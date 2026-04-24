@@ -1,0 +1,13 @@
+{
+  "shots": [
+    {
+      "shot_id": "EP01_SC01_SH01",
+      "duration_sec": 3,
+      "character": "女主",
+      "location": "客厅",
+      "core_action": "冲进门质问男主",
+      "emotion": "焦急愤怒",
+      "dialogue": "你为什么骗我？"
+    }
+  ]
+}

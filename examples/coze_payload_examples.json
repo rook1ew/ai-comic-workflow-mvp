@@ -1,0 +1,18 @@
+{
+  "init_project": {
+    "title": "情绪反转漫剧样片",
+    "genre": "情绪反转",
+    "platform": "douyin",
+    "duration_seconds": 60,
+    "target_audience": "18-30 female audience"
+  },
+  "standard_response": {
+    "success": true,
+    "code": "OK",
+    "message": "project initialized",
+    "data": {
+      "project_id": "example-project-id"
+    },
+    "next_action": "generate_script"
+  }
+}

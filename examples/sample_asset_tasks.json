@@ -1,0 +1,9 @@
+{
+  "asset_tasks": [
+    {
+      "shot_id": "EP01_SC01_SH01",
+      "task_type": "image",
+      "status": "queued"
+    }
+  ]
+}

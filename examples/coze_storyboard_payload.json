@@ -1,0 +1,43 @@
+{
+  "script_card_json": {
+    "opening_hook": "She walks into the wrong meeting room",
+    "conflict": "Everyone mistakes her identity",
+    "escalation": "She cannot explain in time",
+    "turning_point": "The boss asks her to stay",
+    "ending_hook": "A promotion rumor starts"
+  },
+  "storyboard_json": {
+    "shots": [
+      {
+        "shot_id": "SH01",
+        "duration_sec": 3,
+        "character": "Lin Xia",
+        "location": "Meeting Room",
+        "core_action": "Lin Xia opens the door",
+        "emotion": "nervous",
+        "camera": "medium",
+        "dialogue": "Sorry, wrong room.",
+        "image_prompt": "image prompt 1",
+        "video_prompt": "video prompt 1",
+        "voice_prompt": "voice prompt 1",
+        "bgm_prompt": "bgm prompt 1",
+        "status": "prompt_ready"
+      },
+      {
+        "shot_id": "SH02",
+        "duration_sec": 2,
+        "character": "Boss",
+        "location": "Meeting Room",
+        "core_action": "Boss looks up",
+        "emotion": "curious",
+        "camera": "close-up",
+        "dialogue": "Wait.",
+        "image_prompt": "image prompt 2",
+        "video_prompt": "video prompt 2",
+        "voice_prompt": "voice prompt 2",
+        "bgm_prompt": "bgm prompt 2",
+        "status": "prompt_ready"
+      }
+    ]
+  }
+}

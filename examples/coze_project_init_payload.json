@@ -1,0 +1,32 @@
+{
+  "project_card_json": {
+    "project_title": "Urban Hook",
+    "genre": "urban",
+    "platform": "coze",
+    "target_duration": 60,
+    "target_audience": "young-adult",
+    "visual_style": "comic-realism",
+    "core_conflict": "identity confusion",
+    "hook": "wrong room",
+    "ending_hook": "unexpected promotion",
+    "selling_points": ["fast", "dramatic"],
+    "status": "draft"
+  },
+  "characters_json": {
+    "characters": [
+      {
+        "name": "Lin Xia",
+        "role": "lead",
+        "age_vibe": "young professional",
+        "appearance": "sharp face",
+        "hair": "short black hair",
+        "outfit": "office wear",
+        "personality": "calm",
+        "speaking_style": "measured",
+        "must_keep": ["short hair"],
+        "avoid": ["fantasy armor"],
+        "main_reference_confirmed": false
+      }
+    ]
+  }
+}

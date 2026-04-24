@@ -1,10 +1,10 @@
 from fastapi.testclient import TestClient
+
 from app.main import app
 
-client = TestClient(app)
 
-
-def test_root():
+def test_smoke_root():
+    client = TestClient(app)
     response = client.get("/")
     assert response.status_code == 200
     assert response.json()["success"] is True

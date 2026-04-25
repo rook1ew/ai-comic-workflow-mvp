@@ -1,3 +1,8 @@
+from app.models.shot import Shot
+from app.schemas.coze import CozeFullDemoFlowRequest
+from app.services.coze_service import coze_full_demo_flow
+
+
 def _full_demo_flow_payload():
     return {
         "project_card_json": {
@@ -98,3 +103,19 @@ def test_coze_summary_completed_is_consistent_after_full_demo_flow(client):
     body = summary.json()
     assert body["next_action"] == "completed"
     assert body["data"]["next_action"] == "completed"
+
+
+def test_full_demo_flow_saves_duration_sec(db_session):
+    response = coze_full_demo_flow(db_session, CozeFullDemoFlowRequest(**_full_demo_flow_payload()))
+    project_id = response.data["project_id"]
+
+    shot = (
+        db_session.query(Shot)
+        .join(Shot.scene)
+        .join(Shot.scene.property.mapper.class_.episode)  # type: ignore[attr-defined]
+        .filter(Shot.scene.property.mapper.class_.episode.property.mapper.class_.project_id == project_id)  # type: ignore[attr-defined]
+        .first()
+    )
+    assert shot is not None
+    assert shot.metadata_json["source_shot_id"] == "SH01"
+    assert shot.metadata_json["duration_sec"] == 3

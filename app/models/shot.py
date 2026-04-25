@@ -1,4 +1,4 @@
-from sqlalchemy import Enum, ForeignKey, String, Text
+from sqlalchemy import JSON, Enum, ForeignKey, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
@@ -19,6 +19,7 @@ class Shot(TimestampMixin, Base):
     video_prompt: Mapped[str] = mapped_column(Text, nullable=False)
     voice_prompt: Mapped[str] = mapped_column(Text, nullable=False)
     bgm_prompt: Mapped[str] = mapped_column(Text, nullable=False)
+    metadata_json: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
     status: Mapped[ShotStatus] = mapped_column(Enum(ShotStatus), default=ShotStatus.PENDING, nullable=False)
 
     scene = relationship("Scene", back_populates="shots")

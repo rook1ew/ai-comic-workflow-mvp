@@ -12,3 +12,13 @@ def create_shot(db: Session, payload: ShotCreate) -> Shot:
         raise HTTPException(status_code=404, detail="Scene not found")
     shot = Shot(**payload.model_dump())
     return create_and_refresh(db, shot)
+
+
+def update_shot_metadata(db: Session, shot_id: int, metadata_json: dict) -> Shot:
+    shot = db.get(Shot, shot_id)
+    if shot is None:
+        raise HTTPException(status_code=404, detail="Shot not found")
+    shot.metadata_json = metadata_json
+    db.commit()
+    db.refresh(shot)
+    return shot

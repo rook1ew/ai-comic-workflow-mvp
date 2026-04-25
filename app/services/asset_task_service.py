@@ -7,11 +7,12 @@ from app.models.asset_task import AssetTask
 from app.models.character import Character
 from app.models.enums import AssetModality, AssetTaskStatus
 from app.models.episode import Episode
+from app.models.project import Project
 from app.models.scene import Scene
 from app.models.shot import Shot
 from app.providers.base import ProviderExecutionError
 from app.providers.factory import get_provider
-from app.providers.schemas import ProviderRequest
+from app.providers.schemas import ImageProviderInput, ProviderRequest, VideoProviderInput
 from app.schemas.asset_task import AssetTaskCreate, BulkAssetTaskCreateRequest, BulkAssetTaskRunResponse, BulkAssetTaskRunResult
 from app.services.repository import create_and_refresh
 
@@ -37,14 +38,88 @@ def _get_project_shots(db: Session, project_id: int) -> list[Shot]:
     )
 
 
+def _get_project_for_shot(shot: Shot) -> Project:
+    project = shot.scene.episode.project
+    if project is None:
+        raise HTTPException(status_code=400, detail="Shot project context is invalid")
+    return project
+
+
+def _get_first_confirmed_character_reference(db: Session, project_id: int) -> str | None:
+    character = (
+        db.query(Character)
+        .filter(Character.project_id == project_id, Character.main_reference_confirmed.is_(True))
+        .order_by(Character.id.asc())
+        .first()
+    )
+    if character is None:
+        return None
+    return character.main_reference_url
+
+
+def _extract_project_style(project: Project) -> str | None:
+    if project.description:
+        for line in project.description.splitlines():
+            if line.startswith("visual_style="):
+                value = line.split("=", 1)[1].strip()
+                if value:
+                    return value
+    for tag in project.tags:
+        if "style" in tag.lower() or "comic" in tag.lower() or "realism" in tag.lower():
+            return tag
+    return None
+
+
+def _get_existing_image_asset_url(db: Session, shot_id: int) -> str | None:
+    asset = (
+        db.query(Asset)
+        .filter(Asset.shot_id == shot_id, Asset.modality == AssetModality.IMAGE)
+        .order_by(Asset.id.asc())
+        .first()
+    )
+    if asset is None:
+        return None
+    return asset.file_url
+
+
+def _build_provider_payload(db: Session, task: AssetTask) -> dict:
+    shot = task.shot
+    project = _get_project_for_shot(shot)
+    base_payload = dict(task.input_payload or {})
+
+    if task.modality == AssetModality.IMAGE:
+        image_input = ImageProviderInput(
+            prompt=shot.image_prompt,
+            character_reference_url=_get_first_confirmed_character_reference(db, project.id),
+            shot_id=shot.id,
+            style=_extract_project_style(project),
+        )
+        return {**image_input.model_dump(), **base_payload}
+
+    if task.modality == AssetModality.VIDEO:
+        image_url = _get_existing_image_asset_url(db, shot.id)
+        if image_url is None:
+            raise ProviderExecutionError("Image asset is required before video generation")
+        shot_metadata = shot.metadata_json or {}
+        duration = shot_metadata.get("duration_sec") or base_payload.get("duration") or base_payload.get("duration_sec") or 3
+        video_input = VideoProviderInput(
+            image_url=image_url,
+            prompt=shot.video_prompt,
+            duration=duration,
+            aspect_ratio="9:16",
+            resolution="720p",
+        )
+        return {**video_input.model_dump(), **base_payload}
+
+    return base_payload
+
+
 def create_asset_task(db: Session, payload: AssetTaskCreate) -> AssetTask:
     shot = db.get(Shot, payload.shot_id)
     if shot is None:
         raise HTTPException(status_code=404, detail="Shot not found")
 
-    project = shot.scene.episode.project
-    if project is None:
-        raise HTTPException(status_code=400, detail="Shot project context is invalid")
+    project = _get_project_for_shot(shot)
 
     _ensure_confirmed_character_reference(db, project.id)
 
@@ -130,13 +205,13 @@ def run_asset_task(db: Session, asset_task_id: int) -> AssetTask:
     task.error_message = None
     db.commit()
 
-    request = ProviderRequest(
-        shot_id=task.shot_id,
-        modality=task.modality.value,
-        payload=task.input_payload or {},
-    )
-
     try:
+        payload = _build_provider_payload(db, task)
+        request = ProviderRequest(
+            shot_id=task.shot_id,
+            modality=task.modality.value,
+            payload=payload,
+        )
         result = provider.generate(request)
     except ProviderExecutionError as exc:
         task.retry_count += 1

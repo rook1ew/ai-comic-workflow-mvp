@@ -16,8 +16,8 @@ class MockProviderMixin:
             url=f"https://mock.assets/{asset_type}/shot-{payload.shot_id}.{suffix}",
             metadata={
                 "mock": True,
-                "asset_type": asset_type,
-                "shot_id": payload.shot_id,
+                "provider_name": self.name,
+                "modality": asset_type,
                 "input_payload": payload.payload,
             },
         )

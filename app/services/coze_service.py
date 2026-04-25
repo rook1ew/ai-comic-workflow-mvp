@@ -32,7 +32,7 @@ from app.services.episode_service import create_episode, get_or_create_default_e
 from app.services.publish_service import create_publish_record
 from app.services.project_service import create_project, get_project_or_404, get_project_summary
 from app.services.scene_service import create_scene
-from app.services.shot_service import create_shot
+from app.services.shot_service import create_shot, update_shot_metadata
 
 
 def _build_project_description(project_card) -> str:
@@ -158,7 +158,7 @@ def coze_storyboard(db: Session, project_id: int, payload: CozeStoryboardRequest
             except ValueError:
                 shot_number = index
 
-        create_shot(
+        created_shot = create_shot(
             db,
             ShotCreate(
                 scene_id=scene_id,
@@ -172,6 +172,19 @@ def coze_storyboard(db: Session, project_id: int, payload: CozeStoryboardRequest
                 bgm_prompt=shot_item.bgm_prompt,
                 status=shot_item.status,
             ),
+        )
+        update_shot_metadata(
+            db,
+            created_shot.id,
+            {
+                "source_shot_id": shot_item.shot_id,
+                "duration_sec": shot_item.duration_sec,
+                "character": shot_item.character,
+                "location": shot_item.location,
+                "emotion": shot_item.emotion,
+                "camera": shot_item.camera,
+                "dialogue": shot_item.dialogue,
+            },
         )
         shots_count += 1
 

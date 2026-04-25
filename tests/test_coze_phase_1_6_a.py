@@ -1,3 +1,8 @@
+from app.models.shot import Shot
+from app.schemas.coze import CozeProjectInitRequest, CozeStoryboardRequest
+from app.services.coze_service import coze_project_init, coze_storyboard
+
+
 def _coze_init_payload():
     return {
         "project_card_json": {
@@ -170,6 +175,20 @@ def test_coze_storyboard_creates_episode_scene_shots(client):
     assert body["data"]["episode_id"] >= 1
     assert body["data"]["shots_count"] == 2
     assert body["next_action"] == "create_asset_tasks"
+
+
+def test_storyboard_import_saves_duration_sec(db_session):
+    init_response = coze_project_init(db_session, CozeProjectInitRequest(**_coze_init_payload()))
+    project_id = init_response.data["project_id"]
+    storyboard_response = coze_storyboard(db_session, project_id, CozeStoryboardRequest(**_coze_storyboard_payload()))
+
+    assert storyboard_response.data["shots_count"] == 2
+    shots = db_session.query(Shot).order_by(Shot.shot_number.asc()).all()
+    assert len(shots) == 2
+    assert shots[0].metadata_json["source_shot_id"] == "SH01"
+    assert shots[0].metadata_json["duration_sec"] == 3
+    assert shots[1].metadata_json["source_shot_id"] == "SH02"
+    assert shots[1].metadata_json["duration_sec"] == 2
 
 
 def test_coze_create_asset_tasks_requires_confirmed_character(client):

@@ -36,4 +36,5 @@ class ShotResponse(TimestampedResponse):
     video_prompt: str
     voice_prompt: str
     bgm_prompt: str
+    metadata_json: dict
     status: ShotStatus

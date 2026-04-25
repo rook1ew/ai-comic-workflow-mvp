@@ -27,6 +27,8 @@ from app.schemas.project import ProviderReadinessResponse
 from app.services.prompt_enhancer import build_image_enhanced_prompt
 from app.services.repository import create_and_refresh
 
+_IMAGE2_REAL_CALLS_THIS_RUN = 0
+
 
 def _ensure_confirmed_character_reference(db: Session, project_id: int) -> None:
     confirmed_count = (
@@ -93,26 +95,65 @@ def _get_existing_image_asset_url(db: Session, shot_id: int) -> str | None:
     return asset.file_url
 
 
-def _ensure_image2_real_call_is_allowed(task: AssetTask) -> None:
+def reset_image2_real_call_counter() -> None:
+    global _IMAGE2_REAL_CALLS_THIS_RUN
+    _IMAGE2_REAL_CALLS_THIS_RUN = 0
+
+
+def _build_image2_preflight_result(task: AssetTask, request_payload: dict, blocked_reason: str, *, dry_run: bool) -> dict:
+    return {
+        "provider_name": "image2_real",
+        "preflight_ok": False,
+        "real_call": False,
+        "dry_run": dry_run,
+        "request_payload": request_payload,
+        "response_payload": None,
+        "error_body": None,
+        "job_id": None,
+        "usage": None,
+        "latency_ms": None,
+        "blocked_reason": blocked_reason,
+        "task_id": task.id,
+    }
+
+
+def _run_image2_real_preflight(task: AssetTask, request_payload: dict) -> tuple[bool, dict, str | None]:
+    global _IMAGE2_REAL_CALLS_THIS_RUN
+
     if task.modality != AssetModality.IMAGE or task.provider_name != "image2_real":
-        return
+        return True, {}, None
 
     settings = get_settings()
-    if not settings.enable_real_image_provider:
-        raise ProviderExecutionError(
-            "Real Image2 provider is disabled. Set ENABLE_REAL_IMAGE_PROVIDER=true before using provider_name=image2_real."
-        )
-    if not settings.image2_api_key.strip():
-        raise ProviderExecutionError(
-            "IMAGE2_API_KEY is required before using provider_name=image2_real."
-        )
+    blocked_reason: str | None = None
+
     if settings.image_provider_mode != "image2_real":
-        raise ProviderExecutionError(
-            "IMAGE_PROVIDER_MODE must be image2_real before using provider_name=image2_real."
-        )
-    raise ProviderExecutionError(
-        "Real Image2 HTTP calls remain blocked in v0.3-B. No external request was sent."
-    )
+        blocked_reason = "IMAGE_PROVIDER_MODE must be image2_real before using provider_name=image2_real."
+    elif not settings.enable_real_image_provider:
+        blocked_reason = "Real Image2 provider is disabled. Set ENABLE_REAL_IMAGE_PROVIDER=true before using provider_name=image2_real."
+    elif not settings.image2_api_key.strip():
+        blocked_reason = "IMAGE2_API_KEY is required before using provider_name=image2_real."
+    elif not settings.image2_base_url.strip():
+        blocked_reason = "IMAGE2_BASE_URL is required before using provider_name=image2_real."
+    elif task.id not in settings.image2_allow_task_ids:
+        blocked_reason = "Asset task id is not allowed by IMAGE2_ALLOW_TASK_IDS."
+    elif _IMAGE2_REAL_CALLS_THIS_RUN >= settings.image2_max_real_calls_per_run:
+        blocked_reason = "IMAGE2_MAX_REAL_CALLS_PER_RUN limit reached."
+    elif task.modality != AssetModality.IMAGE:
+        blocked_reason = "image2_real only supports image tasks."
+    elif not str(request_payload.get("enhanced_prompt") or "").strip():
+        blocked_reason = "enhanced_prompt is required before using provider_name=image2_real."
+    elif settings.image2_dry_run:
+        blocked_reason = "IMAGE2_DRY_RUN is true."
+    else:
+        _IMAGE2_REAL_CALLS_THIS_RUN += 1
+        blocked_reason = "Real Image2 HTTP calls remain blocked in v0.3-C. No external request was sent."
+
+    return False, _build_image2_preflight_result(
+        task,
+        request_payload,
+        blocked_reason,
+        dry_run=settings.image2_dry_run,
+    ), blocked_reason
 
 
 def _build_storyboard_context(shot: Shot) -> dict:
@@ -265,9 +306,11 @@ def run_asset_task(db: Session, asset_task_id: int) -> AssetTask:
     db.commit()
 
     try:
-        _ensure_image2_real_call_is_allowed(task)
         provider = get_provider(task.modality, task.provider_name)
         payload = _build_provider_payload(db, task)
+        preflight_allowed, preflight_result, blocked_reason = _run_image2_real_preflight(task, payload)
+        if not preflight_allowed:
+            raise ProviderExecutionError(blocked_reason or "image2_real preflight blocked the request.")
         request = ProviderRequest(
             shot_id=task.shot_id,
             modality=task.modality.value,
@@ -277,7 +320,15 @@ def run_asset_task(db: Session, asset_task_id: int) -> AssetTask:
     except ProviderExecutionError as exc:
         task.retry_count += 1
         task.error_message = str(exc)
-        task.output_payload = None
+        if task.provider_name == "image2_real":
+            task.output_payload = preflight_result if 'preflight_result' in locals() and preflight_result else {
+                "provider_name": "image2_real",
+                "real_call": False,
+                "dry_run": get_settings().image2_dry_run,
+                "blocked_reason": str(exc),
+            }
+        else:
+            task.output_payload = None
         if task.retry_count > task.max_retries:
             task.status = AssetTaskStatus.NEEDS_HUMAN_REVISION
         else:
@@ -354,6 +405,8 @@ def get_provider_debug_snapshot(db: Session, asset_task_id: int) -> ProviderDebu
     input_payload = dict(task.input_payload or {})
     if asset is not None:
         input_payload = dict(asset.metadata_json.get("input_payload") or input_payload)
+    elif task.output_payload and isinstance(task.output_payload, dict):
+        input_payload = dict(task.output_payload.get("request_payload") or input_payload)
 
     return ProviderDebugSnapshot(
         asset_task_id=task.id,

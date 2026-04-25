@@ -58,6 +58,17 @@ v0.2 当前重点是 Provider Readiness：
 
 当前版本即使设置为 `image2_real`，也不会发出真实请求；系统会返回清晰错误并阻止调用。
 
+v0.3-C 新增的保护配置：
+
+- `IMAGE2_MAX_REAL_CALLS_PER_RUN`
+  - 默认 `1`
+- `IMAGE2_ALLOW_TASK_IDS`
+  - 默认空
+  - 只有显式列出的 `asset_task_id` 才允许进入未来真实调用路径
+- `IMAGE2_DRY_RUN`
+  - 默认 `true`
+  - 为 `true` 时只构造 request payload，不发真实请求
+
 注意：
 
 - `.env` 不允许提交到 GitHub

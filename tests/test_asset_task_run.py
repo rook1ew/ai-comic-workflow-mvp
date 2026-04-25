@@ -5,6 +5,8 @@ from app.providers.base import ProviderExecutionError
 from app.providers.factory import get_provider
 from app.providers.image2 import Image2Provider
 from app.providers.schemas import ImageProviderInput
+from app.services import asset_task_service
+from app.services.asset_task_service import reset_image2_real_call_counter
 
 
 def _create_ready_shot(client):
@@ -709,3 +711,126 @@ def test_image2_provider_map_error_handles_authentication_quota_timeout_and_unkn
 def test_provider_factory_recognizes_image2_real():
     provider = get_provider(AssetModality.IMAGE, "image2_real")
     assert isinstance(provider, Image2Provider)
+
+
+def test_image2_real_dry_run_blocks_and_records_request_payload(client, monkeypatch):
+    monkeypatch.setenv("ENABLE_REAL_IMAGE_PROVIDER", "true")
+    monkeypatch.setenv("IMAGE_PROVIDER_MODE", "image2_real")
+    monkeypatch.setenv("IMAGE2_API_KEY", "fake-key")
+    monkeypatch.setenv("IMAGE2_BASE_URL", "https://api.example.com")
+    monkeypatch.setenv("IMAGE2_DRY_RUN", "true")
+    get_settings.cache_clear()
+    reset_image2_real_call_counter()
+
+    shot = _create_ready_shot(client)
+    task = client.post("/asset-tasks", json={"shot_id": shot["id"], "modality": "image", "provider_name": "image2_real"}).json()
+    monkeypatch.setenv("IMAGE2_ALLOW_TASK_IDS", str(task["id"]))
+    get_settings.cache_clear()
+
+    response = client.post(f"/asset-tasks/{task['id']}/run")
+    assert response.status_code == 200
+    body = response.json()
+    assert body["status"] == "failed"
+    assert "IMAGE2_DRY_RUN is true" in body["error_message"]
+    assert body["output_payload"]["dry_run"] is True
+    assert body["output_payload"]["real_call"] is False
+    assert body["output_payload"]["request_payload"]["enhanced_prompt"] is not None
+
+    debug = client.get(f"/asset-tasks/{task['id']}/provider-debug").json()
+    assert debug["input_payload"]["enhanced_prompt"] is not None
+
+    get_settings.cache_clear()
+    reset_image2_real_call_counter()
+
+
+def test_image2_real_missing_base_url_is_blocked(client, monkeypatch):
+    monkeypatch.setenv("ENABLE_REAL_IMAGE_PROVIDER", "true")
+    monkeypatch.setenv("IMAGE_PROVIDER_MODE", "image2_real")
+    monkeypatch.setenv("IMAGE2_API_KEY", "fake-key")
+    monkeypatch.delenv("IMAGE2_BASE_URL", raising=False)
+    monkeypatch.setenv("IMAGE2_DRY_RUN", "false")
+    get_settings.cache_clear()
+    reset_image2_real_call_counter()
+
+    shot = _create_ready_shot(client)
+    task = client.post("/asset-tasks", json={"shot_id": shot["id"], "modality": "image", "provider_name": "image2_real"}).json()
+    monkeypatch.setenv("IMAGE2_ALLOW_TASK_IDS", str(task["id"]))
+    get_settings.cache_clear()
+
+    response = client.post(f"/asset-tasks/{task['id']}/run")
+    assert response.status_code == 200
+    assert "IMAGE2_BASE_URL is required" in response.json()["error_message"]
+
+    get_settings.cache_clear()
+    reset_image2_real_call_counter()
+
+
+def test_image2_real_task_id_not_allowed_is_blocked(client, monkeypatch):
+    monkeypatch.setenv("ENABLE_REAL_IMAGE_PROVIDER", "true")
+    monkeypatch.setenv("IMAGE_PROVIDER_MODE", "image2_real")
+    monkeypatch.setenv("IMAGE2_API_KEY", "fake-key")
+    monkeypatch.setenv("IMAGE2_BASE_URL", "https://api.example.com")
+    monkeypatch.setenv("IMAGE2_DRY_RUN", "false")
+    monkeypatch.setenv("IMAGE2_ALLOW_TASK_IDS", "")
+    get_settings.cache_clear()
+    reset_image2_real_call_counter()
+
+    shot = _create_ready_shot(client)
+    task = client.post("/asset-tasks", json={"shot_id": shot["id"], "modality": "image", "provider_name": "image2_real"}).json()
+    response = client.post(f"/asset-tasks/{task['id']}/run")
+    assert response.status_code == 200
+    assert "not allowed by IMAGE2_ALLOW_TASK_IDS" in response.json()["error_message"]
+
+    get_settings.cache_clear()
+    reset_image2_real_call_counter()
+
+
+def test_image2_real_missing_enhanced_prompt_is_blocked(client, monkeypatch):
+    monkeypatch.setenv("ENABLE_REAL_IMAGE_PROVIDER", "true")
+    monkeypatch.setenv("IMAGE_PROVIDER_MODE", "image2_real")
+    monkeypatch.setenv("IMAGE2_API_KEY", "fake-key")
+    monkeypatch.setenv("IMAGE2_BASE_URL", "https://api.example.com")
+    monkeypatch.setenv("IMAGE2_DRY_RUN", "false")
+    get_settings.cache_clear()
+    reset_image2_real_call_counter()
+
+    shot = _create_ready_shot(client)
+    task = client.post("/asset-tasks", json={"shot_id": shot["id"], "modality": "image", "provider_name": "image2_real"}).json()
+    monkeypatch.setenv("IMAGE2_ALLOW_TASK_IDS", str(task["id"]))
+    monkeypatch.setattr(asset_task_service, "build_image_enhanced_prompt", lambda **kwargs: "")
+    get_settings.cache_clear()
+
+    response = client.post(f"/asset-tasks/{task['id']}/run")
+    assert response.status_code == 200
+    assert "enhanced_prompt is required" in response.json()["error_message"]
+
+    get_settings.cache_clear()
+    reset_image2_real_call_counter()
+
+
+def test_image2_max_real_calls_per_run_default_limit_is_one(client, monkeypatch):
+    monkeypatch.setenv("ENABLE_REAL_IMAGE_PROVIDER", "true")
+    monkeypatch.setenv("IMAGE_PROVIDER_MODE", "image2_real")
+    monkeypatch.setenv("IMAGE2_API_KEY", "fake-key")
+    monkeypatch.setenv("IMAGE2_BASE_URL", "https://api.example.com")
+    monkeypatch.setenv("IMAGE2_DRY_RUN", "false")
+    monkeypatch.setenv("IMAGE2_MAX_REAL_CALLS_PER_RUN", "1")
+    get_settings.cache_clear()
+    reset_image2_real_call_counter()
+
+    shot1 = _create_ready_shot(client)
+    shot2 = _create_ready_shot(client)
+    task1 = client.post("/asset-tasks", json={"shot_id": shot1["id"], "modality": "image", "provider_name": "image2_real"}).json()
+    task2 = client.post("/asset-tasks", json={"shot_id": shot2["id"], "modality": "image", "provider_name": "image2_real"}).json()
+    monkeypatch.setenv("IMAGE2_ALLOW_TASK_IDS", f"{task1['id']},{task2['id']}")
+    get_settings.cache_clear()
+
+    first = client.post(f"/asset-tasks/{task1['id']}/run")
+    second = client.post(f"/asset-tasks/{task2['id']}/run")
+    assert first.status_code == 200
+    assert second.status_code == 200
+    assert "blocked in v0.3-C" in first.json()["error_message"]
+    assert "IMAGE2_MAX_REAL_CALLS_PER_RUN limit reached" in second.json()["error_message"]
+
+    get_settings.cache_clear()
+    reset_image2_real_call_counter()

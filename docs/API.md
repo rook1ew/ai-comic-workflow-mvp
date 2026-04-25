@@ -26,6 +26,9 @@ Relevant settings:
 - `IMAGE2_BASE_URL`
 - `IMAGE2_MODEL`
 - `ENABLE_REAL_IMAGE_PROVIDER=true | false`
+- `IMAGE2_MAX_REAL_CALLS_PER_RUN`
+- `IMAGE2_ALLOW_TASK_IDS`
+- `IMAGE2_DRY_RUN=true | false`
 
 Real image-provider calls are still blocked in v0.3-A. A future real call must
 only be allowed when all of the following are true:
@@ -37,6 +40,14 @@ only be allowed when all of the following are true:
 In v0.3-B, the `Image2Provider` adapter structure exists, but real HTTP calls
 are still intentionally blocked. This means request shaping, response parsing,
 and error mapping can be tested without generating any real cost.
+
+In v0.3-C, an additional preflight and dry-run protection layer exists:
+
+- `image2_real` still does not send any real request
+- `IMAGE2_DRY_RUN=true` blocks execution after building the request payload
+- only explicitly allowed task ids may enter the future real-call path
+- the run records debug fields such as `request_payload`, `real_call`,
+  `dry_run`, and `blocked_reason`
 
 ## Coze Endpoints
 

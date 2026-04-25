@@ -1,6 +1,7 @@
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
+from app.core.config import get_settings
 from app.core.status_machine import ASSET_TASK_TRANSITIONS, ensure_transition
 from app.models.asset import Asset
 from app.models.asset_task import AssetTask
@@ -90,6 +91,28 @@ def _get_existing_image_asset_url(db: Session, shot_id: int) -> str | None:
     if asset is None:
         return None
     return asset.file_url
+
+
+def _ensure_image2_real_call_is_allowed(task: AssetTask) -> None:
+    if task.modality != AssetModality.IMAGE or task.provider_name != "image2_real":
+        return
+
+    settings = get_settings()
+    if not settings.enable_real_image_provider:
+        raise ProviderExecutionError(
+            "Real Image2 provider is disabled. Set ENABLE_REAL_IMAGE_PROVIDER=true before using provider_name=image2_real."
+        )
+    if not settings.image2_api_key.strip():
+        raise ProviderExecutionError(
+            "IMAGE2_API_KEY is required before using provider_name=image2_real."
+        )
+    if settings.image_provider_mode != "image2_real":
+        raise ProviderExecutionError(
+            "IMAGE_PROVIDER_MODE must be image2_real before using provider_name=image2_real."
+        )
+    raise ProviderExecutionError(
+        "Real Image2 HTTP calls remain blocked in v0.3-B. No external request was sent."
+    )
 
 
 def _build_storyboard_context(shot: Shot) -> dict:
@@ -242,6 +265,7 @@ def run_asset_task(db: Session, asset_task_id: int) -> AssetTask:
     db.commit()
 
     try:
+        _ensure_image2_real_call_is_allowed(task)
         provider = get_provider(task.modality, task.provider_name)
         payload = _build_provider_payload(db, task)
         request = ProviderRequest(

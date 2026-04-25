@@ -1,5 +1,10 @@
 from app.services.prompt_enhancer import build_image_enhanced_prompt
 from app.core.config import get_settings
+from app.models.enums import AssetModality
+from app.providers.base import ProviderExecutionError
+from app.providers.factory import get_provider
+from app.providers.image2 import Image2Provider
+from app.providers.schemas import ImageProviderInput
 
 
 def _create_ready_shot(client):
@@ -629,3 +634,78 @@ def test_provider_debug_supports_image2_stub_input_snapshot(client):
     assert body["input_payload"]["enhanced_prompt"] is not None
     assert body["storyboard_context"]["source_shot_id"] == "SH01"
     assert body["asset_url"].startswith("mock://image2-stub/")
+
+
+def test_image2_provider_build_request_payload_prefers_enhanced_prompt():
+    provider = Image2Provider()
+    payload = provider.build_request_payload(
+        {
+            "prompt": "base image prompt",
+            "enhanced_prompt": "enhanced image prompt",
+            "character_reference_url": "mock://character/reference.png",
+            "shot_id": 1,
+            "style": "comic-realism",
+            "storyboard_context": {"source_shot_id": "SH01"},
+        }
+    )
+    assert payload["prompt"] == "enhanced image prompt"
+
+
+def test_image2_provider_build_request_payload_includes_reference_style_and_storyboard_context():
+    provider = Image2Provider()
+    payload = provider.build_request_payload(
+        {
+            "prompt": "base image prompt",
+            "enhanced_prompt": "enhanced image prompt",
+            "character_reference_url": "mock://character/reference.png",
+            "shot_id": 7,
+            "style": "comic-realism",
+            "storyboard_context": {
+                "source_shot_id": "SH01",
+                "character": "Lin Xia",
+            },
+        }
+    )
+    assert payload["reference_image_url"] == "mock://character/reference.png"
+    assert payload["style"] == "comic-realism"
+    assert payload["metadata"]["shot_id"] == 7
+    assert payload["metadata"]["storyboard_context"]["source_shot_id"] == "SH01"
+
+
+def test_image2_provider_parse_response_extracts_image_url_job_id_and_usage():
+    provider = Image2Provider()
+    result = provider.parse_response(
+        {
+            "image_url": "https://example.com/image.png",
+            "id": "job_123",
+            "model": "image2",
+            "usage": {"credits": 1},
+        }
+    )
+    assert result.url == "https://example.com/image.png"
+    assert result.metadata["provider_name"] == "image2_real"
+    assert result.metadata["job_id"] == "job_123"
+    assert result.metadata["usage"]["credits"] == 1
+    assert result.metadata["real_call"] is True
+
+
+def test_image2_provider_parse_response_missing_image_url_raises_clear_error():
+    provider = Image2Provider()
+    try:
+        provider.parse_response({"id": "job_123"})
+        assert False, "Expected ProviderExecutionError"
+    except ProviderExecutionError as exc:
+        assert "missing image_url" in str(exc).lower()
+
+
+def test_image2_provider_map_error_handles_authentication_quota_timeout_and_unknown():
+    provider = Image2Provider()
+    assert provider.map_error({"code": "authentication_failed"}) == "Image2 provider authentication failed."
+    assert provider.map_error({"message": "insufficient balance"}) == "Image2 provider quota or balance is insufficient."
+    assert provider.map_error(TimeoutError("request timeout")) == "Image2 provider request timed out."
+    assert provider.map_error(RuntimeError("boom")) == "Image2 provider returned an unknown error."
+
+
+def test_provider_factory_recognizes_image2_real():
+    provider = get_provider(AssetModality.IMAGE, "image2_real")
+    assert isinstance(provider, Image2Provider)

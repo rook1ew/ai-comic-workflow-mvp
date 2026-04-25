@@ -34,6 +34,10 @@ only be allowed when all of the following are true:
 - `ENABLE_REAL_IMAGE_PROVIDER=true`
 - `IMAGE2_API_KEY` is present
 
+In v0.3-B, the `Image2Provider` adapter structure exists, but real HTTP calls
+are still intentionally blocked. This means request shaping, response parsing,
+and error mapping can be tested without generating any real cost.
+
 ## Coze Endpoints
 
 ### POST `/coze/project/init`

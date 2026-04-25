@@ -298,3 +298,6 @@ v0.3-D 新增的是“真实 provider 调用审计记录层”。
 
 - API key 不允许提交到 GitHub
 - `.env` 必须继续被 `.gitignore` 忽略
+绗竴娆＄湡瀹?Image2 鍗曚换鍔¤皟鐢ㄥ墠锛岃鍙﹀鍙傝€冿細
+
+- [IMAGE2_FIRST_REAL_CALL_RUNBOOK.md](/C:/Users/29964/Documents/GitHub/ai-comic-workflow-mvp-git/docs/IMAGE2_FIRST_REAL_CALL_RUNBOOK.md)

@@ -236,13 +236,13 @@ def run_asset_task(db: Session, asset_task_id: int) -> AssetTask:
     if task.status == AssetTaskStatus.NEEDS_HUMAN_REVISION:
         return task
 
-    provider = get_provider(task.modality, task.provider_name)
     ensure_transition(task.status, AssetTaskStatus.RUNNING, ASSET_TASK_TRANSITIONS, "asset task")
     task.status = AssetTaskStatus.RUNNING
     task.error_message = None
     db.commit()
 
     try:
+        provider = get_provider(task.modality, task.provider_name)
         payload = _build_provider_payload(db, task)
         request = ProviderRequest(
             shot_id=task.shot_id,
@@ -266,7 +266,7 @@ def run_asset_task(db: Session, asset_task_id: int) -> AssetTask:
         shot_id=task.shot_id,
         asset_task_id=task.id,
         modality=task.modality,
-        provider_name=result.provider_name,
+        provider_name=getattr(result, "provider_name", None) or result.metadata.get("provider_name") or task.provider_name,
         file_url=result.url,
         metadata_json=result.metadata,
     )

@@ -158,6 +158,33 @@ v0.4 才开始接真实 `SeedanceVideoProvider`。
 - 前端
 - 多租户 SaaS
 
+## v0.3-A 当前范围
+
+v0.3-A 只完成真实 `Image2Provider` 接入前的配置和安全开关准备：
+
+- 增加 `IMAGE_PROVIDER_MODE`
+- 增加 `IMAGE2_API_KEY`
+- 增加 `IMAGE2_BASE_URL`
+- 增加 `IMAGE2_MODEL`
+- 增加 `ENABLE_REAL_IMAGE_PROVIDER`
+- 支持 `image2_stub`
+- 对 `image2_real` 做明确阻断
+
+默认行为仍然是：
+
+- 使用 `mock`
+- 不发真实请求
+- 不读取真实费用接口
+- 不产生真实生成费用
+
+真实 image provider 在未来只有同时满足以下条件时才允许启用：
+
+- `IMAGE_PROVIDER_MODE=image2_real`
+- `ENABLE_REAL_IMAGE_PROVIDER=true`
+- `IMAGE2_API_KEY` 存在
+
+并且 `.env` 必须继续留在本地，不允许提交到 GitHub。
+
 ## v0.3 前建议流程
 
 在切真实 provider 前，建议始终按这条顺序检查：

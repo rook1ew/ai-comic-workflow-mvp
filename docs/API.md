@@ -14,6 +14,26 @@ All `/coze/*` endpoints return:
 }
 ```
 
+## Provider Configuration Notes
+
+Current v0.3-A only prepares configuration and safety switches for a future
+real `Image2Provider`.
+
+Relevant settings:
+
+- `IMAGE_PROVIDER_MODE=mock | image2_stub | image2_real`
+- `IMAGE2_API_KEY`
+- `IMAGE2_BASE_URL`
+- `IMAGE2_MODEL`
+- `ENABLE_REAL_IMAGE_PROVIDER=true | false`
+
+Real image-provider calls are still blocked in v0.3-A. A future real call must
+only be allowed when all of the following are true:
+
+- `IMAGE_PROVIDER_MODE=image2_real`
+- `ENABLE_REAL_IMAGE_PROVIDER=true`
+- `IMAGE2_API_KEY` is present
+
 ## Coze Endpoints
 
 ### POST `/coze/project/init`

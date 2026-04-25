@@ -1,4 +1,5 @@
 from app.services.prompt_enhancer import build_image_enhanced_prompt
+from app.core.config import get_settings
 
 
 def _create_ready_shot(client):
@@ -501,3 +502,130 @@ def test_unexecuted_task_provider_debug_returns_basic_info(client):
 def test_provider_debug_returns_404_for_missing_task(client):
     response = client.get("/asset-tasks/999999/provider-debug")
     assert response.status_code == 404
+
+
+def test_default_configuration_keeps_image_task_on_mock_provider(client):
+    get_settings.cache_clear()
+    shot = _create_ready_shot(client)
+    task = client.post("/asset-tasks", json={"shot_id": shot["id"], "modality": "image", "provider_name": "mock"}).json()
+    response = client.post(f"/asset-tasks/{task['id']}/run")
+    assert response.status_code == 200
+    metadata = response.json()["assets"][0]["metadata_json"]
+    assert metadata["provider_name"] == "mock"
+    assert metadata["mock"] is True
+
+
+def test_image2_stub_returns_stub_url_and_real_call_false(client):
+    get_settings.cache_clear()
+    shot = _create_ready_shot(client)
+    task = client.post("/asset-tasks", json={"shot_id": shot["id"], "modality": "image", "provider_name": "image2_stub"}).json()
+    response = client.post(f"/asset-tasks/{task['id']}/run")
+    assert response.status_code == 200
+    body = response.json()
+    assert body["status"] == "succeeded"
+    asset = body["assets"][0]
+    assert asset["url"] == f"mock://image2-stub/{shot['id']}.png"
+    assert asset["metadata_json"]["provider_name"] == "image2_stub"
+    assert asset["metadata_json"]["real_call"] is False
+    assert asset["metadata_json"]["safety_note"] == "stub only, no real API call"
+
+
+def test_image2_real_disabled_returns_clear_error(client, monkeypatch):
+    monkeypatch.setenv("ENABLE_REAL_IMAGE_PROVIDER", "false")
+    monkeypatch.setenv("IMAGE_PROVIDER_MODE", "image2_real")
+    monkeypatch.setenv("IMAGE2_API_KEY", "fake-key")
+    get_settings.cache_clear()
+
+    shot = _create_ready_shot(client)
+    task = client.post("/asset-tasks", json={"shot_id": shot["id"], "modality": "image", "provider_name": "image2_real"}).json()
+    response = client.post(f"/asset-tasks/{task['id']}/run")
+    assert response.status_code == 200
+    body = response.json()
+    assert body["status"] == "failed"
+    assert "Real Image2 provider is disabled" in body["error_message"]
+
+    get_settings.cache_clear()
+
+
+def test_image2_real_missing_api_key_returns_clear_error(client, monkeypatch):
+    monkeypatch.setenv("ENABLE_REAL_IMAGE_PROVIDER", "true")
+    monkeypatch.setenv("IMAGE_PROVIDER_MODE", "image2_real")
+    monkeypatch.delenv("IMAGE2_API_KEY", raising=False)
+    get_settings.cache_clear()
+
+    shot = _create_ready_shot(client)
+    task = client.post("/asset-tasks", json={"shot_id": shot["id"], "modality": "image", "provider_name": "image2_real"}).json()
+    response = client.post(f"/asset-tasks/{task['id']}/run")
+    assert response.status_code == 200
+    body = response.json()
+    assert body["status"] == "failed"
+    assert "IMAGE2_API_KEY is required" in body["error_message"]
+
+    get_settings.cache_clear()
+
+
+def test_provider_debug_supports_image2_stub_input_snapshot(client):
+    get_settings.cache_clear()
+    init = client.post("/coze/project/init", json={
+        "project_card_json": {
+            "project_title": "Image2 Stub Debug Demo",
+            "genre": "urban",
+            "platform": "coze",
+            "target_duration": 60,
+            "target_audience": "young-adult",
+            "visual_style": "comic-realism",
+            "core_conflict": "identity confusion",
+            "hook": "wrong room",
+            "ending_hook": "unexpected promotion",
+            "selling_points": ["fast"],
+            "status": "draft",
+        },
+        "characters_json": {
+            "characters": [
+                {
+                    "name": "Lin Xia",
+                    "role": "lead",
+                    "main_reference_confirmed": False,
+                }
+            ]
+        },
+    }).json()
+    project_id = init["data"]["project_id"]
+    character_id = init["data"]["character_ids"][0]
+    client.post(f"/characters/{character_id}/confirm-reference", json={"main_reference_url": "mock://character/reference.png"})
+    client.post(
+        f"/coze/project/{project_id}/storyboard",
+        json={
+            "script_card_json": {"opening_hook": "Opening"},
+            "storyboard_json": {
+                "shots": [
+                    {
+                        "shot_id": "SH01",
+                        "duration_sec": 3,
+                        "character": "Lin Xia",
+                        "location": "Meeting Room",
+                        "core_action": "Lin Xia opens the door",
+                        "emotion": "nervous",
+                        "camera": "medium",
+                        "dialogue": "Sorry, wrong room.",
+                        "image_prompt": "image prompt 1",
+                        "video_prompt": "video prompt 1",
+                        "voice_prompt": "voice prompt 1",
+                        "bgm_prompt": "bgm prompt 1",
+                        "status": "prompt_ready",
+                    }
+                ]
+            },
+        },
+    )
+    image_task = client.post(
+        "/asset-tasks",
+        json={"shot_id": 1, "modality": "image", "provider_name": "image2_stub"},
+    ).json()
+    client.post(f"/asset-tasks/{image_task['id']}/run")
+    debug = client.get(f"/asset-tasks/{image_task['id']}/provider-debug")
+    assert debug.status_code == 200
+    body = debug.json()
+    assert body["input_payload"]["enhanced_prompt"] is not None
+    assert body["storyboard_context"]["source_shot_id"] == "SH01"
+    assert body["asset_url"].startswith("mock://image2-stub/")

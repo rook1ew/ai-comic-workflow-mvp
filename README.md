@@ -31,6 +31,38 @@ v0.2 当前重点是 Provider Readiness：
 - 不读取真实 API key
 - 不会产生真实费用
 
+## v0.3-A Provider 配置开关
+
+当前 v0.3-A 只做真实 Image2Provider 接入前的配置和安全开关准备。
+
+新增配置项：
+
+- `IMAGE_PROVIDER_MODE`
+  - 默认 `mock`
+  - 可选：`mock / image2_stub / image2_real`
+- `IMAGE2_API_KEY`
+  - 默认空
+  - 本轮只预留，不实际调用
+- `IMAGE2_BASE_URL`
+  - 默认空
+- `IMAGE2_MODEL`
+  - 默认 `image2`
+- `ENABLE_REAL_IMAGE_PROVIDER`
+  - 默认 `false`
+
+真实 image provider 在未来只有同时满足以下条件才允许调用：
+
+- `IMAGE_PROVIDER_MODE=image2_real`
+- `ENABLE_REAL_IMAGE_PROVIDER=true`
+- `IMAGE2_API_KEY` 存在
+
+当前版本即使设置为 `image2_real`，也不会发出真实请求；系统会返回清晰错误并阻止调用。
+
+注意：
+
+- `.env` 不允许提交到 GitHub
+- API key 只能放本地环境变量或本地 `.env`
+
 ## 本地启动
 
 ```powershell

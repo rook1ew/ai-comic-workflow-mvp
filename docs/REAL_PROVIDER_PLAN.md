@@ -279,3 +279,22 @@ v0.3-D 新增的是“真实 provider 调用审计记录层”。
 4. `GET /projects/{project_id}/provider-readiness`
 
 只有当 payload 合格、mock 流程跑通、provider debug 正常、provider readiness 通过后，再进入真实 provider 接入。
+## v0.3-E 前置条件
+
+在进入 v0.3-E 之前，必须先准备好：
+
+- 可用的 OpenAI API key
+- 已确认的 billing / credits
+- 本地 `.env` 安全配置
+- 单独的 allow task id
+
+如果这些条件还没准备好，就不要进入第一次真实 Image2 调用。
+
+请先阅读：
+
+- [IMAGE2_API_KEY_SETUP.md](/C:/Users/29964/Documents/GitHub/ai-comic-workflow-mvp-git/docs/IMAGE2_API_KEY_SETUP.md)
+
+并保持：
+
+- API key 不允许提交到 GitHub
+- `.env` 必须继续被 `.gitignore` 忽略

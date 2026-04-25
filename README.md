@@ -193,3 +193,17 @@ C:\Users\29964\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\p
 cd C:\Users\29964\Documents\GitHub\ai-comic-workflow-mvp-git
 C:\Users\29964\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe -m pytest
 ```
+
+## Image2 API Key 安全配置
+
+真实 provider 默认仍然关闭。
+
+在准备真实 Image2Provider 前，请先阅读：
+
+- [docs/IMAGE2_API_KEY_SETUP.md](/C:/Users/29964/Documents/GitHub/ai-comic-workflow-mvp-git/docs/IMAGE2_API_KEY_SETUP.md)
+
+当前默认安全配置应保持为：
+
+- `IMAGE_PROVIDER_MODE=mock`
+- `ENABLE_REAL_IMAGE_PROVIDER=false`
+- `IMAGE2_DRY_RUN=true`

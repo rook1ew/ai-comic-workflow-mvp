@@ -732,12 +732,20 @@ def test_image2_real_dry_run_blocks_and_records_request_payload(client, monkeypa
     body = response.json()
     assert body["status"] == "failed"
     assert "IMAGE2_DRY_RUN is true" in body["error_message"]
+    assert "provider_audit" in body["output_payload"]
+    assert body["output_payload"]["provider_audit"]["request_payload"]["enhanced_prompt"] is not None
+    assert body["output_payload"]["provider_audit"]["preflight_checks"]["provider_name_is_image2_real"] is True
+    assert body["output_payload"]["provider_audit"]["preflight_checks"]["dry_run_disabled"] is False
     assert body["output_payload"]["dry_run"] is True
     assert body["output_payload"]["real_call"] is False
     assert body["output_payload"]["request_payload"]["enhanced_prompt"] is not None
 
     debug = client.get(f"/asset-tasks/{task['id']}/provider-debug").json()
     assert debug["input_payload"]["enhanced_prompt"] is not None
+    assert debug["provider_audit"]["blocked_reason"] == "IMAGE2_DRY_RUN is true."
+    assert debug["dry_run"] is True
+    assert debug["real_call"] is False
+    assert debug["preflight_checks"]["task_allowed"] is True
 
     get_settings.cache_clear()
     reset_image2_real_call_counter()

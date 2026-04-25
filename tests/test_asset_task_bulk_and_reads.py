@@ -384,6 +384,39 @@ def test_project_provider_debug_summary_returns_404_for_missing_project(client):
     assert response.status_code == 404
 
 
+def test_project_provider_debug_summary_counts_dry_run_and_blocked_real_provider_tasks(client, monkeypatch):
+    monkeypatch.setenv("ENABLE_REAL_IMAGE_PROVIDER", "true")
+    monkeypatch.setenv("IMAGE_PROVIDER_MODE", "image2_real")
+    monkeypatch.setenv("IMAGE2_API_KEY", "fake-key")
+    monkeypatch.setenv("IMAGE2_BASE_URL", "https://api.example.com")
+    monkeypatch.setenv("IMAGE2_DRY_RUN", "true")
+    monkeypatch.setenv("IMAGE2_MAX_REAL_CALLS_PER_RUN", "1")
+    from app.core.config import get_settings
+    from app.services.asset_task_service import reset_image2_real_call_counter
+    get_settings.cache_clear()
+    reset_image2_real_call_counter()
+
+    project, shot1, _ = _create_project_graph(client)
+    task = client.post("/asset-tasks", json={"shot_id": shot1["id"], "modality": "image", "provider_name": "image2_real"}).json()
+    monkeypatch.setenv("IMAGE2_ALLOW_TASK_IDS", str(task["id"]))
+    get_settings.cache_clear()
+
+    client.post(f"/asset-tasks/{task['id']}/run")
+    response = client.get(f"/projects/{project['id']}/provider-debug-summary")
+    assert response.status_code == 200
+    body = response.json()
+    item = next(entry for entry in body["items"] if entry["asset_task_id"] == task["id"])
+    assert item["provider_audit"]["provider_name"] == "image2_real"
+    assert item["blocked_reason"] == "IMAGE2_DRY_RUN is true."
+    assert item["dry_run"] is True
+    assert item["real_call"] is False
+    assert item["preflight_passed"] is False
+    assert body["summary"]["dry_run_tasks_count"] == 1
+    assert body["summary"]["blocked_real_provider_tasks_count"] == 1
+    get_settings.cache_clear()
+    reset_image2_real_call_counter()
+
+
 def test_project_provider_readiness_returns_ready_for_complete_mock_project(client):
     init = client.post("/coze/project/init", json={
         "project_card_json": {

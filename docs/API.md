@@ -49,6 +49,9 @@ In v0.3-C, an additional preflight and dry-run protection layer exists:
 - the run records debug fields such as `request_payload`, `real_call`,
   `dry_run`, and `blocked_reason`
 
+In v0.3-D, these fields are standardized under a `provider_audit` structure.
+This audit payload is the main record for future real-provider execution review.
+
 ## Coze Endpoints
 
 ### POST `/coze/project/init`
@@ -153,7 +156,13 @@ Example response:
   },
   "asset_url": "https://mock.assets/image/shot-1.txt",
   "asset_id": 1,
-  "error_message": null
+  "error_message": null,
+  "provider_audit": {},
+  "blocked_reason": null,
+  "dry_run": null,
+  "real_call": null,
+  "preflight_passed": null,
+  "preflight_checks": {}
 }
 ```
 
@@ -191,7 +200,12 @@ Example response:
       },
       "asset_url": "https://mock.assets/image/shot-1.txt",
       "asset_id": 1,
-      "error_message": null
+      "error_message": null,
+      "provider_audit": {},
+      "blocked_reason": null,
+      "dry_run": null,
+      "real_call": null,
+      "preflight_passed": null
     }
   ],
   "summary": {
@@ -201,7 +215,10 @@ Example response:
     "failed_count": 0,
     "needs_human_revision_count": 0,
     "missing_enhanced_prompt_count": 0,
-    "missing_image_url_for_video_count": 0
+    "missing_image_url_for_video_count": 0,
+    "dry_run_tasks_count": 0,
+    "blocked_real_provider_tasks_count": 0,
+    "real_call_tasks_count": 0
   }
 }
 ```

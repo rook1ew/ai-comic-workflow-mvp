@@ -245,6 +245,30 @@ v0.3-C 继续不做真实 Image2 HTTP 调用。
 
 这样可以在真正放开第一次真实调用前，先把所有执行保护链路验证完整。
 
+## v0.3-D 当前范围
+
+v0.3-D 新增的是“真实 provider 调用审计记录层”。
+
+当前会在 image2_real 的 dry-run / blocked 场景下统一写入：
+
+- `provider_audit`
+
+其目标是为未来第一次真实 Image2 调用提前准备统一审计结构，包括：
+
+- `request_payload`
+- `response_payload`
+- `error_body`
+- `job_id`
+- `usage`
+- `latency_ms`
+- `real_call`
+- `dry_run`
+- `blocked_reason`
+- `preflight_passed`
+- `preflight_checks`
+
+当前 v0.3-D 仍然不会发送真实请求，这个审计结构只是先把未来真实调用需要落库和排查的字段标准化。
+
 ## v0.3 前建议流程
 
 在切真实 provider 前，建议始终按这条顺序检查：

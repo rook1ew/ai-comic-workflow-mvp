@@ -61,6 +61,12 @@ class ProviderDebugSnapshot(BaseModel):
     asset_url: str | None = None
     asset_id: int | None = None
     error_message: str | None = None
+    provider_audit: dict = Field(default_factory=dict)
+    blocked_reason: str | None = None
+    dry_run: bool | None = None
+    real_call: bool | None = None
+    preflight_passed: bool | None = None
+    preflight_checks: dict = Field(default_factory=dict)
 
 
 class ProjectProviderDebugSummaryStats(BaseModel):
@@ -71,6 +77,9 @@ class ProjectProviderDebugSummaryStats(BaseModel):
     needs_human_revision_count: int
     missing_enhanced_prompt_count: int
     missing_image_url_for_video_count: int
+    dry_run_tasks_count: int
+    blocked_real_provider_tasks_count: int
+    real_call_tasks_count: int
 
 
 class ProjectProviderDebugSummary(BaseModel):

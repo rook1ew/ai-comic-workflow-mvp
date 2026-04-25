@@ -101,18 +101,48 @@ def reset_image2_real_call_counter() -> None:
 
 
 def _build_image2_preflight_result(task: AssetTask, request_payload: dict, blocked_reason: str, *, dry_run: bool) -> dict:
-    return {
+    settings = get_settings()
+    preflight_checks = {
+        "provider_name_is_image2_real": task.provider_name == "image2_real",
+        "mode_is_image2_real": settings.image_provider_mode == "image2_real",
+        "real_provider_enabled": settings.enable_real_image_provider,
+        "has_api_key": bool(settings.image2_api_key.strip()),
+        "has_base_url": bool(settings.image2_base_url.strip()),
+        "dry_run_disabled": not settings.image2_dry_run,
+        "task_allowed": task.id in settings.image2_allow_task_ids,
+        "within_call_limit": _IMAGE2_REAL_CALLS_THIS_RUN < settings.image2_max_real_calls_per_run,
+        "modality_is_image": task.modality == AssetModality.IMAGE,
+        "has_enhanced_prompt": bool(str(request_payload.get("enhanced_prompt") or "").strip()),
+    }
+    provider_audit = {
         "provider_name": "image2_real",
-        "preflight_ok": False,
-        "real_call": False,
-        "dry_run": dry_run,
+        "modality": "image",
         "request_payload": request_payload,
         "response_payload": None,
         "error_body": None,
         "job_id": None,
         "usage": None,
         "latency_ms": None,
+        "real_call": False,
+        "dry_run": dry_run,
         "blocked_reason": blocked_reason,
+        "preflight_passed": False,
+        "preflight_checks": preflight_checks,
+    }
+    return {
+        "provider_audit": provider_audit,
+        "provider_name": "image2_real",
+        "request_payload": request_payload,
+        "response_payload": None,
+        "error_body": None,
+        "job_id": None,
+        "usage": None,
+        "latency_ms": None,
+        "real_call": False,
+        "dry_run": dry_run,
+        "blocked_reason": blocked_reason,
+        "preflight_passed": False,
+        "preflight_checks": preflight_checks,
         "task_id": task.id,
     }
 
@@ -406,7 +436,18 @@ def get_provider_debug_snapshot(db: Session, asset_task_id: int) -> ProviderDebu
     if asset is not None:
         input_payload = dict(asset.metadata_json.get("input_payload") or input_payload)
     elif task.output_payload and isinstance(task.output_payload, dict):
-        input_payload = dict(task.output_payload.get("request_payload") or input_payload)
+        provider_audit_payload = task.output_payload.get("provider_audit") or {}
+        input_payload = dict(
+            provider_audit_payload.get("request_payload")
+            or task.output_payload.get("request_payload")
+            or input_payload
+        )
+
+    provider_audit = {}
+    if asset is not None:
+        provider_audit = dict(asset.metadata_json.get("provider_audit") or {})
+    elif task.output_payload and isinstance(task.output_payload, dict):
+        provider_audit = dict(task.output_payload.get("provider_audit") or {})
 
     return ProviderDebugSnapshot(
         asset_task_id=task.id,
@@ -421,6 +462,12 @@ def get_provider_debug_snapshot(db: Session, asset_task_id: int) -> ProviderDebu
         asset_url=asset.file_url if asset is not None else None,
         asset_id=asset.id if asset is not None else None,
         error_message=task.error_message,
+        provider_audit=provider_audit,
+        blocked_reason=provider_audit.get("blocked_reason") or (task.output_payload or {}).get("blocked_reason") if task.output_payload else None,
+        dry_run=provider_audit.get("dry_run"),
+        real_call=provider_audit.get("real_call"),
+        preflight_passed=provider_audit.get("preflight_passed"),
+        preflight_checks=provider_audit.get("preflight_checks") or {},
     )
 
 
@@ -444,6 +491,9 @@ def get_project_provider_debug_summary(db: Session, project_id: int) -> ProjectP
         for item in items
         if item.modality == AssetModality.VIDEO and not (item.input_payload or {}).get("image_url")
     )
+    dry_run_tasks_count = sum(1 for item in items if item.dry_run is True)
+    blocked_real_provider_tasks_count = sum(1 for item in items if item.blocked_reason)
+    real_call_tasks_count = sum(1 for item in items if item.real_call is True)
 
     return ProjectProviderDebugSummary(
         project_id=project_id,
@@ -457,6 +507,9 @@ def get_project_provider_debug_summary(db: Session, project_id: int) -> ProjectP
             needs_human_revision_count=needs_human_revision_count,
             missing_enhanced_prompt_count=missing_enhanced_prompt_count,
             missing_image_url_for_video_count=missing_image_url_for_video_count,
+            dry_run_tasks_count=dry_run_tasks_count,
+            blocked_real_provider_tasks_count=blocked_real_provider_tasks_count,
+            real_call_tasks_count=real_call_tasks_count,
         ),
     )
 

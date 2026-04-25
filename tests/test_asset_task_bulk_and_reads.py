@@ -166,3 +166,219 @@ def test_project_summary_should_reflect_task_and_asset_counts(client):
     assert body["succeeded_tasks_count"] == 7
     assert body["failed_tasks_count"] == 0
     assert body["needs_human_revision_count"] == 0
+
+
+def test_project_provider_debug_summary_returns_all_asset_tasks(client):
+    init = client.post("/coze/project/init", json={
+        "project_card_json": {
+            "project_title": "Provider Debug Summary Demo",
+            "genre": "urban",
+            "platform": "coze",
+            "target_duration": 60,
+            "target_audience": "young-adult",
+            "visual_style": "comic-realism",
+            "core_conflict": "identity confusion",
+            "hook": "wrong room",
+            "ending_hook": "unexpected promotion",
+            "selling_points": ["fast"],
+            "status": "draft",
+        },
+        "characters_json": {
+            "characters": [
+                {
+                    "name": "Lin Xia",
+                    "role": "lead",
+                    "main_reference_confirmed": False,
+                }
+            ]
+        },
+    }).json()
+    project_id = init["data"]["project_id"]
+    character_id = init["data"]["character_ids"][0]
+    client.post(f"/characters/{character_id}/confirm-reference", json={"main_reference_url": "mock://character/reference.png"})
+    client.post(
+        f"/coze/project/{project_id}/storyboard",
+        json={
+            "script_card_json": {"opening_hook": "Opening"},
+            "storyboard_json": {
+                "shots": [
+                    {
+                        "shot_id": "SH01",
+                        "duration_sec": 7,
+                        "character": "Lin Xia",
+                        "location": "Meeting Room",
+                        "core_action": "Lin Xia opens the door",
+                        "emotion": "nervous",
+                        "camera": "medium",
+                        "dialogue": "Sorry, wrong room.",
+                        "image_prompt": "image prompt 1",
+                        "video_prompt": "video prompt 1",
+                        "voice_prompt": "voice prompt 1",
+                        "bgm_prompt": "bgm prompt 1",
+                        "status": "prompt_ready",
+                    }
+                ]
+            },
+        },
+    )
+    client.post(f"/coze/project/{project_id}/create-asset-tasks", json={"video_shot_ids": ["SH01"]})
+    client.post(f"/coze/project/{project_id}/run-asset-tasks")
+
+    response = client.get(f"/projects/{project_id}/provider-debug-summary")
+    assert response.status_code == 200
+    body = response.json()
+    assert body["project_id"] == project_id
+    assert body["asset_tasks_count"] == 4
+    assert len(body["items"]) == 4
+
+
+def test_project_provider_debug_summary_includes_image_enhanced_prompt(client):
+    init = client.post("/coze/project/init", json={
+        "project_card_json": {
+            "project_title": "Provider Debug Image Demo",
+            "genre": "urban",
+            "platform": "coze",
+            "target_duration": 60,
+            "target_audience": "young-adult",
+            "visual_style": "comic-realism",
+            "core_conflict": "identity confusion",
+            "hook": "wrong room",
+            "ending_hook": "unexpected promotion",
+            "selling_points": ["fast"],
+            "status": "draft",
+        },
+        "characters_json": {
+            "characters": [
+                {
+                    "name": "Lin Xia",
+                    "role": "lead",
+                    "main_reference_confirmed": False,
+                }
+            ]
+        },
+    }).json()
+    project_id = init["data"]["project_id"]
+    character_id = init["data"]["character_ids"][0]
+    client.post(f"/characters/{character_id}/confirm-reference", json={"main_reference_url": "mock://character/reference.png"})
+    client.post(
+        f"/coze/project/{project_id}/storyboard",
+        json={
+            "script_card_json": {"opening_hook": "Opening"},
+            "storyboard_json": {
+                "shots": [
+                    {
+                        "shot_id": "SH01",
+                        "duration_sec": 3,
+                        "character": "Lin Xia",
+                        "location": "Meeting Room",
+                        "core_action": "Lin Xia opens the door",
+                        "emotion": "nervous",
+                        "camera": "medium",
+                        "dialogue": "Sorry, wrong room.",
+                        "image_prompt": "image prompt 1",
+                        "video_prompt": "video prompt 1",
+                        "voice_prompt": "voice prompt 1",
+                        "bgm_prompt": "bgm prompt 1",
+                        "status": "prompt_ready",
+                    }
+                ]
+            },
+        },
+    )
+    client.post(f"/coze/project/{project_id}/create-asset-tasks", json={"video_shot_ids": []})
+    client.post(f"/coze/project/{project_id}/run-asset-tasks")
+
+    response = client.get(f"/projects/{project_id}/provider-debug-summary")
+    body = response.json()
+    image_item = next(item for item in body["items"] if item["modality"] == "image")
+    assert image_item["enhanced_prompt"] is not None
+    assert image_item["storyboard_context"]["source_shot_id"] == "SH01"
+
+
+def test_project_provider_debug_summary_includes_video_image_url_and_duration(client):
+    init = client.post("/coze/project/init", json={
+        "project_card_json": {
+            "project_title": "Provider Debug Video Summary Demo",
+            "genre": "urban",
+            "platform": "coze",
+            "target_duration": 60,
+            "target_audience": "young-adult",
+            "visual_style": "comic-realism",
+            "core_conflict": "identity confusion",
+            "hook": "wrong room",
+            "ending_hook": "unexpected promotion",
+            "selling_points": ["fast"],
+            "status": "draft",
+        },
+        "characters_json": {
+            "characters": [
+                {
+                    "name": "Lin Xia",
+                    "role": "lead",
+                    "main_reference_confirmed": False,
+                }
+            ]
+        },
+    }).json()
+    project_id = init["data"]["project_id"]
+    character_id = init["data"]["character_ids"][0]
+    client.post(f"/characters/{character_id}/confirm-reference", json={"main_reference_url": "mock://character/reference.png"})
+    client.post(
+        f"/coze/project/{project_id}/storyboard",
+        json={
+            "script_card_json": {"opening_hook": "Opening"},
+            "storyboard_json": {
+                "shots": [
+                    {
+                        "shot_id": "SH01",
+                        "duration_sec": 7,
+                        "character": "Lin Xia",
+                        "location": "Meeting Room",
+                        "core_action": "Lin Xia opens the door",
+                        "emotion": "nervous",
+                        "camera": "medium",
+                        "dialogue": "Sorry, wrong room.",
+                        "image_prompt": "image prompt 1",
+                        "video_prompt": "video prompt 1",
+                        "voice_prompt": "voice prompt 1",
+                        "bgm_prompt": "bgm prompt 1",
+                        "status": "prompt_ready",
+                    }
+                ]
+            },
+        },
+    )
+    client.post(f"/coze/project/{project_id}/create-asset-tasks", json={"video_shot_ids": ["SH01"]})
+    client.post(f"/coze/project/{project_id}/run-asset-tasks")
+
+    response = client.get(f"/projects/{project_id}/provider-debug-summary")
+    body = response.json()
+    video_item = next(item for item in body["items"] if item["modality"] == "video")
+    assert video_item["input_payload"]["image_url"].startswith("https://mock.assets/image/")
+    assert video_item["input_payload"]["duration"] == 7
+
+
+def test_project_provider_debug_summary_counts_statuses(client):
+    project, shot1, shot2 = _create_project_graph(client)
+    client.post(
+        "/asset-tasks",
+        json={
+            "shot_id": shot1["id"],
+            "modality": "image",
+            "provider_name": "mock",
+            "input_payload": {"should_fail": True},
+        },
+    )
+    client.post("/asset-tasks", json={"shot_id": shot2["id"], "modality": "image", "provider_name": "mock"})
+    client.post(f"/projects/{project['id']}/asset-tasks/run-bulk")
+
+    response = client.get(f"/projects/{project['id']}/provider-debug-summary")
+    body = response.json()
+    assert body["summary"]["succeeded_count"] == 1
+    assert body["summary"]["failed_count"] == 1
+    assert body["summary"]["needs_human_revision_count"] == 0
+
+
+def test_project_provider_debug_summary_returns_404_for_missing_project(client):
+    response = client.get("/projects/999999/provider-debug-summary")
+    assert response.status_code == 404

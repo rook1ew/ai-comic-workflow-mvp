@@ -92,6 +92,55 @@ Example response:
 }
 ```
 
+### GET `/projects/{project_id}/provider-debug-summary`
+
+Project-level provider readiness summary for all asset tasks.
+
+Use cases:
+
+- inspect all image and video provider inputs for one project in a single call
+- verify `enhanced_prompt` coverage before connecting a real image provider
+- verify `image_url` and `duration` coverage before connecting a real video provider
+- let Coze or a human operator check provider readiness across the whole project
+
+Example response:
+
+```json
+{
+  "project_id": 1,
+  "asset_tasks_count": 4,
+  "items": [
+    {
+      "asset_task_id": 1,
+      "shot_id": "SH01",
+      "internal_shot_id": 1,
+      "modality": "image",
+      "provider_name": "mock",
+      "status": "succeeded",
+      "enhanced_prompt": "Base image prompt: image prompt 1",
+      "storyboard_context": {
+        "source_shot_id": "SH01"
+      },
+      "input_payload": {
+        "enhanced_prompt": "Base image prompt: image prompt 1"
+      },
+      "asset_url": "https://mock.assets/image/shot-1.txt",
+      "asset_id": 1,
+      "error_message": null
+    }
+  ],
+  "summary": {
+    "image_tasks_count": 1,
+    "video_tasks_count": 1,
+    "succeeded_count": 2,
+    "failed_count": 0,
+    "needs_human_revision_count": 0,
+    "missing_enhanced_prompt_count": 0,
+    "missing_image_url_for_video_count": 0
+  }
+}
+```
+
 ### POST `/coze/project/full-demo-flow`
 
 Single-call demo endpoint. It runs this full MVP sequence:

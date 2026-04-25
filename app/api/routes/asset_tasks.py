@@ -3,12 +3,13 @@ from sqlalchemy.orm import Session
 
 from app.api.dependencies import get_db
 from app.schemas.asset import AssetResponse
-from app.schemas.asset_task import AssetTaskCreate, AssetTaskResponse, BulkAssetTaskCreateRequest, BulkAssetTaskRunResponse, ProviderDebugSnapshot
+from app.schemas.asset_task import AssetTaskCreate, AssetTaskResponse, BulkAssetTaskCreateRequest, BulkAssetTaskRunResponse, ProjectProviderDebugSummary, ProviderDebugSnapshot
 from app.services.asset_task_service import (
     bulk_create_project_asset_tasks,
     bulk_run_project_asset_tasks,
     create_asset_task,
     get_asset_task_or_404,
+    get_project_provider_debug_summary,
     get_provider_debug_snapshot,
     list_project_asset_tasks,
     list_project_assets,
@@ -46,6 +47,11 @@ def get_project_asset_tasks_route(project_id: int, db: Session = Depends(get_db)
 @router.get("/projects/{project_id}/assets", response_model=list[AssetResponse])
 def get_project_assets_route(project_id: int, db: Session = Depends(get_db)) -> list[AssetResponse]:
     return list_project_assets(db, project_id)
+
+
+@router.get("/projects/{project_id}/provider-debug-summary", response_model=ProjectProviderDebugSummary)
+def get_project_provider_debug_summary_route(project_id: int, db: Session = Depends(get_db)) -> ProjectProviderDebugSummary:
+    return get_project_provider_debug_summary(db, project_id)
 
 
 @router.post("/projects/{project_id}/asset-tasks/bulk", response_model=list[AssetTaskResponse], status_code=201)

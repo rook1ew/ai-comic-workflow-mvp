@@ -69,8 +69,16 @@ ProviderResult(
 另外，当前已经提供只读调试接口：
 
 - `GET /asset-tasks/{asset_task_id}/provider-debug`
+- `GET /projects/{project_id}/provider-debug-summary`
 
 它用于在接入真实 `Image2Provider` / `SeedanceVideoProvider` 之前，先排查最终送入 provider 的 `input_payload` 是否符合预期。
+
+其中项目级 summary 更适合 Coze 或人工做整项目检查，用来快速判断：
+
+- 哪些 image task 缺少 `enhanced_prompt`
+- 哪些 video task 缺少 `image_url`
+- 哪些任务已经成功
+- 哪些任务仍失败或需要人工修订
 
 ### 预期职责
 

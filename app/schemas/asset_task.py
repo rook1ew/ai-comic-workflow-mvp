@@ -50,6 +50,8 @@ class BulkAssetTaskRunResponse(BaseModel):
 
 class ProviderDebugSnapshot(BaseModel):
     asset_task_id: int
+    shot_id: str | None = None
+    internal_shot_id: int
     modality: AssetModality
     provider_name: str
     status: AssetTaskStatus
@@ -59,3 +61,20 @@ class ProviderDebugSnapshot(BaseModel):
     asset_url: str | None = None
     asset_id: int | None = None
     error_message: str | None = None
+
+
+class ProjectProviderDebugSummaryStats(BaseModel):
+    image_tasks_count: int
+    video_tasks_count: int
+    succeeded_count: int
+    failed_count: int
+    needs_human_revision_count: int
+    missing_enhanced_prompt_count: int
+    missing_image_url_for_video_count: int
+
+
+class ProjectProviderDebugSummary(BaseModel):
+    project_id: int
+    asset_tasks_count: int
+    items: list[ProviderDebugSnapshot] = Field(default_factory=list)
+    summary: ProjectProviderDebugSummaryStats

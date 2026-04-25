@@ -18,6 +18,8 @@ from app.schemas.asset_task import (
     BulkAssetTaskCreateRequest,
     BulkAssetTaskRunResponse,
     BulkAssetTaskRunResult,
+    ProjectProviderDebugSummary,
+    ProjectProviderDebugSummaryStats,
     ProviderDebugSnapshot,
 )
 from app.services.prompt_enhancer import build_image_enhanced_prompt
@@ -330,6 +332,8 @@ def get_provider_debug_snapshot(db: Session, asset_task_id: int) -> ProviderDebu
 
     return ProviderDebugSnapshot(
         asset_task_id=task.id,
+        shot_id=(task.shot.metadata_json or {}).get("source_shot_id"),
+        internal_shot_id=task.shot_id,
         modality=task.modality,
         provider_name=task.provider_name,
         status=task.status,
@@ -339,4 +343,41 @@ def get_provider_debug_snapshot(db: Session, asset_task_id: int) -> ProviderDebu
         asset_url=asset.file_url if asset is not None else None,
         asset_id=asset.id if asset is not None else None,
         error_message=task.error_message,
+    )
+
+
+def get_project_provider_debug_summary(db: Session, project_id: int) -> ProjectProviderDebugSummary:
+    if db.get(Project, project_id) is None:
+        raise HTTPException(status_code=404, detail="Project not found")
+
+    tasks = list_project_asset_tasks(db, project_id)
+    items = [get_provider_debug_snapshot(db, task.id) for task in tasks]
+
+    image_tasks_count = sum(1 for item in items if item.modality == AssetModality.IMAGE)
+    video_tasks_count = sum(1 for item in items if item.modality == AssetModality.VIDEO)
+    succeeded_count = sum(1 for item in items if item.status == AssetTaskStatus.SUCCEEDED)
+    failed_count = sum(1 for item in items if item.status == AssetTaskStatus.FAILED)
+    needs_human_revision_count = sum(1 for item in items if item.status == AssetTaskStatus.NEEDS_HUMAN_REVISION)
+    missing_enhanced_prompt_count = sum(
+        1 for item in items if item.modality == AssetModality.IMAGE and not item.enhanced_prompt
+    )
+    missing_image_url_for_video_count = sum(
+        1
+        for item in items
+        if item.modality == AssetModality.VIDEO and not (item.input_payload or {}).get("image_url")
+    )
+
+    return ProjectProviderDebugSummary(
+        project_id=project_id,
+        asset_tasks_count=len(items),
+        items=items,
+        summary=ProjectProviderDebugSummaryStats(
+            image_tasks_count=image_tasks_count,
+            video_tasks_count=video_tasks_count,
+            succeeded_count=succeeded_count,
+            failed_count=failed_count,
+            needs_human_revision_count=needs_human_revision_count,
+            missing_enhanced_prompt_count=missing_enhanced_prompt_count,
+            missing_image_url_for_video_count=missing_image_url_for_video_count,
+        ),
     )

@@ -7,6 +7,7 @@ from app.schemas.coze import (
     CozeCreateAssetTasksRequest,
     CozeFullDemoFlowRequest,
     CozeGenerateScriptRequest,
+    CozePayloadValidationRequest,
     CozePublishRecordRequest,
     CozeProjectInitRequest,
     CozeResponse,
@@ -22,6 +23,7 @@ from app.services.coze_service import (
     coze_project_summary,
     coze_run_asset_tasks,
     coze_storyboard,
+    coze_validate_payload,
 )
 
 router = APIRouter()
@@ -30,6 +32,11 @@ router = APIRouter()
 @router.post("/coze/project/init", response_model=CozeResponse, status_code=201)
 def coze_project_init_route(payload: CozeProjectInitRequest, db: Session = Depends(get_db)) -> CozeResponse:
     return coze_project_init(db, payload)
+
+
+@router.post("/coze/project/validate-payload", response_model=CozeResponse)
+def coze_validate_payload_route(payload: CozePayloadValidationRequest) -> CozeResponse:
+    return coze_validate_payload(payload)
 
 
 @router.post("/coze/project/{project_id}/generate-script", response_model=CozeResponse)

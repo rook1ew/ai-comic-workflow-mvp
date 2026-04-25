@@ -33,3 +33,12 @@ class ProjectSummary(BaseModel):
     needs_human_revision_count: int
     publish_records_count: int
     next_action: str
+
+
+class ProviderReadinessResponse(BaseModel):
+    project_id: int
+    ready_for_image_provider: bool
+    ready_for_video_provider: bool
+    blocking_issues: list[str] = Field(default_factory=list)
+    warnings: list[str] = Field(default_factory=list)
+    summary: dict = Field(default_factory=dict)

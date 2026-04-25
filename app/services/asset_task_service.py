@@ -22,6 +22,7 @@ from app.schemas.asset_task import (
     ProjectProviderDebugSummaryStats,
     ProviderDebugSnapshot,
 )
+from app.schemas.project import ProviderReadinessResponse
 from app.services.prompt_enhancer import build_image_enhanced_prompt
 from app.services.repository import create_and_refresh
 
@@ -380,4 +381,59 @@ def get_project_provider_debug_summary(db: Session, project_id: int) -> ProjectP
             missing_enhanced_prompt_count=missing_enhanced_prompt_count,
             missing_image_url_for_video_count=missing_image_url_for_video_count,
         ),
+    )
+
+
+def get_project_provider_readiness(db: Session, project_id: int) -> ProviderReadinessResponse:
+    debug_summary = get_project_provider_debug_summary(db, project_id)
+    stats = debug_summary.summary
+
+    blocking_issues: list[str] = []
+    warnings: list[str] = []
+
+    if stats.image_tasks_count == 0:
+        blocking_issues.append("Project has no image tasks.")
+    if stats.failed_count > 0:
+        blocking_issues.append("Project has failed asset tasks.")
+    if stats.needs_human_revision_count > 0:
+        blocking_issues.append("Project has asset tasks that need human revision.")
+    if stats.missing_enhanced_prompt_count > 0:
+        blocking_issues.append("Some image tasks are missing enhanced_prompt.")
+    if stats.missing_image_url_for_video_count > 0:
+        blocking_issues.append("Some video tasks are missing image_url.")
+
+    video_duration_missing_count = sum(
+        1
+        for item in debug_summary.items
+        if item.modality == AssetModality.VIDEO and not (item.input_payload or {}).get("duration")
+    )
+    if video_duration_missing_count > 0:
+        blocking_issues.append("Some video tasks are missing duration.")
+
+    if stats.video_tasks_count == 0:
+        warnings.append("Project has no video tasks; video provider readiness is based on the current absence of video work.")
+
+    ready_for_image_provider = (
+        stats.image_tasks_count > 0
+        and stats.failed_count == 0
+        and stats.needs_human_revision_count == 0
+        and stats.missing_enhanced_prompt_count == 0
+    )
+    ready_for_video_provider = (
+        stats.video_tasks_count == 0
+        or (
+            stats.failed_count == 0
+            and stats.needs_human_revision_count == 0
+            and stats.missing_image_url_for_video_count == 0
+            and video_duration_missing_count == 0
+        )
+    )
+
+    return ProviderReadinessResponse(
+        project_id=project_id,
+        ready_for_image_provider=ready_for_image_provider,
+        ready_for_video_provider=ready_for_video_provider,
+        blocking_issues=blocking_issues,
+        warnings=warnings,
+        summary=debug_summary.model_dump(),
     )

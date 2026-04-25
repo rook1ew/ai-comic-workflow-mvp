@@ -382,3 +382,86 @@ def test_project_provider_debug_summary_counts_statuses(client):
 def test_project_provider_debug_summary_returns_404_for_missing_project(client):
     response = client.get("/projects/999999/provider-debug-summary")
     assert response.status_code == 404
+
+
+def test_project_provider_readiness_returns_ready_for_complete_mock_project(client):
+    init = client.post("/coze/project/init", json={
+        "project_card_json": {
+            "project_title": "Provider Readiness Demo",
+            "genre": "urban",
+            "platform": "coze",
+            "target_duration": 60,
+            "target_audience": "young-adult",
+            "visual_style": "comic-realism",
+            "core_conflict": "identity confusion",
+            "hook": "wrong room",
+            "ending_hook": "unexpected promotion",
+            "selling_points": ["fast"],
+            "status": "draft",
+        },
+        "characters_json": {
+            "characters": [
+                {
+                    "name": "Lin Xia",
+                    "role": "lead",
+                    "main_reference_confirmed": False,
+                }
+            ]
+        },
+    }).json()
+    project_id = init["data"]["project_id"]
+    character_id = init["data"]["character_ids"][0]
+    client.post(f"/characters/{character_id}/confirm-reference", json={"main_reference_url": "mock://character/reference.png"})
+    client.post(
+        f"/coze/project/{project_id}/storyboard",
+        json={
+            "script_card_json": {"opening_hook": "Opening"},
+            "storyboard_json": {
+                "shots": [
+                    {
+                        "shot_id": "SH01",
+                        "duration_sec": 7,
+                        "character": "Lin Xia",
+                        "location": "Meeting Room",
+                        "core_action": "Lin Xia opens the door",
+                        "emotion": "nervous",
+                        "camera": "medium",
+                        "dialogue": "Sorry, wrong room.",
+                        "image_prompt": "image prompt 1",
+                        "video_prompt": "video prompt 1",
+                        "voice_prompt": "voice prompt 1",
+                        "bgm_prompt": "bgm prompt 1",
+                        "status": "prompt_ready",
+                    }
+                ]
+            },
+        },
+    )
+    client.post(f"/coze/project/{project_id}/create-asset-tasks", json={"video_shot_ids": ["SH01"]})
+    client.post(f"/coze/project/{project_id}/run-asset-tasks")
+
+    response = client.get(f"/projects/{project_id}/provider-readiness")
+    assert response.status_code == 200
+    body = response.json()
+    assert body["ready_for_image_provider"] is True
+    assert body["ready_for_video_provider"] is True
+    assert body["blocking_issues"] == []
+
+
+def test_project_provider_readiness_returns_blocking_issues_for_missing_debug_requirements(client):
+    project, shot1, shot2 = _create_project_graph(client)
+    client.post("/asset-tasks", json={"shot_id": shot1["id"], "modality": "image", "provider_name": "mock"})
+    client.post("/asset-tasks", json={"shot_id": shot2["id"], "modality": "video", "provider_name": "mock"})
+
+    response = client.get(f"/projects/{project['id']}/provider-readiness")
+    assert response.status_code == 200
+    body = response.json()
+    assert body["ready_for_image_provider"] is False
+    assert body["ready_for_video_provider"] is False
+    assert any("missing enhanced_prompt" in issue.lower() for issue in body["blocking_issues"])
+    assert any("missing image_url" in issue.lower() for issue in body["blocking_issues"])
+
+
+def test_project_provider_readiness_returns_404_for_missing_project(client):
+    response = client.get("/projects/999999/provider-readiness")
+    assert response.status_code == 404

@@ -54,6 +54,36 @@ When `project_status = published` and `publish_records_count > 0`, both:
 
 will be `completed`.
 
+### POST `/coze/project/validate-payload`
+
+Validate a Coze full-demo-flow payload without creating a project or writing any
+database records.
+
+Use cases:
+
+- check whether a real Coze payload is complete enough before calling full-demo-flow
+- catch blocking field issues before the workflow starts
+- surface warnings such as missing `visual_style` or `duration_sec`
+
+Example response:
+
+```json
+{
+  "success": true,
+  "code": "OK",
+  "message": "Payload validation completed",
+  "data": {
+    "valid": true,
+    "errors": [],
+    "warnings": [],
+    "shots_count": 1,
+    "characters_count": 1,
+    "video_shot_ids_count": 1
+  },
+  "next_action": "ready_for_full_demo_flow"
+}
+```
+
 ### GET `/asset-tasks/{asset_task_id}/provider-debug`
 
 Read-only debug snapshot for provider input inspection before or after execution.
@@ -138,6 +168,30 @@ Example response:
     "missing_enhanced_prompt_count": 0,
     "missing_image_url_for_video_count": 0
   }
+}
+```
+
+### GET `/projects/{project_id}/provider-readiness`
+
+Project-level readiness check before switching from mock providers to real
+`Image2` and `Seedance` providers.
+
+Use cases:
+
+- verify whether a project is ready for a real image provider
+- verify whether video tasks have the required `image_url` and `duration`
+- let Coze check project-wide provider readiness before a v0.3 real-provider rollout
+
+Example response:
+
+```json
+{
+  "project_id": 1,
+  "ready_for_image_provider": true,
+  "ready_for_video_provider": true,
+  "blocking_issues": [],
+  "warnings": [],
+  "summary": {}
 }
 ```
 

@@ -1,31 +1,40 @@
-# Coze AI Comic MVP
+# Coze-first AI Comic Workflow MVP
 
-一个面向 AI 漫剧早期验证的 Coze-first 后端 MVP。
+这是一个面向 AI 漫剧生产流程验证的 Coze-first 后端 MVP。
 
-当前目标不是做完整 SaaS，而是把下面这条内部生产线跑通：
+当前目标不是做完整 SaaS，而是先把这条内部生产链路跑通：
 
-`立项 -> 角色设定 -> 剧本卡 -> 分镜/镜头 -> 素材任务 -> mock provider -> 审核记录 -> 发布记录 -> Coze summary`
+`立项 -> 角色设定 -> 剧本卡 -> 分镜/镜头 -> 素材任务 -> mock provider -> 发布记录 -> Coze summary`
 
 ## 当前项目状态
 
-当前仓库已经完成这些能力：
+v0.1 已跑通：
 
-- FastAPI + SQLAlchemy + SQLite + Alembic 基础底座
-- `Project / Episode / Character / Scene / Shot / AssetTask / Asset / Review / PublishRecord` 数据模型
-- 基础 REST API
+- Coze 固定 demo payload
+- `full-demo-flow`
 - mock provider 执行闭环
-- 项目级批量 asset task 创建与执行
-- Coze 编排接口最小闭环
-- pytest 自动化测试
+- publish record
 
-当前测试状态：
+v0.2 当前重点是 Provider Readiness：
 
-- `55 passed`
+- 校验 Coze 真实 payload 是否合格
+- 为 image task 生成 `enhanced_prompt`
+- 透传 `storyboard_context`
+- 为 video task 补齐 `image_url` 和 `duration`
+- 提供 task 级和 project 级 provider debug 读取接口
+- 提供 project 级 provider readiness 检查
+
+当前仍然只使用 mock provider：
+
+- 不接真实 Image2 API
+- 不接真实 Seedance API
+- 不读取真实 API key
+- 不会产生真实费用
 
 ## 本地启动
 
 ```powershell
-cd C:\Users\29964\Documents\Codex\ai-comic-workflow-mvp-main
+cd C:\Users\29964\Documents\GitHub\ai-comic-workflow-mvp-git
 Copy-Item .env.example .env
 C:\Users\29964\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe -m pip install -r requirements.txt
 C:\Users\29964\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe -m alembic upgrade head
@@ -36,7 +45,7 @@ C:\Users\29964\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\p
 
 - OpenAPI: [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
 
-## 当前可用接口列表
+## 当前可用接口
 
 ### 基础 REST API
 
@@ -44,6 +53,7 @@ C:\Users\29964\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\p
 - `GET /projects`
 - `GET /projects/{project_id}`
 - `GET /projects/{project_id}/summary`
+- `GET /projects/{project_id}/provider-readiness`
 - `POST /characters`
 - `POST /characters/{character_id}/confirm-reference`
 - `POST /episodes`
@@ -52,8 +62,10 @@ C:\Users\29964\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\p
 - `POST /asset-tasks`
 - `GET /asset-tasks/{asset_task_id}`
 - `POST /asset-tasks/{asset_task_id}/run`
+- `GET /asset-tasks/{asset_task_id}/provider-debug`
 - `GET /projects/{project_id}/asset-tasks`
 - `GET /projects/{project_id}/assets`
+- `GET /projects/{project_id}/provider-debug-summary`
 - `POST /projects/{project_id}/asset-tasks/bulk`
 - `POST /projects/{project_id}/asset-tasks/run-bulk`
 - `POST /reviews`
@@ -63,77 +75,78 @@ C:\Users\29964\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\p
 ### Coze 编排接口
 
 - `POST /coze/project/init`
+- `POST /coze/project/validate-payload`
 - `POST /coze/project/{project_id}/generate-script`
 - `POST /coze/project/{project_id}/storyboard`
 - `POST /coze/project/{project_id}/create-asset-tasks`
 - `POST /coze/project/{project_id}/run-asset-tasks`
 - `POST /coze/project/{project_id}/publish-record`
 - `GET /coze/project/{project_id}/summary`
+- `POST /coze/project/full-demo-flow`
 
 ## Coze-first MVP 手动测试流程
 
-建议按这个顺序手动演示：
+推荐按这个顺序演示：
+
+1. `POST /coze/project/validate-payload`
+   - 先检查 Coze 真实 payload 是否合格
+   - 如果有 errors，先修 payload 再继续
+2. `POST /coze/project/full-demo-flow`
+   - 一次性跑完整条 mock 演示闭环
+3. `GET /projects/{project_id}/provider-debug-summary`
+   - 查看整个项目的 provider 输入快照摘要
+4. `GET /projects/{project_id}/provider-readiness`
+   - 判断项目是否已经满足切换真实 provider 的最低条件
+
+如果你想分步演示，也可以用：
 
 1. `POST /coze/project/init`
-   - 创建项目和角色
-   - 返回 `project_id`、`character_ids`
-   - `next_action = confirm_character_reference`
-
 2. `POST /characters/{character_id}/confirm-reference`
-   - 确认角色主参考
-   - `next_action = create_storyboard`
-
 3. `POST /coze/project/{project_id}/generate-script`
-   - 写入 Coze 已生成好的剧本卡
-   - 若项目下还没有 Episode，会自动创建默认 Episode
-   - `next_action = create_storyboard`
-
 4. `POST /coze/project/{project_id}/storyboard`
-   - 导入 Coze 已生成好的 storyboard JSON
-   - 创建 Episode / Scene / Shot
-   - `next_action = create_asset_tasks`
-
 5. `POST /coze/project/{project_id}/create-asset-tasks`
-   - 创建默认 `image + voice + bgm`
-   - 重点镜头可额外创建 `video`
-   - `next_action = run_asset_tasks`
-
 6. `POST /coze/project/{project_id}/run-asset-tasks`
-   - 运行 mock provider
-   - 写回 `Asset`
-   - `next_action = check_summary`
-
 7. `GET /coze/project/{project_id}/summary`
-   - 查看项目进度、任务状态、下一步动作
-
 8. `POST /coze/project/{project_id}/publish-record`
-   - 写入发布记录
-   - 项目状态更新为 `published`
-   - `next_action = completed`
+
+## v0.2 Provider Readiness 当前能力
+
+当前已经具备的 provider readiness 能力：
+
+- `POST /coze/project/validate-payload`
+  - 校验 Coze full-demo-flow payload 是否完整
+- `GET /asset-tasks/{asset_task_id}/provider-debug`
+  - 查看单个任务最终送入 provider 的输入快照
+- `GET /projects/{project_id}/provider-debug-summary`
+  - 查看整个项目下所有任务的 provider 输入摘要
+- `GET /projects/{project_id}/provider-readiness`
+  - 判断项目是否满足切换真实 Image2 / Seedance 前的最低条件
 
 ## 示例 payload
 
-示例文件位于 [examples](</C:/Users/29964/Documents/Codex/ai-comic-workflow-mvp-main/examples>)：
+示例文件位于 [examples](/C:/Users/29964/Documents/GitHub/ai-comic-workflow-mvp-git/examples)：
 
-- [coze_project_init_payload.json](</C:/Users/29964/Documents/Codex/ai-comic-workflow-mvp-main/examples/coze_project_init_payload.json>)
-- [coze_script_payload.json](</C:/Users/29964/Documents/Codex/ai-comic-workflow-mvp-main/examples/coze_script_payload.json>)
-- [coze_storyboard_payload.json](</C:/Users/29964/Documents/Codex/ai-comic-workflow-mvp-main/examples/coze_storyboard_payload.json>)
-- [coze_create_asset_tasks_payload.json](</C:/Users/29964/Documents/Codex/ai-comic-workflow-mvp-main/examples/coze_create_asset_tasks_payload.json>)
-- [coze_publish_record_payload.json](</C:/Users/29964/Documents/Codex/ai-comic-workflow-mvp-main/examples/coze_publish_record_payload.json>)
+- [coze_project_init_payload.json](/C:/Users/29964/Documents/GitHub/ai-comic-workflow-mvp-git/examples/coze_project_init_payload.json)
+- [coze_script_payload.json](/C:/Users/29964/Documents/GitHub/ai-comic-workflow-mvp-git/examples/coze_script_payload.json)
+- [coze_storyboard_payload.json](/C:/Users/29964/Documents/GitHub/ai-comic-workflow-mvp-git/examples/coze_storyboard_payload.json)
+- [coze_create_asset_tasks_payload.json](/C:/Users/29964/Documents/GitHub/ai-comic-workflow-mvp-git/examples/coze_create_asset_tasks_payload.json)
+- [coze_publish_record_payload.json](/C:/Users/29964/Documents/GitHub/ai-comic-workflow-mvp-git/examples/coze_publish_record_payload.json)
+- [coze_full_demo_flow_payload.json](/C:/Users/29964/Documents/GitHub/ai-comic-workflow-mvp-git/examples/coze_full_demo_flow_payload.json)
 
 ## 当前还没有实现的内容
 
+- 真实 Image2Provider 接入
+- 真实 SeedanceVideoProvider 接入
+- 真实 API key 管理
+- 真实费用调用
+- n8n
 - Retrospective
-- n8n 工作流
 - 前端
 - 多租户 / SaaS 权限系统
-- 真实 provider 接入
-- 更完整的任务生命周期管理
-- 更完整的项目状态自动推进
 
-## 开发说明
+## 测试
 
-当前实现强调两件事：
-
-- Coze 编排层只做薄封装，不复制底层业务逻辑
-- 本地默认可运行，不依赖真实付费模型服务
+```powershell
+cd C:\Users\29964\Documents\GitHub\ai-comic-workflow-mvp-git
+C:\Users\29964\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe -m pytest
+```

@@ -2,7 +2,8 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from app.api.dependencies import get_db
-from app.schemas.project import ProjectCreate, ProjectResponse, ProjectSummary
+from app.schemas.project import ProjectCreate, ProjectResponse, ProjectSummary, ProviderReadinessResponse
+from app.services.asset_task_service import get_project_provider_readiness
 from app.services.project_service import create_project, get_project_or_404, get_project_summary, list_projects
 
 router = APIRouter()
@@ -26,3 +27,8 @@ def get_project_route(project_id: int, db: Session = Depends(get_db)) -> Project
 @router.get("/projects/{project_id}/summary", response_model=ProjectSummary)
 def get_project_summary_route(project_id: int, db: Session = Depends(get_db)) -> ProjectSummary:
     return get_project_summary(db, project_id)
+
+
+@router.get("/projects/{project_id}/provider-readiness", response_model=ProviderReadinessResponse)
+def get_project_provider_readiness_route(project_id: int, db: Session = Depends(get_db)) -> ProviderReadinessResponse:
+    return get_project_provider_readiness(db, project_id)

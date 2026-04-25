@@ -346,3 +346,141 @@ def test_summary_returns_completed_after_publish(client):
     summary = client.get(f"/coze/project/{project_id}/summary").json()
     assert summary["next_action"] == "completed"
     assert summary["data"]["next_action"] == "completed"
+
+
+def test_validate_payload_returns_valid_true_for_complete_payload(client):
+    response = client.post(
+        "/coze/project/validate-payload",
+        json={
+            "project_card_json": {
+                "project_title": "Urban Hook",
+                "visual_style": "comic-realism",
+            },
+            "characters_json": {
+                "characters": [
+                    {
+                        "name": "Lin Xia",
+                        "role": "lead",
+                        "appearance": "sharp face",
+                    }
+                ]
+            },
+            "script_card_json": {
+                "opening_hook": "Opening",
+                "conflict": "Conflict",
+                "turning_point": "Turning",
+                "ending_hook": "Ending",
+            },
+            "storyboard_json": {
+                "shots": [
+                    {
+                        "shot_id": "SH01",
+                        "duration_sec": 3,
+                        "core_action": "Open the door",
+                        "image_prompt": "image prompt",
+                        "video_prompt": "video prompt",
+                        "voice_prompt": "voice prompt",
+                        "bgm_prompt": "bgm prompt",
+                    }
+                ]
+            },
+            "video_shot_ids": ["SH01"],
+            "publish_record_json": {
+                "platform": "douyin",
+                "title": "Episode 1",
+            },
+        },
+    )
+    assert response.status_code == 200
+    body = response.json()
+    assert body["data"]["valid"] is True
+    assert body["data"]["errors"] == []
+    assert body["next_action"] == "ready_for_full_demo_flow"
+
+
+def test_validate_payload_returns_errors_for_missing_required_fields(client):
+    response = client.post(
+        "/coze/project/validate-payload",
+        json={
+            "project_card_json": {},
+            "characters_json": {"characters": [{}]},
+            "script_card_json": {},
+            "storyboard_json": {"shots": [{}]},
+            "video_shot_ids": [],
+            "publish_record_json": {},
+        },
+    )
+    assert response.status_code == 200
+    body = response.json()
+    assert body["data"]["valid"] is False
+    assert len(body["data"]["errors"]) > 0
+    assert body["next_action"] == "fix_payload"
+
+
+def test_validate_payload_warns_when_duration_sec_is_missing(client):
+    response = client.post(
+        "/coze/project/validate-payload",
+        json={
+            "project_card_json": {"project_title": "Urban Hook", "visual_style": "comic-realism"},
+            "characters_json": {"characters": [{"name": "Lin Xia", "role": "lead", "appearance": "sharp face"}]},
+            "script_card_json": {
+                "opening_hook": "Opening",
+                "conflict": "Conflict",
+                "turning_point": "Turning",
+                "ending_hook": "Ending",
+            },
+            "storyboard_json": {
+                "shots": [
+                    {
+                        "shot_id": "SH01",
+                        "core_action": "Open the door",
+                        "image_prompt": "image prompt",
+                        "video_prompt": "video prompt",
+                        "voice_prompt": "voice prompt",
+                        "bgm_prompt": "bgm prompt",
+                    }
+                ]
+            },
+            "video_shot_ids": [],
+            "publish_record_json": {"platform": "douyin", "title": "Episode 1"},
+        },
+    )
+    assert response.status_code == 200
+    body = response.json()
+    assert body["data"]["valid"] is True
+    assert any("duration_sec is recommended" in warning for warning in body["data"]["warnings"])
+
+
+def test_validate_payload_returns_error_for_unknown_video_shot_id(client):
+    response = client.post(
+        "/coze/project/validate-payload",
+        json={
+            "project_card_json": {"project_title": "Urban Hook", "visual_style": "comic-realism"},
+            "characters_json": {"characters": [{"name": "Lin Xia", "role": "lead", "appearance": "sharp face"}]},
+            "script_card_json": {
+                "opening_hook": "Opening",
+                "conflict": "Conflict",
+                "turning_point": "Turning",
+                "ending_hook": "Ending",
+            },
+            "storyboard_json": {
+                "shots": [
+                    {
+                        "shot_id": "SH01",
+                        "duration_sec": 3,
+                        "core_action": "Open the door",
+                        "image_prompt": "image prompt",
+                        "video_prompt": "video prompt",
+                        "voice_prompt": "voice prompt",
+                        "bgm_prompt": "bgm prompt",
+                    }
+                ]
+            },
+            "video_shot_ids": ["SH99"],
+            "publish_record_json": {"platform": "douyin", "title": "Episode 1"},
+        },
+    )
+    assert response.status_code == 200
+    body = response.json()
+    assert body["data"]["valid"] is False
+    assert any("unknown shot id: SH99" in error for error in body["data"]["errors"])

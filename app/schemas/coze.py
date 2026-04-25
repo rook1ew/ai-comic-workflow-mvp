@@ -1,3 +1,5 @@
+from typing import Any
+
 from pydantic import BaseModel, Field
 
 from app.models.enums import ProjectStatus, ShotStatus
@@ -107,3 +109,12 @@ class CozeFullDemoFlowRequest(BaseModel):
     storyboard_json: CozeStoryboardPayload
     video_shot_ids: list[str] = Field(default_factory=list)
     publish_record_json: CozePublishRecordRequest
+
+
+class CozePayloadValidationRequest(BaseModel):
+    project_card_json: dict[str, Any] = Field(default_factory=dict)
+    characters_json: dict[str, Any] = Field(default_factory=dict)
+    script_card_json: dict[str, Any] = Field(default_factory=dict)
+    storyboard_json: dict[str, Any] = Field(default_factory=dict)
+    video_shot_ids: list[str] = Field(default_factory=list)
+    publish_record_json: dict[str, Any] = Field(default_factory=dict)

@@ -12,6 +12,7 @@ from app.schemas.coze import (
     CozeCreateAssetTasksRequest,
     CozeFullDemoFlowRequest,
     CozeGenerateScriptRequest,
+    CozePayloadValidationRequest,
     CozePublishRecordRequest,
     CozeProjectInitRequest,
     CozeResponse,
@@ -77,6 +78,79 @@ def _build_script_card(script_card_json) -> str:
         f"ending_hook={script_card_json.ending_hook}" if script_card_json.ending_hook else None,
     ]
     return "\n".join(line for line in lines if line)
+
+
+def coze_validate_payload(payload: CozePayloadValidationRequest) -> CozeResponse:
+    errors: list[str] = []
+    warnings: list[str] = []
+
+    project_card = payload.project_card_json or {}
+    characters_json = payload.characters_json or {}
+    script_card = payload.script_card_json or {}
+    storyboard_json = payload.storyboard_json or {}
+    publish_record = payload.publish_record_json or {}
+
+    if not str(project_card.get("project_title") or "").strip():
+        errors.append("project_card_json.project_title is required.")
+    if not str(project_card.get("visual_style") or "").strip():
+        warnings.append("project_card_json.visual_style is recommended.")
+
+    characters = characters_json.get("characters") or []
+    if not isinstance(characters, list) or len(characters) == 0:
+        errors.append("characters_json.characters must contain at least one character.")
+        characters = []
+    for index, character in enumerate(characters, start=1):
+        if not str((character or {}).get("name") or "").strip():
+            errors.append(f"characters_json.characters[{index - 1}].name is required.")
+        if not str((character or {}).get("role") or "").strip():
+            errors.append(f"characters_json.characters[{index - 1}].role is required.")
+        if not str((character or {}).get("appearance") or "").strip():
+            errors.append(f"characters_json.characters[{index - 1}].appearance is required.")
+
+    required_script_fields = ["opening_hook", "conflict", "turning_point", "ending_hook"]
+    for field_name in required_script_fields:
+        if not str(script_card.get(field_name) or "").strip():
+            errors.append(f"script_card_json.{field_name} is required.")
+
+    shots = storyboard_json.get("shots") or []
+    if not isinstance(shots, list) or len(shots) == 0:
+        errors.append("storyboard_json.shots must contain at least one shot.")
+        shots = []
+
+    shot_ids: set[str] = set()
+    required_shot_fields = ["shot_id", "core_action", "image_prompt", "video_prompt", "voice_prompt", "bgm_prompt"]
+    for index, shot in enumerate(shots, start=1):
+        for field_name in required_shot_fields:
+            if not str((shot or {}).get(field_name) or "").strip():
+                errors.append(f"storyboard_json.shots[{index - 1}].{field_name} is required.")
+        shot_id = str((shot or {}).get("shot_id") or "").strip()
+        if shot_id:
+            shot_ids.add(shot_id)
+        if (shot or {}).get("duration_sec") in (None, ""):
+            warnings.append(f"storyboard_json.shots[{index - 1}].duration_sec is recommended.")
+
+    for video_shot_id in payload.video_shot_ids:
+        if video_shot_id not in shot_ids:
+            errors.append(f"video_shot_ids contains unknown shot id: {video_shot_id}.")
+
+    if not str(publish_record.get("platform") or "").strip():
+        warnings.append("publish_record_json.platform is recommended.")
+    if not str(publish_record.get("title") or "").strip():
+        warnings.append("publish_record_json.title is recommended.")
+
+    is_valid = len(errors) == 0
+    return CozeResponse(
+        message="Payload validation completed",
+        data={
+            "valid": is_valid,
+            "errors": errors,
+            "warnings": warnings,
+            "shots_count": len(shots),
+            "characters_count": len(characters),
+            "video_shot_ids_count": len(payload.video_shot_ids),
+        },
+        next_action="ready_for_full_demo_flow" if is_valid else "fix_payload",
+    )
 
 
 def coze_project_init(db: Session, payload: CozeProjectInitRequest) -> CozeResponse:

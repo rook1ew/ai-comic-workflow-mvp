@@ -1,4 +1,12 @@
 {
+  "_field_notes": {
+    "project_card_json": "项目级结构化信息，可直接由 Coze 输出。",
+    "characters_json": "角色设定数组，建议至少包含 1 个主角色。",
+    "script_card_json": "剧情结构卡，不要求后端自行生成。",
+    "storyboard_json": "镜头数组，每个 shot 必须带 image/video/voice/bgm 四类 prompt。",
+    "video_shot_ids": "需要额外创建 video 任务的 shot_id 列表，例如 SH01。",
+    "publish_record_json": "演示闭环使用的发布记录信息。"
+  },
   "project_card_json": {
     "project_title": "Urban Hook Full Demo",
     "genre": "urban",

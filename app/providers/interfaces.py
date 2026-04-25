@@ -1,5 +1,5 @@
 from app.providers.base import BaseProvider
-from app.providers.schemas import ProviderRequest, ProviderResponse
+from app.providers.schemas import ImageProviderInput, ProviderRequest, ProviderResponse, ProviderResult, VideoProviderInput
 
 
 class ImageProvider(BaseProvider[ProviderRequest, ProviderResponse]):
@@ -15,4 +15,12 @@ class VoiceProvider(BaseProvider[ProviderRequest, ProviderResponse]):
 
 
 class MusicProvider(BaseProvider[ProviderRequest, ProviderResponse]):
+    pass
+
+
+class RealImageProvider(BaseProvider[ImageProviderInput, ProviderResult]):
+    pass
+
+
+class RealVideoProvider(BaseProvider[VideoProviderInput, ProviderResult]):
     pass

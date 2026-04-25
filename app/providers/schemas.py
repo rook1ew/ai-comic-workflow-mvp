@@ -12,3 +12,23 @@ class ProviderResponse(BaseModel):
     asset_type: str
     url: str
     metadata: dict = Field(default_factory=dict)
+
+
+class ProviderResult(BaseModel):
+    url: str
+    metadata: dict = Field(default_factory=dict)
+
+
+class ImageProviderInput(BaseModel):
+    prompt: str
+    character_reference_url: str | None = None
+    shot_id: int
+    style: str | None = None
+
+
+class VideoProviderInput(BaseModel):
+    image_url: str
+    prompt: str
+    duration: int | float
+    aspect_ratio: str
+    resolution: str

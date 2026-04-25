@@ -46,3 +46,16 @@ class BulkAssetTaskRunResponse(BaseModel):
     failed_count: int
     needs_human_revision_count: int
     results: list[BulkAssetTaskRunResult]
+
+
+class ProviderDebugSnapshot(BaseModel):
+    asset_task_id: int
+    modality: AssetModality
+    provider_name: str
+    status: AssetTaskStatus
+    input_payload: dict = Field(default_factory=dict)
+    enhanced_prompt: str | None = None
+    storyboard_context: dict = Field(default_factory=dict)
+    asset_url: str | None = None
+    asset_id: int | None = None
+    error_message: str | None = None

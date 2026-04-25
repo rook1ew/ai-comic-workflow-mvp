@@ -42,6 +42,35 @@ ProviderResult(
 - `character_reference_url`
 - `shot_id`
 - `style`
+- `storyboard_context`
+
+### enhanced_prompt 策略
+
+在 v0.2-E 中，系统会先生成一个 `enhanced_prompt`，用于后续真实图片 provider 接入：
+
+- 保留原始 `image_prompt`
+- 追加 `visual_style`
+- 如果存在 `character_reference_url`，追加角色一致性提示
+- 追加 storyboard 上下文：
+  - `source_shot_id`
+  - `character`
+  - `location`
+  - `emotion`
+  - `camera`
+  - `dialogue`
+- 明确要求不要模仿具体 IP、明星、影视角色或已知动漫角色
+
+在 v0.3 接入真实 `Image2Provider` 时，应优先使用：
+
+- `enhanced_prompt`
+
+而不是直接只用原始 `image_prompt`
+
+另外，当前已经提供只读调试接口：
+
+- `GET /asset-tasks/{asset_task_id}/provider-debug`
+
+它用于在接入真实 `Image2Provider` / `SeedanceVideoProvider` 之前，先排查最终送入 provider 的 `input_payload` 是否符合预期。
 
 ### 预期职责
 

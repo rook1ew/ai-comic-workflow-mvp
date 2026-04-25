@@ -13,7 +13,14 @@ from app.models.shot import Shot
 from app.providers.base import ProviderExecutionError
 from app.providers.factory import get_provider
 from app.providers.schemas import ImageProviderInput, ProviderRequest, VideoProviderInput
-from app.schemas.asset_task import AssetTaskCreate, BulkAssetTaskCreateRequest, BulkAssetTaskRunResponse, BulkAssetTaskRunResult
+from app.schemas.asset_task import (
+    AssetTaskCreate,
+    BulkAssetTaskCreateRequest,
+    BulkAssetTaskRunResponse,
+    BulkAssetTaskRunResult,
+    ProviderDebugSnapshot,
+)
+from app.services.prompt_enhancer import build_image_enhanced_prompt
 from app.services.repository import create_and_refresh
 
 
@@ -101,14 +108,27 @@ def _build_provider_payload(db: Session, task: AssetTask) -> dict:
     base_payload = dict(task.input_payload or {})
 
     if task.modality == AssetModality.IMAGE:
+        storyboard_context = _build_storyboard_context(shot)
+        character_reference_url = _get_first_confirmed_character_reference(db, project.id)
+        style = _extract_project_style(project)
         image_input = ImageProviderInput(
             prompt=shot.image_prompt,
-            character_reference_url=_get_first_confirmed_character_reference(db, project.id),
+            character_reference_url=character_reference_url,
             shot_id=shot.id,
-            style=_extract_project_style(project),
-            storyboard_context=_build_storyboard_context(shot),
+            style=style,
+            storyboard_context=storyboard_context,
         )
-        return {**image_input.model_dump(), **base_payload}
+        return {
+            **image_input.model_dump(),
+            "base_prompt": shot.image_prompt,
+            "enhanced_prompt": build_image_enhanced_prompt(
+                base_prompt=shot.image_prompt,
+                visual_style=style,
+                character_reference_url=character_reference_url,
+                storyboard_context=storyboard_context,
+            ),
+            **base_payload,
+        }
 
     if task.modality == AssetModality.VIDEO:
         image_url = _get_existing_image_asset_url(db, shot.id)
@@ -295,4 +315,28 @@ def bulk_run_project_asset_tasks(db: Session, project_id: int) -> BulkAssetTaskR
         failed_count=failed_count,
         needs_human_revision_count=needs_human_revision_count,
         results=results,
+    )
+
+
+def get_provider_debug_snapshot(db: Session, asset_task_id: int) -> ProviderDebugSnapshot:
+    task = get_asset_task_or_404(db, asset_task_id)
+    asset = None
+    if task.assets:
+        asset = sorted(task.assets, key=lambda item: item.id)[-1]
+
+    input_payload = dict(task.input_payload or {})
+    if asset is not None:
+        input_payload = dict(asset.metadata_json.get("input_payload") or input_payload)
+
+    return ProviderDebugSnapshot(
+        asset_task_id=task.id,
+        modality=task.modality,
+        provider_name=task.provider_name,
+        status=task.status,
+        input_payload=input_payload,
+        enhanced_prompt=input_payload.get("enhanced_prompt"),
+        storyboard_context=input_payload.get("storyboard_context") or {},
+        asset_url=asset.file_url if asset is not None else None,
+        asset_id=asset.id if asset is not None else None,
+        error_message=task.error_message,
     )

@@ -54,6 +54,44 @@ When `project_status = published` and `publish_records_count > 0`, both:
 
 will be `completed`.
 
+### GET `/asset-tasks/{asset_task_id}/provider-debug`
+
+Read-only debug snapshot for provider input inspection before or after execution.
+
+Use cases:
+
+- inspect the final `input_payload` sent to the mock provider
+- inspect `enhanced_prompt` for image tasks
+- inspect `storyboard_context` for imported storyboard shots
+- inspect `image_url` and `duration` for video tasks
+- debug failed tasks without calling any real provider
+
+Example response:
+
+```json
+{
+  "asset_task_id": 1,
+  "modality": "image",
+  "provider_name": "mock",
+  "status": "succeeded",
+  "input_payload": {
+    "prompt": "image prompt 1",
+    "base_prompt": "image prompt 1",
+    "enhanced_prompt": "Base image prompt: image prompt 1",
+    "storyboard_context": {
+      "source_shot_id": "SH01"
+    }
+  },
+  "enhanced_prompt": "Base image prompt: image prompt 1",
+  "storyboard_context": {
+    "source_shot_id": "SH01"
+  },
+  "asset_url": "https://mock.assets/image/shot-1.txt",
+  "asset_id": 1,
+  "error_message": null
+}
+```
+
 ### POST `/coze/project/full-demo-flow`
 
 Single-call demo endpoint. It runs this full MVP sequence:

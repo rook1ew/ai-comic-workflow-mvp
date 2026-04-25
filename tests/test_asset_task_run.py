@@ -139,6 +139,77 @@ def test_image_task_metadata_contains_image_input_payload(client):
     assert metadata["input_payload"]["shot_id"] == shot["id"]
     assert "character_reference_url" in metadata["input_payload"]
     assert "style" in metadata["input_payload"]
+    assert metadata["input_payload"]["storyboard_context"] == {}
+
+
+def test_image_task_metadata_contains_storyboard_context(client):
+    init = client.post("/coze/project/init", json={
+        "project_card_json": {
+            "project_title": "Storyboard Context Demo",
+            "genre": "urban",
+            "platform": "coze",
+            "target_duration": 60,
+            "target_audience": "young-adult",
+            "visual_style": "comic-realism",
+            "core_conflict": "identity confusion",
+            "hook": "wrong room",
+            "ending_hook": "unexpected promotion",
+            "selling_points": ["fast"],
+            "status": "draft",
+        },
+        "characters_json": {
+            "characters": [
+                {
+                    "name": "Lin Xia",
+                    "role": "lead",
+                    "main_reference_confirmed": False,
+                }
+            ]
+        },
+    }).json()
+    project_id = init["data"]["project_id"]
+    character_id = init["data"]["character_ids"][0]
+    client.post(f"/characters/{character_id}/confirm-reference", json={"main_reference_url": "mock://character/reference.png"})
+    client.post(
+        f"/coze/project/{project_id}/storyboard",
+        json={
+            "script_card_json": {"opening_hook": "Opening"},
+            "storyboard_json": {
+                "shots": [
+                    {
+                        "shot_id": "SH01",
+                        "duration_sec": 3,
+                        "character": "Lin Xia",
+                        "location": "Meeting Room",
+                        "core_action": "Lin Xia opens the door",
+                        "emotion": "nervous",
+                        "camera": "medium",
+                        "dialogue": "Sorry, wrong room.",
+                        "image_prompt": "image prompt 1",
+                        "video_prompt": "video prompt 1",
+                        "voice_prompt": "voice prompt 1",
+                        "bgm_prompt": "bgm prompt 1",
+                        "status": "prompt_ready",
+                    }
+                ]
+            },
+        },
+    )
+    asset_tasks = client.post(f"/coze/project/{project_id}/create-asset-tasks", json={"video_shot_ids": []}).json()
+    assert asset_tasks["data"]["created_count"] == 3
+
+    task_list = client.get(f"/projects/{project_id}/asset-tasks").json()
+    image_task = next(task for task in task_list if task["modality"] == "image")
+    image_result = client.post(f"/asset-tasks/{image_task['id']}/run").json()
+
+    storyboard_context = image_result["assets"][0]["metadata_json"]["input_payload"]["storyboard_context"]
+    assert storyboard_context["source_shot_id"] == "SH01"
+    assert storyboard_context["duration_sec"] == 3
+    assert storyboard_context["character"] == "Lin Xia"
+    assert storyboard_context["location"] == "Meeting Room"
+    assert storyboard_context["emotion"] == "nervous"
+    assert storyboard_context["camera"] == "medium"
+    assert storyboard_context["dialogue"] == "Sorry, wrong room."
 
 
 def test_video_task_metadata_contains_video_input_payload(client):

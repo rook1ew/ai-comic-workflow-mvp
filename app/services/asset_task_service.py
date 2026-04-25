@@ -82,6 +82,19 @@ def _get_existing_image_asset_url(db: Session, shot_id: int) -> str | None:
     return asset.file_url
 
 
+def _build_storyboard_context(shot: Shot) -> dict:
+    shot_metadata = shot.metadata_json or {}
+    return {
+        "source_shot_id": shot_metadata.get("source_shot_id"),
+        "duration_sec": shot_metadata.get("duration_sec"),
+        "character": shot_metadata.get("character"),
+        "location": shot_metadata.get("location"),
+        "emotion": shot_metadata.get("emotion"),
+        "camera": shot_metadata.get("camera"),
+        "dialogue": shot_metadata.get("dialogue"),
+    } if shot_metadata else {}
+
+
 def _build_provider_payload(db: Session, task: AssetTask) -> dict:
     shot = task.shot
     project = _get_project_for_shot(shot)
@@ -93,6 +106,7 @@ def _build_provider_payload(db: Session, task: AssetTask) -> dict:
             character_reference_url=_get_first_confirmed_character_reference(db, project.id),
             shot_id=shot.id,
             style=_extract_project_style(project),
+            storyboard_context=_build_storyboard_context(shot),
         )
         return {**image_input.model_dump(), **base_payload}
 

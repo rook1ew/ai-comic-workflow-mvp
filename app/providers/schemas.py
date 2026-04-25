@@ -24,6 +24,7 @@ class ImageProviderInput(BaseModel):
     character_reference_url: str | None = None
     shot_id: int
     style: str | None = None
+    storyboard_context: dict = Field(default_factory=dict)
 
 
 class VideoProviderInput(BaseModel):

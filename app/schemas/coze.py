@@ -98,3 +98,12 @@ class CozePublishRecordRequest(BaseModel):
     title: str
     published_at: str
     url: str
+
+
+class CozeFullDemoFlowRequest(BaseModel):
+    project_card_json: CozeProjectCard
+    characters_json: CozeCharactersPayload
+    script_card_json: CozeScriptCard
+    storyboard_json: CozeStoryboardPayload
+    video_shot_ids: list[str] = Field(default_factory=list)
+    publish_record_json: CozePublishRecordRequest

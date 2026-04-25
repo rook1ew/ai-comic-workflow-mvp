@@ -326,3 +326,4 @@ def test_summary_returns_completed_after_publish(client):
     )
     summary = client.get(f"/coze/project/{project_id}/summary").json()
     assert summary["next_action"] == "completed"
+    assert summary["data"]["next_action"] == "completed"

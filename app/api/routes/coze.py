@@ -5,6 +5,7 @@ from app.api.dependencies import get_db
 from app.schemas.coze import (
     ConfirmCharacterReferenceRequest,
     CozeCreateAssetTasksRequest,
+    CozeFullDemoFlowRequest,
     CozeGenerateScriptRequest,
     CozePublishRecordRequest,
     CozeProjectInitRequest,
@@ -14,6 +15,7 @@ from app.schemas.coze import (
 from app.services.coze_service import (
     coze_confirm_character_reference,
     coze_create_asset_tasks,
+    coze_full_demo_flow,
     coze_generate_script,
     coze_project_init,
     coze_publish_record,
@@ -79,3 +81,8 @@ def coze_publish_record_route(
 @router.get("/coze/project/{project_id}/summary", response_model=CozeResponse)
 def coze_project_summary_route(project_id: int, db: Session = Depends(get_db)) -> CozeResponse:
     return coze_project_summary(db, project_id)
+
+
+@router.post("/coze/project/full-demo-flow", response_model=CozeResponse)
+def coze_full_demo_flow_route(payload: CozeFullDemoFlowRequest, db: Session = Depends(get_db)) -> CozeResponse:
+    return coze_full_demo_flow(db, payload)

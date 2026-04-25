@@ -10,6 +10,7 @@ from app.schemas.character import CharacterCreate
 from app.schemas.coze import (
     ConfirmCharacterReferenceRequest,
     CozeCreateAssetTasksRequest,
+    CozeFullDemoFlowRequest,
     CozeGenerateScriptRequest,
     CozePublishRecordRequest,
     CozeProjectInitRequest,
@@ -301,8 +302,71 @@ def _coze_next_action(db: Session, project_id: int, summary) -> str:
 
 def coze_project_summary(db: Session, project_id: int) -> CozeResponse:
     summary = get_project_summary(db, project_id)
+    next_action = _coze_next_action(db, project_id, summary)
+    summary_data = summary.model_dump()
+    summary_data["next_action"] = next_action
     return CozeResponse(
         message="Project summary fetched",
-        data=summary.model_dump(),
-        next_action=_coze_next_action(db, project_id, summary),
+        data=summary_data,
+        next_action=next_action,
+    )
+
+
+def coze_full_demo_flow(db: Session, payload: CozeFullDemoFlowRequest) -> CozeResponse:
+    init_response = coze_project_init(
+        db,
+        CozeProjectInitRequest(
+            project_card_json=payload.project_card_json,
+            characters_json=payload.characters_json,
+        ),
+    )
+    project_id = init_response.data["project_id"]
+    character_ids: list[int] = init_response.data["character_ids"]
+    if not character_ids:
+        raise HTTPException(status_code=400, detail="At least one character is required")
+
+    coze_confirm_character_reference(
+        db,
+        character_ids[0],
+        ConfirmCharacterReferenceRequest(main_reference_url="mock://character/reference.png"),
+    )
+
+    script_response = coze_generate_script(
+        db,
+        project_id,
+        CozeGenerateScriptRequest(script_card_json=payload.script_card_json),
+    )
+    episode_id = script_response.data["episode_id"]
+
+    storyboard_response = coze_storyboard(
+        db,
+        project_id,
+        CozeStoryboardRequest(
+            script_card_json=payload.script_card_json,
+            storyboard_json=payload.storyboard_json,
+        ),
+    )
+
+    asset_task_response = coze_create_asset_tasks(
+        db,
+        project_id,
+        CozeCreateAssetTasksRequest(video_shot_ids=payload.video_shot_ids),
+    )
+    run_response = coze_run_asset_tasks(db, project_id)
+    publish_response = coze_publish_record(db, project_id, payload.publish_record_json)
+    summary_response = coze_project_summary(db, project_id)
+
+    return CozeResponse(
+        message="Full demo flow completed",
+        data={
+            "project_id": project_id,
+            "character_ids": character_ids,
+            "episode_id": episode_id,
+            "shots_count": storyboard_response.data["shots_count"],
+            "asset_tasks_count": asset_task_response.data["asset_tasks_count"],
+            "assets_count": summary_response.data["assets_count"],
+            "publish_record_id": publish_response.data["publish_record_id"],
+            "final_summary": summary_response.data,
+        },
+        next_action="completed",
     )

@@ -80,9 +80,10 @@
 3. `POST /asset-tasks/{asset_task_id}/manual-asset`
 4. `GET /projects/{project_id}/manual-image-progress`
 5. `GET /projects/{project_id}/editing-shot-board`
-6. 根据 shot board 进入人工剪辑
-7. 如需视频辅助，再看 `video-prompts` 或 `manual-video-progress`
-8. 最后看 `manual-production-summary` / `publish-readiness` / `manual-final-checklist`
+6. `GET /projects/{project_id}/editing-timeline`
+7. 根据 shot board 和 timeline 进入人工剪辑
+8. 如需视频辅助，再看 `video-prompts` 或 `manual-video-progress`
+9. 最后看 `manual-production-summary` / `publish-readiness` / `manual-final-checklist`
 
 ## 当前限制
 

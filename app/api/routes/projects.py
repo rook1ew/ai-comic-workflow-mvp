@@ -9,6 +9,7 @@ from app.schemas.project import (
     ProjectManualImageProgress,
     ProjectManualFinalChecklist,
     ProjectEditingShotBoard,
+    ProjectEditingTimeline,
     ProjectManualProductionSummary,
     ProjectManualVideoProgress,
     ProjectPublishReadiness,
@@ -26,6 +27,7 @@ from app.services.project_service import (
     get_project_manual_image_progress,
     get_project_manual_final_checklist,
     get_project_editing_shot_board,
+    get_project_editing_timeline,
     get_project_manual_production_summary,
     get_project_manual_video_progress,
     get_project_publish_readiness,
@@ -105,3 +107,8 @@ def get_project_manual_final_checklist_route(project_id: int, db: Session = Depe
 @router.get("/projects/{project_id}/editing-shot-board", response_model=ProjectEditingShotBoard)
 def get_project_editing_shot_board_route(project_id: int, db: Session = Depends(get_db)) -> ProjectEditingShotBoard:
     return get_project_editing_shot_board(db, project_id)
+
+
+@router.get("/projects/{project_id}/editing-timeline", response_model=ProjectEditingTimeline)
+def get_project_editing_timeline_route(project_id: int, db: Session = Depends(get_db)) -> ProjectEditingTimeline:
+    return get_project_editing_timeline(db, project_id)

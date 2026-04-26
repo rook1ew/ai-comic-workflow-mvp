@@ -1,4 +1,4 @@
-# MANUAL_PRODUCTION_WORKFLOW
+﻿# MANUAL_PRODUCTION_WORKFLOW
 
 ## 目标
 
@@ -25,9 +25,10 @@
 7. `POST /asset-tasks/{asset_task_id}/manual-video-asset`
 8. `GET /projects/{project_id}/manual-video-progress`
 9. `GET /projects/{project_id}/editing-shot-board`
-10. `GET /projects/{project_id}/manual-production-summary`
-11. `GET /projects/{project_id}/publish-readiness`
-12. `GET /projects/{project_id}/manual-final-checklist`
+10. `GET /projects/{project_id}/editing-timeline`
+11. `GET /projects/{project_id}/manual-production-summary`
+12. `GET /projects/{project_id}/publish-readiness`
+13. `GET /projects/{project_id}/manual-final-checklist`
 
 ## 推荐操作顺序
 
@@ -122,6 +123,18 @@
 - 查看 `subtitle_text / sfx / editing_notes`
 - 判断每个 shot 是否已经 `ready_for_editing`
 
+### 8. 把 shot board 转成时间线施工单
+
+调用：
+
+- `GET /projects/{project_id}/editing-timeline`
+
+用途：
+
+- 自动计算每个 shot 的 `start_time / end_time`
+- 输出字幕、音效、镜头运动、人物微动和转场
+- 作为剪映 / CapCut / Premiere / Coze 视频创作的时间线执行清单
+
 ## 三层总览接口
 
 ### manual-production-summary
@@ -193,6 +206,8 @@
 继续：
 
 - 先看 `video-prompts`
+- 再看 `editing-shot-board`
+- 最后看 `editing-timeline`
 - 根据镜头运动、人物微动、字幕和音效字段生成视频
 - 回填视频
 
@@ -222,6 +237,7 @@
 - 指导人物微动和镜头节奏
 - 作为字幕、音效和转场的剪辑备注
 - 自动进入 `video-prompts` 的 `copy_ready_video_prompt`
+- 自动进入 `editing-shot-board` 和 `editing-timeline`
 
 ## 当前明确不做的事
 
@@ -236,5 +252,7 @@
 
 - [MANUAL_IMAGE_GENERATION_SOP.md](/C:/Users/29964/Documents/GitHub/ai-comic-workflow-mvp-git/docs/MANUAL_IMAGE_GENERATION_SOP.md)
 - [MANUAL_VIDEO_GENERATION_SOP.md](/C:/Users/29964/Documents/GitHub/ai-comic-workflow-mvp-git/docs/MANUAL_VIDEO_GENERATION_SOP.md)
+- [EDITING_SHOT_BOARD_SOP.md](/C:/Users/29964/Documents/GitHub/ai-comic-workflow-mvp-git/docs/EDITING_SHOT_BOARD_SOP.md)
+- [EDITING_TIMELINE_EXPORT_SOP.md](/C:/Users/29964/Documents/GitHub/ai-comic-workflow-mvp-git/docs/EDITING_TIMELINE_EXPORT_SOP.md)
 - [EDITING_STORYBOARD_FIELDS.md](/C:/Users/29964/Documents/GitHub/ai-comic-workflow-mvp-git/docs/EDITING_STORYBOARD_FIELDS.md)
 - [API.md](/C:/Users/29964/Documents/GitHub/ai-comic-workflow-mvp-git/docs/API.md)

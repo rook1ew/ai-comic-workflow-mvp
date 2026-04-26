@@ -281,3 +281,32 @@ class ProjectEditingShotBoard(BaseModel):
     blocked_shots_count: int
     items: list[EditingShotBoardItem] = Field(default_factory=list)
     next_action: str
+
+
+class EditingTimelineItem(BaseModel):
+    order: int
+    internal_shot_id: int
+    source_shot_id: str | None = None
+    start_time: int | float
+    end_time: int | float
+    duration: int | float
+    image_asset_url: str | None = None
+    subtitle_text: str | None = None
+    sfx: str | None = None
+    camera_motion: str | None = None
+    subject_motion: str | None = None
+    transition: str | None = None
+    editing_notes: str | None = None
+    ready_for_editing: bool
+    blocking_issues: list[str] = Field(default_factory=list)
+    warnings: list[str] = Field(default_factory=list)
+
+
+class ProjectEditingTimeline(BaseModel):
+    project_id: int
+    shots_count: int
+    total_duration: int | float
+    ready_for_timeline: bool
+    items: list[EditingTimelineItem] = Field(default_factory=list)
+    blocking_issues: list[str] = Field(default_factory=list)
+    next_action: str

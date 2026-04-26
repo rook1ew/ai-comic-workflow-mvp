@@ -990,6 +990,61 @@ Rules:
 - if all images exist but some editing fields are missing, `next_action = review_editing_fields`
 - if everything is ready, `next_action = ready_for_manual_editing`
 
+### GET `/projects/{project_id}/editing-timeline`
+
+Project-level timeline export for manual editing in CapCut, Premiere, Coze video
+creation, or similar tools.
+
+Use cases:
+
+- convert the shot board into a timeline-oriented execution sheet
+- calculate `start_time` / `end_time` for every shot
+- prepare subtitle, sound effect, transition, and motion cues in playback order
+- check whether the whole project is ready for manual timeline editing
+
+Response example:
+
+```json
+{
+  "project_id": 1,
+  "shots_count": 3,
+  "total_duration": 12,
+  "ready_for_timeline": true,
+  "items": [
+    {
+      "order": 1,
+      "internal_shot_id": 11,
+      "source_shot_id": "SH01",
+      "start_time": 0,
+      "end_time": 3,
+      "duration": 3,
+      "image_asset_url": "file:///D:/AI漫剧图片库/SH01.png",
+      "subtitle_text": "不好意思，我走错了。",
+      "sfx": "door_open",
+      "camera_motion": "slow_push_in",
+      "subject_motion": "blink, slight_body_shift",
+      "transition": "cut",
+      "editing_notes": "Use slight zoom-in and nervous pause.",
+      "ready_for_editing": true,
+      "blocking_issues": [],
+      "warnings": []
+    }
+  ],
+  "blocking_issues": [],
+  "next_action": "ready_for_manual_timeline_editing"
+}
+```
+
+Rules:
+
+- items are returned in shot order
+- `start_time` / `end_time` are accumulated from duration
+- duration prefers `Shot.metadata_json.duration_sec`
+- if duration is missing, it defaults to `3` and adds `duration_defaulted`
+- if image asset is missing, the item is not ready and includes `missing_image_asset`
+- prefers a manual image asset over a mock image asset
+- if all items are ready, `next_action = ready_for_manual_timeline_editing`
+
 ### Editing storyboard metadata fields
 
 The following optional fields are supported in storyboard shot payloads and are

@@ -2077,3 +2077,288 @@ def test_editing_shot_board_all_ready_returns_ready_for_manual_editing(client):
 def test_editing_shot_board_missing_project_returns_404(client):
     response = client.get("/projects/999999/editing-shot-board")
     assert response.status_code == 404
+
+
+def test_editing_timeline_returns_items_in_shot_order_and_computes_times(client):
+    init = client.post("/coze/project/init", json={
+        "project_card_json": {
+            "project_title": "Editing Timeline Demo",
+            "genre": "urban",
+            "platform": "coze",
+            "target_duration": 60,
+            "target_audience": "young-adult",
+            "visual_style": "anime-comic",
+            "core_conflict": "identity confusion",
+            "hook": "wrong room",
+            "ending_hook": "unexpected promotion",
+            "selling_points": ["fast"],
+            "status": "draft",
+        },
+        "characters_json": {
+            "characters": [
+                {
+                    "name": "Lin Xia",
+                    "role": "lead",
+                    "main_reference_confirmed": False,
+                }
+            ]
+        },
+    }).json()
+    project_id = init["data"]["project_id"]
+    character_id = init["data"]["character_ids"][0]
+    client.post(f"/characters/{character_id}/confirm-reference", json={"main_reference_url": "mock://character/reference.png"})
+    client.post(
+        f"/coze/project/{project_id}/storyboard",
+        json={
+            "script_card_json": {"opening_hook": "Opening"},
+            "storyboard_json": {
+                "shots": [
+                    {
+                        "shot_id": "SH01",
+                        "duration_sec": 3,
+                        "character": "Lin Xia",
+                        "location": "Meeting Room",
+                        "core_action": "Lin Xia opens the door",
+                        "emotion": "nervous",
+                        "camera": "medium close-up",
+                        "shot_type": "dialogue",
+                        "camera_motion": "slow_push_in",
+                        "subject_motion": "blink",
+                        "transition": "cut",
+                        "subtitle_text": "Sorry, wrong room.",
+                        "sfx": "door_open",
+                        "editing_notes": "Use slight zoom-in and nervous pause.",
+                        "dialogue": "Sorry, wrong room.",
+                        "image_prompt": "young woman opening a meeting room door",
+                        "video_prompt": "office door opens, awkward pause",
+                        "voice_prompt": "voice prompt 1",
+                        "bgm_prompt": "bgm prompt 1",
+                        "status": "prompt_ready",
+                    },
+                    {
+                        "shot_id": "SH02",
+                        "duration_sec": 5,
+                        "character": "Lin Xia",
+                        "location": "Meeting Room",
+                        "core_action": "Everyone stares at Lin Xia",
+                        "emotion": "awkward",
+                        "camera": "wide shot",
+                        "shot_type": "reaction",
+                        "camera_motion": "static",
+                        "subject_motion": "slight_body_shift",
+                        "transition": "cut",
+                        "subtitle_text": "……",
+                        "sfx": "room_tension",
+                        "editing_notes": "Hold for reaction.",
+                        "dialogue": "…",
+                        "image_prompt": "everyone stares in silence",
+                        "video_prompt": "room goes silent",
+                        "voice_prompt": "silence",
+                        "bgm_prompt": "tension",
+                        "status": "prompt_ready",
+                    }
+                ]
+            },
+        },
+    )
+    client.post(f"/coze/project/{project_id}/create-asset-tasks", json={})
+    tasks = client.get(f"/projects/{project_id}/asset-tasks").json()
+    image_tasks = [task for task in tasks if task["modality"] == "image"]
+    client.post(
+        f"/asset-tasks/{image_tasks[0]['id']}/manual-asset",
+        json={"asset_url": "file:///D:/AI漫剧图片库/SH01.png", "asset_type": "image", "notes": "manual 1"},
+    )
+    client.post(
+        f"/asset-tasks/{image_tasks[1]['id']}/manual-asset",
+        json={"asset_url": "file:///D:/AI漫剧图片库/SH02.png", "asset_type": "image", "notes": "manual 2"},
+    )
+
+    response = client.get(f"/projects/{project_id}/editing-timeline")
+    assert response.status_code == 200
+    body = response.json()
+    assert body["shots_count"] == 2
+    assert body["total_duration"] == 8
+    assert body["items"][0]["source_shot_id"] == "SH01"
+    assert body["items"][0]["start_time"] == 0
+    assert body["items"][0]["end_time"] == 3
+    assert body["items"][1]["source_shot_id"] == "SH02"
+    assert body["items"][1]["start_time"] == 3
+    assert body["items"][1]["end_time"] == 8
+
+
+def test_editing_timeline_prefers_manual_image_asset_url(client):
+    project, shot1, _ = _create_project_graph(client)
+    image_task = client.post("/asset-tasks", json={"shot_id": shot1["id"], "modality": "image", "provider_name": "mock"}).json()
+    client.post(f"/asset-tasks/{image_task['id']}/run")
+    client.post(
+        f"/asset-tasks/{image_task['id']}/manual-asset",
+        json={"asset_url": "file:///D:/AI漫剧图片库/SH01.png", "asset_type": "image", "notes": "manual preferred"},
+    )
+
+    response = client.get(f"/projects/{project['id']}/editing-timeline")
+    assert response.status_code == 200
+    item = next(exported for exported in response.json()["items"] if exported["internal_shot_id"] == shot1["id"])
+    assert item["image_asset_url"] == "file:///D:/AI漫剧图片库/SH01.png"
+
+
+def test_editing_timeline_missing_image_asset_blocks_timeline(client):
+    project, _, _ = _create_project_graph(client)
+    response = client.get(f"/projects/{project['id']}/editing-timeline")
+    assert response.status_code == 200
+    body = response.json()
+    assert body["ready_for_timeline"] is False
+    assert "missing_image_asset" in body["blocking_issues"]
+
+
+def test_editing_timeline_missing_duration_defaults_to_three_seconds(client):
+    init = client.post("/coze/project/init", json={
+        "project_card_json": {
+            "project_title": "Editing Timeline Default Duration Demo",
+            "genre": "urban",
+            "platform": "coze",
+            "target_duration": 60,
+            "target_audience": "young-adult",
+            "visual_style": "anime-comic",
+            "core_conflict": "identity confusion",
+            "hook": "wrong room",
+            "ending_hook": "unexpected promotion",
+            "selling_points": ["fast"],
+            "status": "draft",
+        },
+        "characters_json": {
+            "characters": [
+                {
+                    "name": "Lin Xia",
+                    "role": "lead",
+                    "main_reference_confirmed": False,
+                }
+            ]
+        },
+    }).json()
+    project_id = init["data"]["project_id"]
+    character_id = init["data"]["character_ids"][0]
+    client.post(f"/characters/{character_id}/confirm-reference", json={"main_reference_url": "mock://character/reference.png"})
+    client.post(
+        f"/coze/project/{project_id}/storyboard",
+        json={
+            "script_card_json": {"opening_hook": "Opening"},
+            "storyboard_json": {
+                "shots": [
+                    {
+                        "shot_id": "SH01",
+                        "character": "Lin Xia",
+                        "location": "Meeting Room",
+                        "core_action": "Lin Xia opens the door",
+                        "emotion": "nervous",
+                        "camera": "medium close-up",
+                        "shot_type": "dialogue",
+                        "camera_motion": "slow_push_in",
+                        "subject_motion": "blink",
+                        "transition": "cut",
+                        "subtitle_text": "Sorry, wrong room.",
+                        "sfx": "door_open",
+                        "editing_notes": "Use slight zoom-in and nervous pause.",
+                        "dialogue": "Sorry, wrong room.",
+                        "image_prompt": "young woman opening a meeting room door",
+                        "video_prompt": "office door opens, awkward pause",
+                        "voice_prompt": "voice prompt 1",
+                        "bgm_prompt": "bgm prompt 1",
+                        "status": "prompt_ready",
+                    }
+                ]
+            },
+        },
+    )
+    client.post(f"/coze/project/{project_id}/create-asset-tasks", json={})
+    tasks = client.get(f"/projects/{project_id}/asset-tasks").json()
+    image_task = next(task for task in tasks if task["modality"] == "image")
+    client.post(
+        f"/asset-tasks/{image_task['id']}/manual-asset",
+        json={"asset_url": "file:///D:/AI漫剧图片库/SH01.png", "asset_type": "image", "notes": "manual image"},
+    )
+
+    response = client.get(f"/projects/{project_id}/editing-timeline")
+    assert response.status_code == 200
+    item = response.json()["items"][0]
+    assert item["duration"] == 3
+    assert "duration_defaulted" in item["warnings"]
+
+
+def test_editing_timeline_all_ready_returns_ready_for_manual_timeline_editing(client):
+    init = client.post("/coze/project/init", json={
+        "project_card_json": {
+            "project_title": "Editing Timeline Ready Demo",
+            "genre": "urban",
+            "platform": "coze",
+            "target_duration": 60,
+            "target_audience": "young-adult",
+            "visual_style": "anime-comic",
+            "core_conflict": "identity confusion",
+            "hook": "wrong room",
+            "ending_hook": "unexpected promotion",
+            "selling_points": ["fast"],
+            "status": "draft",
+        },
+        "characters_json": {
+            "characters": [
+                {
+                    "name": "Lin Xia",
+                    "role": "lead",
+                    "main_reference_confirmed": False,
+                }
+            ]
+        },
+    }).json()
+    project_id = init["data"]["project_id"]
+    character_id = init["data"]["character_ids"][0]
+    client.post(f"/characters/{character_id}/confirm-reference", json={"main_reference_url": "mock://character/reference.png"})
+    client.post(
+        f"/coze/project/{project_id}/storyboard",
+        json={
+            "script_card_json": {"opening_hook": "Opening"},
+            "storyboard_json": {
+                "shots": [
+                    {
+                        "shot_id": "SH01",
+                        "duration_sec": 3,
+                        "character": "Lin Xia",
+                        "location": "Meeting Room",
+                        "core_action": "Lin Xia opens the door",
+                        "emotion": "nervous",
+                        "camera": "medium close-up",
+                        "shot_type": "dialogue",
+                        "camera_motion": "slow_push_in",
+                        "subject_motion": "blink",
+                        "transition": "cut",
+                        "subtitle_text": "Sorry, wrong room.",
+                        "sfx": "door_open",
+                        "editing_notes": "Use slight zoom-in and nervous pause.",
+                        "dialogue": "Sorry, wrong room.",
+                        "image_prompt": "young woman opening a meeting room door",
+                        "video_prompt": "office door opens, awkward pause",
+                        "voice_prompt": "voice prompt 1",
+                        "bgm_prompt": "bgm prompt 1",
+                        "status": "prompt_ready",
+                    }
+                ]
+            },
+        },
+    )
+    client.post(f"/coze/project/{project_id}/create-asset-tasks", json={})
+    tasks = client.get(f"/projects/{project_id}/asset-tasks").json()
+    image_task = next(task for task in tasks if task["modality"] == "image")
+    client.post(
+        f"/asset-tasks/{image_task['id']}/manual-asset",
+        json={"asset_url": "file:///D:/AI漫剧图片库/SH01.png", "asset_type": "image", "notes": "manual image"},
+    )
+
+    response = client.get(f"/projects/{project_id}/editing-timeline")
+    assert response.status_code == 200
+    body = response.json()
+    assert body["ready_for_timeline"] is True
+    assert body["next_action"] == "ready_for_manual_timeline_editing"
+
+
+def test_editing_timeline_missing_project_returns_404(client):
+    response = client.get("/projects/999999/editing-timeline")
+    assert response.status_code == 404

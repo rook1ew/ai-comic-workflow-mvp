@@ -24,6 +24,8 @@ from app.schemas.project import ProjectManualImageProgressItem
 from app.schemas.project import ProjectManualFinalChecklist
 from app.schemas.project import ProjectEditingShotBoard
 from app.schemas.project import EditingShotBoardItem
+from app.schemas.project import ProjectEditingTimeline
+from app.schemas.project import EditingTimelineItem
 from app.schemas.project import ProjectManualVideoProgress
 from app.schemas.project import ProjectManualVideoProgressItem
 from app.schemas.project import ProjectPublishReadiness
@@ -949,5 +951,70 @@ def get_project_editing_shot_board(db: Session, project_id: int) -> ProjectEditi
         ready_shots_count=ready_shots_count,
         blocked_shots_count=blocked_shots_count,
         items=items,
+        next_action=next_action,
+    )
+
+
+def get_project_editing_timeline(db: Session, project_id: int) -> ProjectEditingTimeline:
+    shot_board = get_project_editing_shot_board(db, project_id)
+
+    timeline_items: list[EditingTimelineItem] = []
+    current_time: int | float = 0
+    blocking_issue_set: set[str] = set()
+    ready_for_timeline = True
+
+    for order, shot_item in enumerate(shot_board.items, start=1):
+        warnings: list[str] = []
+        duration = shot_item.duration
+        if duration in (None, ""):
+            duration = 3
+            warnings.append("duration_defaulted")
+
+        start_time = current_time
+        end_time = current_time + duration
+        current_time = end_time
+
+        item_blocking_issues = list(shot_item.blocking_issues)
+        if item_blocking_issues:
+            ready_for_timeline = False
+            for issue in item_blocking_issues:
+                blocking_issue_set.add(issue)
+
+        timeline_items.append(
+            EditingTimelineItem(
+                order=order,
+                internal_shot_id=shot_item.internal_shot_id,
+                source_shot_id=shot_item.source_shot_id,
+                start_time=start_time,
+                end_time=end_time,
+                duration=duration,
+                image_asset_url=shot_item.image_asset_url,
+                subtitle_text=shot_item.subtitle_text,
+                sfx=shot_item.sfx,
+                camera_motion=shot_item.camera_motion,
+                subject_motion=shot_item.subject_motion,
+                transition=shot_item.transition,
+                editing_notes=shot_item.editing_notes,
+                ready_for_editing=shot_item.ready_for_editing,
+                blocking_issues=item_blocking_issues,
+                warnings=warnings,
+            )
+        )
+
+    if not ready_for_timeline:
+        if "missing_image_asset" in blocking_issue_set:
+            next_action = "continue_image_generation"
+        else:
+            next_action = "review_editing_fields"
+    else:
+        next_action = "ready_for_manual_timeline_editing"
+
+    return ProjectEditingTimeline(
+        project_id=project_id,
+        shots_count=len(timeline_items),
+        total_duration=current_time,
+        ready_for_timeline=ready_for_timeline,
+        items=timeline_items,
+        blocking_issues=sorted(blocking_issue_set),
         next_action=next_action,
     )

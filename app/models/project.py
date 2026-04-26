@@ -14,6 +14,7 @@ class Project(TimestampMixin, Base):
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
     target_platforms: Mapped[list[str]] = mapped_column(JSON, default=list, nullable=False)
     tags: Mapped[list[str]] = mapped_column(JSON, default=list, nullable=False)
+    visual_asset_library_json: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
     status: Mapped[ProjectStatus] = mapped_column(Enum(ProjectStatus), default=ProjectStatus.DRAFT, nullable=False)
 
     episodes = relationship("Episode", back_populates="project", cascade="all, delete-orphan")

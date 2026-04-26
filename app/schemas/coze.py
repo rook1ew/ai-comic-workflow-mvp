@@ -24,6 +24,7 @@ class CozeProjectCard(BaseModel):
     hook: str | None = None
     ending_hook: str | None = None
     selling_points: list[str] = Field(default_factory=list)
+    visual_asset_library_json: dict[str, Any] | None = None
     status: ProjectStatus = ProjectStatus.DRAFT
 
 
@@ -36,6 +37,7 @@ class CozeCharacterItem(BaseModel):
     outfit: str | None = None
     personality: str | None = None
     speaking_style: str | None = None
+    main_reference_url: str | None = None
     must_keep: list[str] = Field(default_factory=list)
     avoid: list[str] = Field(default_factory=list)
     main_reference_confirmed: bool = False
@@ -48,6 +50,7 @@ class CozeCharactersPayload(BaseModel):
 class CozeProjectInitRequest(BaseModel):
     project_card_json: CozeProjectCard
     characters_json: CozeCharactersPayload
+    visual_asset_library_json: dict[str, Any] | None = None
 
 
 class ConfirmCharacterReferenceRequest(BaseModel):
@@ -78,6 +81,9 @@ class CozeStoryboardShot(BaseModel):
     subtitle_text: str | None = None
     sfx: str | None = None
     editing_notes: str | None = None
+    character_asset_keys: list[str] = Field(default_factory=list)
+    scene_asset_key: str | None = None
+    prop_asset_keys: list[str] = Field(default_factory=list)
     image_prompt: str
     video_prompt: str
     voice_prompt: str
@@ -112,6 +118,7 @@ class CozePublishRecordRequest(BaseModel):
 class CozeFullDemoFlowRequest(BaseModel):
     project_card_json: CozeProjectCard
     characters_json: CozeCharactersPayload
+    visual_asset_library_json: dict[str, Any] | None = None
     script_card_json: CozeScriptCard
     storyboard_json: CozeStoryboardPayload
     video_shot_ids: list[str] = Field(default_factory=list)
@@ -121,6 +128,7 @@ class CozeFullDemoFlowRequest(BaseModel):
 class CozePayloadValidationRequest(BaseModel):
     project_card_json: dict[str, Any] = Field(default_factory=dict)
     characters_json: dict[str, Any] = Field(default_factory=dict)
+    visual_asset_library_json: Any | None = None
     script_card_json: dict[str, Any] = Field(default_factory=dict)
     storyboard_json: dict[str, Any] = Field(default_factory=dict)
     video_shot_ids: list[str] = Field(default_factory=list)

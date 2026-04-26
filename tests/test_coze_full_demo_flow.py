@@ -1,3 +1,4 @@
+from app.models.project import Project
 from app.models.shot import Shot
 from app.schemas.coze import CozeFullDemoFlowRequest
 from app.services.coze_service import coze_full_demo_flow
@@ -169,3 +170,42 @@ def test_full_demo_flow_saves_duration_sec(db_session):
     assert shot.metadata_json["subtitle_text"] == "对不起，我走错了。"
     assert shot.metadata_json["sfx"] == "door_open"
     assert shot.metadata_json["editing_notes"] == "Push in slightly as she enters."
+
+
+def test_full_demo_flow_saves_visual_asset_library_json(db_session):
+    payload = _full_demo_flow_payload()
+    payload["visual_asset_library_json"] = {
+        "characters": [
+            {
+                "asset_key": "lin_wan",
+                "name": "Lin Xia",
+                "main_reference_url": "file:///D:/AI漫剧角色库/LinWan_main.png",
+                "must_keep": ["same hairstyle"],
+                "avoid": ["celebrity likeness"],
+            }
+        ],
+        "scenes": [
+            {
+                "asset_key": "meeting_room_a",
+                "name": "Meeting Room A",
+                "main_reference_url": "file:///D:/AI漫剧场景库/meeting_room_a_main.png",
+            }
+        ],
+        "props": [
+            {
+                "asset_key": "employee_badge",
+                "name": "Employee Badge",
+                "main_reference_url": "file:///D:/AI漫剧道具库/employee_badge_main.png",
+            }
+        ],
+    }
+    payload["storyboard_json"]["shots"][0]["character_asset_keys"] = ["lin_wan"]
+    payload["storyboard_json"]["shots"][0]["scene_asset_key"] = "meeting_room_a"
+    payload["storyboard_json"]["shots"][0]["prop_asset_keys"] = ["employee_badge"]
+
+    response = coze_full_demo_flow(db_session, CozeFullDemoFlowRequest(**payload))
+    project = db_session.get(Project, response.data["project_id"])
+    assert project is not None
+    assert project.visual_asset_library_json["characters"][0]["asset_key"] == "lin_wan"
+    assert project.visual_asset_library_json["scenes"][0]["asset_key"] == "meeting_room_a"
+    assert project.visual_asset_library_json["props"][0]["asset_key"] == "employee_badge"

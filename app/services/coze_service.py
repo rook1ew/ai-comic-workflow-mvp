@@ -99,7 +99,21 @@ def _build_shot_metadata(shot_item) -> dict:
         "subtitle_text": shot_item.subtitle_text,
         "sfx": shot_item.sfx,
         "editing_notes": shot_item.editing_notes,
+        "character_asset_keys": shot_item.character_asset_keys,
+        "scene_asset_key": shot_item.scene_asset_key,
+        "prop_asset_keys": shot_item.prop_asset_keys,
     }
+
+
+def _extract_visual_asset_library(payload) -> dict:
+    direct = getattr(payload, "visual_asset_library_json", None)
+    if isinstance(direct, dict):
+        return direct
+    project_card = getattr(payload, "project_card_json", None)
+    nested = getattr(project_card, "visual_asset_library_json", None) if project_card is not None else None
+    if isinstance(nested, dict):
+        return nested
+    return {}
 
 
 def coze_validate_payload(payload: CozePayloadValidationRequest) -> CozeResponse:
@@ -108,14 +122,31 @@ def coze_validate_payload(payload: CozePayloadValidationRequest) -> CozeResponse
 
     project_card = payload.project_card_json or {}
     characters_json = payload.characters_json or {}
+    visual_asset_library_json = payload.visual_asset_library_json
     script_card = payload.script_card_json or {}
     storyboard_json = payload.storyboard_json or {}
     publish_record = payload.publish_record_json or {}
+    visual_asset_library = visual_asset_library_json if visual_asset_library_json is not None else project_card.get("visual_asset_library_json")
 
     if not str(project_card.get("project_title") or "").strip():
         errors.append("project_card_json.project_title is required.")
     if not str(project_card.get("visual_style") or "").strip():
         warnings.append("project_card_json.visual_style is recommended.")
+
+    visual_asset_lookup: dict[str, set[str]] = {"characters": set(), "scenes": set(), "props": set()}
+    if visual_asset_library is not None:
+        if not isinstance(visual_asset_library, dict):
+            errors.append("visual_asset_library_json must be an object.")
+            visual_asset_library = {}
+        for bucket in ("characters", "scenes", "props"):
+            value = visual_asset_library.get(bucket)
+            if value is not None and not isinstance(value, list):
+                errors.append(f"visual_asset_library_json.{bucket} must be an array.")
+                continue
+            if isinstance(value, list):
+                for item in value:
+                    if isinstance(item, dict) and str(item.get("asset_key") or "").strip():
+                        visual_asset_lookup[bucket].add(str(item.get("asset_key")).strip())
 
     characters = characters_json.get("characters") or []
     if not isinstance(characters, list) or len(characters) == 0:
@@ -150,6 +181,31 @@ def coze_validate_payload(payload: CozePayloadValidationRequest) -> CozeResponse
             shot_ids.add(shot_id)
         if (shot or {}).get("duration_sec") in (None, ""):
             warnings.append(f"storyboard_json.shots[{index - 1}].duration_sec is recommended.")
+        character_asset_keys = (shot or {}).get("character_asset_keys")
+        if character_asset_keys is not None and not isinstance(character_asset_keys, list):
+            errors.append(f"storyboard_json.shots[{index - 1}].character_asset_keys must be an array.")
+        if isinstance(character_asset_keys, list):
+            for asset_key in character_asset_keys:
+                if str(asset_key) not in visual_asset_lookup["characters"]:
+                    warnings.append(
+                        f"storyboard_json.shots[{index - 1}].character_asset_keys references unknown asset_key: {asset_key}."
+                    )
+        scene_asset_key = (shot or {}).get("scene_asset_key")
+        if scene_asset_key is not None and not isinstance(scene_asset_key, str):
+            errors.append(f"storyboard_json.shots[{index - 1}].scene_asset_key must be a string.")
+        if isinstance(scene_asset_key, str) and scene_asset_key and scene_asset_key not in visual_asset_lookup["scenes"]:
+            warnings.append(
+                f"storyboard_json.shots[{index - 1}].scene_asset_key references unknown asset_key: {scene_asset_key}."
+            )
+        prop_asset_keys = (shot or {}).get("prop_asset_keys")
+        if prop_asset_keys is not None and not isinstance(prop_asset_keys, list):
+            errors.append(f"storyboard_json.shots[{index - 1}].prop_asset_keys must be an array.")
+        if isinstance(prop_asset_keys, list):
+            for asset_key in prop_asset_keys:
+                if str(asset_key) not in visual_asset_lookup["props"]:
+                    warnings.append(
+                        f"storyboard_json.shots[{index - 1}].prop_asset_keys references unknown asset_key: {asset_key}."
+                    )
 
     for video_shot_id in payload.video_shot_ids:
         if video_shot_id not in shot_ids:
@@ -183,6 +239,7 @@ def coze_project_init(db: Session, payload: CozeProjectInitRequest) -> CozeRespo
             description=_build_project_description(payload.project_card_json),
             target_platforms=[payload.project_card_json.platform] if payload.project_card_json.platform else [],
             tags=[tag for tag in [payload.project_card_json.genre, payload.project_card_json.target_audience, payload.project_card_json.visual_style] if tag],
+            visual_asset_library_json=_extract_visual_asset_library(payload),
             status=payload.project_card_json.status,
         ),
     )
@@ -456,6 +513,7 @@ def coze_full_demo_flow(db: Session, payload: CozeFullDemoFlowRequest) -> CozeRe
         CozeProjectInitRequest(
             project_card_json=payload.project_card_json,
             characters_json=payload.characters_json,
+            visual_asset_library_json=payload.visual_asset_library_json,
         ),
     )
     project_id = init_response.data["project_id"]

@@ -16,6 +16,7 @@ from app.schemas.project import (
     ProjectPublishReadiness,
     ProjectResponse,
     ProjectSummary,
+    ProjectVisualAssetLibrary,
     ProjectVideoReadiness,
     ProviderReadinessResponse,
 )
@@ -34,6 +35,7 @@ from app.services.project_service import (
     get_project_manual_video_progress,
     get_project_publish_readiness,
     get_project_summary,
+    get_project_visual_asset_library,
     get_project_video_readiness,
     list_projects,
 )
@@ -64,6 +66,11 @@ def get_project_summary_route(project_id: int, db: Session = Depends(get_db)) ->
 @router.get("/projects/{project_id}/provider-readiness", response_model=ProviderReadinessResponse)
 def get_project_provider_readiness_route(project_id: int, db: Session = Depends(get_db)) -> ProviderReadinessResponse:
     return get_project_provider_readiness(db, project_id)
+
+
+@router.get("/projects/{project_id}/visual-asset-library", response_model=ProjectVisualAssetLibrary)
+def get_project_visual_asset_library_route(project_id: int, db: Session = Depends(get_db)) -> ProjectVisualAssetLibrary:
+    return get_project_visual_asset_library(db, project_id)
 
 
 @router.get("/projects/{project_id}/image-prompts", response_model=ProjectImagePromptExport)

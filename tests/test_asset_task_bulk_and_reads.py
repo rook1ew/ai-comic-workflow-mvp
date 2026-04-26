@@ -386,6 +386,233 @@ def test_project_image_prompts_include_editing_fields(client):
     assert item["editing_notes"] == "Push in slightly as she enters."
 
 
+def test_project_visual_asset_library_returns_characters_scenes_and_props(client):
+    init = client.post("/coze/project/init", json={
+        "project_card_json": {
+            "project_title": "Visual Asset Library Demo",
+            "genre": "urban",
+            "platform": "coze",
+            "target_duration": 60,
+            "target_audience": "young-adult",
+            "visual_style": "anime-comic",
+            "core_conflict": "identity confusion",
+            "hook": "wrong room",
+            "ending_hook": "unexpected promotion",
+            "selling_points": ["fast"],
+            "status": "draft",
+        },
+        "visual_asset_library_json": {
+            "characters": [{"asset_key": "lin_wan", "name": "Lin Xia"}],
+            "scenes": [{"asset_key": "meeting_room_a", "name": "Meeting Room A"}],
+            "props": [{"asset_key": "employee_badge", "name": "Employee Badge"}],
+        },
+        "characters_json": {
+            "characters": [
+                {
+                    "name": "Lin Xia",
+                    "role": "lead",
+                    "main_reference_confirmed": False,
+                }
+            ]
+        },
+    }).json()
+    project_id = init["data"]["project_id"]
+
+    response = client.get(f"/projects/{project_id}/visual-asset-library")
+    assert response.status_code == 200
+    body = response.json()
+    assert body["characters_count"] == 1
+    assert body["scenes_count"] == 1
+    assert body["props_count"] == 1
+    assert body["characters"][0]["asset_key"] == "lin_wan"
+    assert body["next_action"] == "ready_for_reference_guided_image_generation"
+
+
+def test_project_image_prompts_return_visual_asset_refs_and_reference_guidance(client):
+    init = client.post("/coze/project/init", json={
+        "project_card_json": {
+            "project_title": "Image Prompt Ref Demo",
+            "genre": "urban",
+            "platform": "coze",
+            "target_duration": 60,
+            "target_audience": "young-adult",
+            "visual_style": "anime-comic",
+            "core_conflict": "identity confusion",
+            "hook": "wrong room",
+            "ending_hook": "unexpected promotion",
+            "selling_points": ["fast"],
+            "status": "draft",
+        },
+        "visual_asset_library_json": {
+            "characters": [
+                {
+                    "asset_key": "lin_wan",
+                    "name": "Lin Xia",
+                    "main_reference_url": "file:///D:/AI漫剧角色库/LinWan_main.png",
+                    "must_keep": ["same hairstyle"],
+                    "avoid": ["celebrity likeness"],
+                }
+            ],
+            "scenes": [
+                {
+                    "asset_key": "meeting_room_a",
+                    "name": "Meeting Room A",
+                    "main_reference_url": "file:///D:/AI漫剧场景库/meeting_room_a_main.png",
+                    "must_keep": ["conference table"],
+                    "avoid": ["fantasy background"],
+                }
+            ],
+            "props": [
+                {
+                    "asset_key": "employee_badge",
+                    "name": "Employee Badge",
+                    "main_reference_url": "file:///D:/AI漫剧道具库/employee_badge_main.png",
+                }
+            ],
+        },
+        "characters_json": {
+            "characters": [
+                {
+                    "name": "Lin Xia",
+                    "role": "lead",
+                    "main_reference_confirmed": False,
+                }
+            ]
+        },
+    }).json()
+    project_id = init["data"]["project_id"]
+    character_id = init["data"]["character_ids"][0]
+    client.post(f"/characters/{character_id}/confirm-reference", json={"main_reference_url": "mock://character/reference.png"})
+    client.post(
+        f"/coze/project/{project_id}/storyboard",
+        json={
+            "script_card_json": {"opening_hook": "Opening"},
+            "storyboard_json": {
+                "shots": [
+                    {
+                        "shot_id": "SH01",
+                        "duration_sec": 3,
+                        "character": "Lin Xia",
+                        "location": "Meeting Room",
+                        "core_action": "Lin Xia opens the door",
+                        "emotion": "nervous",
+                        "camera": "medium close-up",
+                        "character_asset_keys": ["lin_wan"],
+                        "scene_asset_key": "meeting_room_a",
+                        "prop_asset_keys": ["employee_badge"],
+                        "dialogue": "Sorry, wrong room.",
+                        "image_prompt": "young woman opening a meeting room door",
+                        "video_prompt": "video prompt 1",
+                        "voice_prompt": "voice prompt 1",
+                        "bgm_prompt": "bgm prompt 1",
+                        "status": "prompt_ready",
+                    }
+                ]
+            },
+        },
+    )
+    client.post(f"/coze/project/{project_id}/create-asset-tasks", json={})
+
+    response = client.get(f"/projects/{project_id}/image-prompts")
+    assert response.status_code == 200
+    item = response.json()["items"][0]
+    assert item["character_asset_keys"] == ["lin_wan"]
+    assert item["scene_asset_key"] == "meeting_room_a"
+    assert item["prop_asset_keys"] == ["employee_badge"]
+    assert item["visual_asset_refs"]["characters"][0]["asset_key"] == "lin_wan"
+    assert item["visual_asset_refs"]["scene"]["asset_key"] == "meeting_room_a"
+    assert item["visual_asset_refs"]["props"][0]["asset_key"] == "employee_badge"
+    assert "Recommended character reference:" in item["copy_ready_prompt"]
+    assert "Recommended scene reference:" in item["copy_ready_prompt"]
+    assert "Recommended prop reference:" in item["copy_ready_prompt"]
+
+
+def test_editing_shot_board_returns_visual_asset_refs(client):
+    init = client.post("/coze/project/init", json={
+        "project_card_json": {
+            "project_title": "Editing Board Ref Demo",
+            "genre": "urban",
+            "platform": "coze",
+            "target_duration": 60,
+            "target_audience": "young-adult",
+            "visual_style": "anime-comic",
+            "core_conflict": "identity confusion",
+            "hook": "wrong room",
+            "ending_hook": "unexpected promotion",
+            "selling_points": ["fast"],
+            "status": "draft",
+        },
+        "visual_asset_library_json": {
+            "characters": [{"asset_key": "lin_wan", "name": "Lin Xia"}],
+            "scenes": [{"asset_key": "meeting_room_a", "name": "Meeting Room A"}],
+            "props": [{"asset_key": "employee_badge", "name": "Employee Badge"}],
+        },
+        "characters_json": {
+            "characters": [
+                {
+                    "name": "Lin Xia",
+                    "role": "lead",
+                    "main_reference_confirmed": False,
+                }
+            ]
+        },
+    }).json()
+    project_id = init["data"]["project_id"]
+    character_id = init["data"]["character_ids"][0]
+    client.post(f"/characters/{character_id}/confirm-reference", json={"main_reference_url": "mock://character/reference.png"})
+    client.post(
+        f"/coze/project/{project_id}/storyboard",
+        json={
+            "script_card_json": {"opening_hook": "Opening"},
+            "storyboard_json": {
+                "shots": [
+                    {
+                        "shot_id": "SH01",
+                        "duration_sec": 3,
+                        "character": "Lin Xia",
+                        "location": "Meeting Room",
+                        "core_action": "Lin Xia opens the door",
+                        "emotion": "nervous",
+                        "camera": "medium close-up",
+                        "shot_type": "dialogue",
+                        "camera_motion": "slow_push_in",
+                        "subject_motion": "blink",
+                        "transition": "cut",
+                        "subtitle_text": "对不起，我走错了。",
+                        "sfx": "door_open",
+                        "editing_notes": "Push in slightly as she enters.",
+                        "character_asset_keys": ["lin_wan"],
+                        "scene_asset_key": "meeting_room_a",
+                        "prop_asset_keys": ["employee_badge"],
+                        "dialogue": "Sorry, wrong room.",
+                        "image_prompt": "young woman opening a meeting room door",
+                        "video_prompt": "video prompt 1",
+                        "voice_prompt": "voice prompt 1",
+                        "bgm_prompt": "bgm prompt 1",
+                        "status": "prompt_ready",
+                    }
+                ]
+            },
+        },
+    )
+    client.post(f"/coze/project/{project_id}/create-asset-tasks", json={})
+    tasks = client.get(f"/projects/{project_id}/asset-tasks").json()
+    image_task = next(task for task in tasks if task["modality"] == "image")
+    client.post(
+        f"/asset-tasks/{image_task['id']}/manual-asset",
+        json={"asset_url": "file:///D:/AI漫剧图片库/SH01.png", "asset_type": "image", "notes": "manual image"},
+    )
+
+    response = client.get(f"/projects/{project_id}/editing-shot-board")
+    assert response.status_code == 200
+    item = response.json()["items"][0]
+    assert item["character_asset_keys"] == ["lin_wan"]
+    assert item["scene_asset_key"] == "meeting_room_a"
+    assert item["prop_asset_keys"] == ["employee_badge"]
+    assert item["visual_asset_refs"]["characters"][0]["asset_key"] == "lin_wan"
+    assert item["visual_asset_refs"]["scene"]["asset_key"] == "meeting_room_a"
+
+
 def test_project_image_prompts_unexecuted_image_task_still_returns_prompt(client):
     project, shot1, _ = _create_project_graph(client)
     task = client.post("/asset-tasks", json={"shot_id": shot1["id"], "modality": "image", "provider_name": "mock"}).json()

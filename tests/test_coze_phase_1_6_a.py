@@ -205,6 +205,29 @@ def test_storyboard_import_saves_duration_sec(db_session):
     assert shots[1].metadata_json["duration_sec"] == 2
 
 
+def test_storyboard_import_saves_visual_asset_keys_to_shot_metadata(db_session):
+    init_payload = _coze_init_payload()
+    init_payload["visual_asset_library_json"] = {
+        "characters": [{"asset_key": "lin_wan", "name": "Lin Xia"}],
+        "scenes": [{"asset_key": "meeting_room_a", "name": "Meeting Room A"}],
+        "props": [{"asset_key": "employee_badge", "name": "Employee Badge"}],
+    }
+    init_response = coze_project_init(db_session, CozeProjectInitRequest(**init_payload))
+    project_id = init_response.data["project_id"]
+
+    storyboard_payload = _coze_storyboard_payload()
+    storyboard_payload["storyboard_json"]["shots"][0]["character_asset_keys"] = ["lin_wan"]
+    storyboard_payload["storyboard_json"]["shots"][0]["scene_asset_key"] = "meeting_room_a"
+    storyboard_payload["storyboard_json"]["shots"][0]["prop_asset_keys"] = ["employee_badge"]
+    coze_storyboard(db_session, project_id, CozeStoryboardRequest(**storyboard_payload))
+
+    shot = db_session.query(Shot).order_by(Shot.shot_number.asc()).first()
+    assert shot is not None
+    assert shot.metadata_json["character_asset_keys"] == ["lin_wan"]
+    assert shot.metadata_json["scene_asset_key"] == "meeting_room_a"
+    assert shot.metadata_json["prop_asset_keys"] == ["employee_badge"]
+
+
 def test_coze_create_asset_tasks_requires_confirmed_character(client):
     init = client.post("/coze/project/init", json=_coze_init_payload()).json()
     project_id = init["data"]["project_id"]
@@ -498,3 +521,91 @@ def test_validate_payload_returns_error_for_unknown_video_shot_id(client):
     body = response.json()
     assert body["data"]["valid"] is False
     assert any("unknown shot id: SH99" in error for error in body["data"]["errors"])
+
+
+def test_validate_payload_returns_errors_for_invalid_visual_asset_library_types(client):
+    response = client.post(
+        "/coze/project/validate-payload",
+        json={
+            "project_card_json": {"project_title": "Urban Hook", "visual_style": "comic-realism"},
+            "visual_asset_library_json": {"characters": {}, "scenes": [], "props": "oops"},
+            "characters_json": {"characters": [{"name": "Lin Xia", "role": "lead", "appearance": "sharp face"}]},
+            "script_card_json": {
+                "opening_hook": "Opening",
+                "conflict": "Conflict",
+                "turning_point": "Turning",
+                "ending_hook": "Ending",
+            },
+            "storyboard_json": {
+                "shots": [
+                    {
+                        "shot_id": "SH01",
+                        "duration_sec": 3,
+                        "core_action": "Open the door",
+                        "character_asset_keys": "lin_wan",
+                        "scene_asset_key": ["meeting_room_a"],
+                        "prop_asset_keys": "employee_badge",
+                        "image_prompt": "image prompt",
+                        "video_prompt": "video prompt",
+                        "voice_prompt": "voice prompt",
+                        "bgm_prompt": "bgm prompt",
+                    }
+                ]
+            },
+            "video_shot_ids": [],
+            "publish_record_json": {"platform": "douyin", "title": "Episode 1"},
+        },
+    )
+    assert response.status_code == 200
+    body = response.json()
+    assert body["data"]["valid"] is False
+    assert any("visual_asset_library_json.characters must be an array." in error for error in body["data"]["errors"])
+    assert any("visual_asset_library_json.props must be an array." in error for error in body["data"]["errors"])
+    assert any("character_asset_keys must be an array." in error for error in body["data"]["errors"])
+    assert any("scene_asset_key must be a string." in error for error in body["data"]["errors"])
+    assert any("prop_asset_keys must be an array." in error for error in body["data"]["errors"])
+
+
+def test_validate_payload_warns_for_unknown_visual_asset_keys(client):
+    response = client.post(
+        "/coze/project/validate-payload",
+        json={
+            "project_card_json": {"project_title": "Urban Hook", "visual_style": "comic-realism"},
+            "visual_asset_library_json": {
+                "characters": [{"asset_key": "lin_wan", "name": "Lin Xia"}],
+                "scenes": [{"asset_key": "meeting_room_a", "name": "Meeting Room A"}],
+                "props": [{"asset_key": "employee_badge", "name": "Employee Badge"}],
+            },
+            "characters_json": {"characters": [{"name": "Lin Xia", "role": "lead", "appearance": "sharp face"}]},
+            "script_card_json": {
+                "opening_hook": "Opening",
+                "conflict": "Conflict",
+                "turning_point": "Turning",
+                "ending_hook": "Ending",
+            },
+            "storyboard_json": {
+                "shots": [
+                    {
+                        "shot_id": "SH01",
+                        "duration_sec": 3,
+                        "core_action": "Open the door",
+                        "character_asset_keys": ["unknown_character"],
+                        "scene_asset_key": "unknown_scene",
+                        "prop_asset_keys": ["unknown_prop"],
+                        "image_prompt": "image prompt",
+                        "video_prompt": "video prompt",
+                        "voice_prompt": "voice prompt",
+                        "bgm_prompt": "bgm prompt",
+                    }
+                ]
+            },
+            "video_shot_ids": [],
+            "publish_record_json": {"platform": "douyin", "title": "Episode 1"},
+        },
+    )
+    assert response.status_code == 200
+    body = response.json()
+    assert body["data"]["valid"] is True
+    assert any("references unknown asset_key: unknown_character" in warning for warning in body["data"]["warnings"])
+    assert any("references unknown asset_key: unknown_scene" in warning for warning in body["data"]["warnings"])
+    assert any("references unknown asset_key: unknown_prop" in warning for warning in body["data"]["warnings"])

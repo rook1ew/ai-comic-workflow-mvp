@@ -17,19 +17,20 @@
 完整人工生产链路如下：
 
 1. `POST /coze/project/full-demo-flow`
-2. `GET /projects/{project_id}/image-prompts`
-3. `POST /asset-tasks/{asset_task_id}/manual-asset`
-4. `GET /projects/{project_id}/manual-image-progress`
-5. `GET /projects/{project_id}/video-readiness`
-6. `GET /projects/{project_id}/video-prompts`
-7. `POST /asset-tasks/{asset_task_id}/manual-video-asset`
-8. `GET /projects/{project_id}/manual-video-progress`
-9. `GET /projects/{project_id}/editing-shot-board`
-10. `GET /projects/{project_id}/editing-timeline`
-11. `GET /projects/{project_id}/editing-cue-sheet`
-12. `GET /projects/{project_id}/manual-production-summary`
-13. `GET /projects/{project_id}/publish-readiness`
-14. `GET /projects/{project_id}/manual-final-checklist`
+2. `GET /projects/{project_id}/visual-asset-library`
+3. `GET /projects/{project_id}/image-prompts`
+4. `POST /asset-tasks/{asset_task_id}/manual-asset`
+5. `GET /projects/{project_id}/manual-image-progress`
+6. `GET /projects/{project_id}/video-readiness`
+7. `GET /projects/{project_id}/video-prompts`
+8. `POST /asset-tasks/{asset_task_id}/manual-video-asset`
+9. `GET /projects/{project_id}/manual-video-progress`
+10. `GET /projects/{project_id}/editing-shot-board`
+11. `GET /projects/{project_id}/editing-timeline`
+12. `GET /projects/{project_id}/editing-cue-sheet`
+13. `GET /projects/{project_id}/manual-production-summary`
+14. `GET /projects/{project_id}/publish-readiness`
+15. `GET /projects/{project_id}/manual-final-checklist`
 
 ## 推荐操作顺序
 
@@ -267,5 +268,7 @@
 - [MANUAL_VIDEO_GENERATION_SOP.md](/C:/Users/29964/Documents/GitHub/ai-comic-workflow-mvp-git/docs/MANUAL_VIDEO_GENERATION_SOP.md)
 - [EDITING_SHOT_BOARD_SOP.md](/C:/Users/29964/Documents/GitHub/ai-comic-workflow-mvp-git/docs/EDITING_SHOT_BOARD_SOP.md)
 - [EDITING_TIMELINE_EXPORT_SOP.md](/C:/Users/29964/Documents/GitHub/ai-comic-workflow-mvp-git/docs/EDITING_TIMELINE_EXPORT_SOP.md)
+- [EDITING_CUE_SHEET_EXPORT_SOP.md](/C:/Users/29964/Documents/GitHub/ai-comic-workflow-mvp-git/docs/EDITING_CUE_SHEET_EXPORT_SOP.md)
 - [EDITING_STORYBOARD_FIELDS.md](/C:/Users/29964/Documents/GitHub/ai-comic-workflow-mvp-git/docs/EDITING_STORYBOARD_FIELDS.md)
+- [VISUAL_ASSET_LIBRARY.md](/C:/Users/29964/Documents/GitHub/ai-comic-workflow-mvp-git/docs/VISUAL_ASSET_LIBRARY.md)
 - [API.md](/C:/Users/29964/Documents/GitHub/ai-comic-workflow-mvp-git/docs/API.md)

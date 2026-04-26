@@ -136,6 +136,7 @@ GET /projects/{project_id}/editing-shot-board
 - 图片是否到位
 - shot_type / camera_motion / subject_motion / transition 是否有值
 - subtitle / sfx / editing_notes 是否基本可用
+- 当前 shot 是否已经关联角色 / 场景 / 道具参考素材
 
 ### 3. 生成 timeline
 

@@ -80,6 +80,7 @@
 3. `POST /asset-tasks/{asset_task_id}/manual-asset`
 4. `GET /projects/{project_id}/manual-image-progress`
 5. `GET /projects/{project_id}/editing-shot-board`
+   - 同时检查 `character_asset_keys / scene_asset_key / prop_asset_keys / visual_asset_refs`
 6. `GET /projects/{project_id}/editing-timeline`
 7. `GET /projects/{project_id}/editing-cue-sheet`
 8. 根据 shot board、timeline 和 cue sheet 进入人工剪辑

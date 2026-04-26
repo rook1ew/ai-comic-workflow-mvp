@@ -1,0 +1,245 @@
+{
+  "project_card_json": {
+    "project_title": "都市职场反转 3 镜头 Visual Assets Demo",
+    "genre": "urban workplace",
+    "platform": "coze",
+    "target_duration": 60,
+    "target_audience": "young-adult",
+    "visual_style": "anime-comic realism",
+    "core_conflict": "女主误入会议室被羞辱，随后身份反转",
+    "hook": "她推门进来，整个会议室安静了",
+    "ending_hook": "总裁助理一句话，让所有人脸色大变",
+    "selling_points": [
+      "都市职场反转",
+      "强情绪镜头",
+      "适合拼帧漫剧剪辑"
+    ],
+    "status": "draft"
+  },
+  "visual_asset_library_json": {
+    "characters": [
+      {
+        "asset_key": "lin_wan",
+        "name": "林晚",
+        "role": "lead",
+        "main_reference_url": "file:///D:/AI漫剧角色库/LinWan_main.png",
+        "must_keep": [
+          "same face shape",
+          "same hairstyle",
+          "same outfit",
+          "same body proportion"
+        ],
+        "avoid": [
+          "celebrity likeness",
+          "known anime character",
+          "changed hairstyle",
+          "changed outfit"
+        ]
+      },
+      {
+        "asset_key": "zhang_man",
+        "name": "张曼",
+        "role": "coworker",
+        "main_reference_url": "file:///D:/AI漫剧角色库/ZhangMan_main.png",
+        "must_keep": [
+          "sharp makeup",
+          "formal office outfit"
+        ],
+        "avoid": [
+          "fantasy costume",
+          "school uniform"
+        ]
+      },
+      {
+        "asset_key": "li_assistant",
+        "name": "李特助",
+        "role": "assistant",
+        "main_reference_url": "file:///D:/AI漫剧角色库/LiAssistant_main.png",
+        "must_keep": [
+          "clean suit",
+          "calm expression"
+        ],
+        "avoid": [
+          "casual wear",
+          "cartoon exaggeration"
+        ]
+      }
+    ],
+    "scenes": [
+      {
+        "asset_key": "meeting_room_a",
+        "name": "会议室A",
+        "main_reference_url": "file:///D:/AI漫剧场景库/meeting_room_a_main.png",
+        "must_keep": [
+          "long conference table",
+          "gray glass wall",
+          "black office chairs",
+          "modern corporate lighting"
+        ],
+        "avoid": [
+          "classroom layout",
+          "fantasy background"
+        ]
+      }
+    ],
+    "props": [
+      {
+        "asset_key": "employee_badge",
+        "name": "员工工牌",
+        "main_reference_url": "file:///D:/AI漫剧道具库/employee_badge_main.png",
+        "must_keep": [
+          "blue strap",
+          "white card",
+          "corporate badge style"
+        ],
+        "avoid": [
+          "school badge",
+          "fantasy medal"
+        ]
+      }
+    ]
+  },
+  "characters_json": {
+    "characters": [
+      {
+        "name": "林晚",
+        "role": "lead",
+        "age_vibe": "young professional",
+        "appearance": "清冷干练，五官利落",
+        "hair": "黑色中长发，低扎",
+        "outfit": "简洁职场套装",
+        "personality": "冷静但隐忍",
+        "speaking_style": "克制、礼貌",
+        "must_keep": [
+          "same hairstyle",
+          "same office outfit"
+        ],
+        "avoid": [
+          "celebrity likeness",
+          "known anime character"
+        ],
+        "main_reference_confirmed": false
+      },
+      {
+        "name": "张曼",
+        "role": "coworker",
+        "appearance": "妆容精致，气场刻薄",
+        "main_reference_confirmed": false
+      },
+      {
+        "name": "李特助",
+        "role": "assistant",
+        "appearance": "西装利落，表情平静",
+        "main_reference_confirmed": false
+      }
+    ]
+  },
+  "script_card_json": {
+    "opening_hook": "女主误入会议室，众人齐刷刷看向她",
+    "conflict": "老员工当众羞辱她身份不配进会议室",
+    "escalation": "气氛越来越尴尬，女主准备退出",
+    "turning_point": "总裁助理突然推门进来",
+    "ending_hook": "一句“林小姐请留步”，众人全都变脸"
+  },
+  "storyboard_json": {
+    "shots": [
+      {
+        "shot_id": "SH01",
+        "duration_sec": 3,
+        "character": "林晚",
+        "location": "会议室A",
+        "character_asset_keys": [
+          "lin_wan"
+        ],
+        "scene_asset_key": "meeting_room_a",
+        "prop_asset_keys": [
+          "employee_badge"
+        ],
+        "core_action": "林晚推门进入会议室",
+        "emotion": "nervous",
+        "camera": "medium close-up",
+        "dialogue": "不好意思，我走错了。",
+        "shot_type": "dialogue",
+        "camera_motion": "slow_push_in",
+        "subject_motion": "blink, slight_body_shift",
+        "transition": "cut",
+        "subtitle_text": "不好意思，我走错了。",
+        "sfx": "door_open",
+        "editing_notes": "慢推镜，留一点紧张停顿。",
+        "image_prompt": "young office woman opening a meeting room door, nervous expression",
+        "video_prompt": "office door opens, awkward pause",
+        "voice_prompt": "soft, nervous female voice",
+        "bgm_prompt": "tense office ambience",
+        "status": "prompt_ready"
+      },
+      {
+        "shot_id": "SH02",
+        "duration_sec": 4,
+        "character": "张曼",
+        "location": "会议室A",
+        "character_asset_keys": [
+          "zhang_man"
+        ],
+        "scene_asset_key": "meeting_room_a",
+        "prop_asset_keys": [
+          "employee_badge"
+        ],
+        "core_action": "张曼冷笑羞辱林晚",
+        "emotion": "mocking",
+        "camera": "close-up",
+        "dialogue": "你也配进这个会议室？",
+        "shot_type": "reaction",
+        "camera_motion": "slow_push_in",
+        "subject_motion": "mouth_move, slight_head_tilt",
+        "transition": "cut",
+        "subtitle_text": "你也配进这个会议室？",
+        "sfx": "office_murmur",
+        "editing_notes": "镜头略带压迫感，字幕重点强调羞辱台词。",
+        "image_prompt": "stylish office woman smirking with pressure close-up",
+        "video_prompt": "mocking office close-up, oppressive feeling",
+        "voice_prompt": "sharp female mocking tone",
+        "bgm_prompt": "low tense underscore",
+        "status": "prompt_ready"
+      },
+      {
+        "shot_id": "SH03",
+        "duration_sec": 5,
+        "character": "李特助",
+        "location": "会议室A",
+        "character_asset_keys": [
+          "li_assistant",
+          "lin_wan"
+        ],
+        "scene_asset_key": "meeting_room_a",
+        "prop_asset_keys": [
+          "employee_badge"
+        ],
+        "core_action": "李特助推门进来并点名林晚",
+        "emotion": "shocked",
+        "camera": "wide to medium",
+        "dialogue": "林小姐，请留步。",
+        "shot_type": "reveal",
+        "camera_motion": "zoom_in",
+        "subject_motion": "turn_head, slight_body_shift",
+        "transition": "flash",
+        "subtitle_text": "林小姐，请留步。",
+        "sfx": "door_bang",
+        "editing_notes": "闪白转场，众人震惊后切到反应。",
+        "image_prompt": "assistant entering meeting room, everyone shocked",
+        "video_prompt": "dramatic office reversal entrance",
+        "voice_prompt": "calm male assistant voice",
+        "bgm_prompt": "reversal stinger",
+        "status": "prompt_ready"
+      }
+    ]
+  },
+  "video_shot_ids": [
+    "SH03"
+  ],
+  "publish_record_json": {
+    "platform": "抖音",
+    "title": "都市职场反转 3 镜头 Demo",
+    "published_at": "2026-04-27T10:00:00",
+    "url": "https://www.douyin.com/video/demo"
+  }
+}

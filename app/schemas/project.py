@@ -9,6 +9,7 @@ class ProjectCreate(BaseModel):
     description: str | None = None
     target_platforms: list[str] = Field(default_factory=list)
     tags: list[str] = Field(default_factory=list)
+    visual_asset_library_json: dict = Field(default_factory=dict)
     status: ProjectStatus = ProjectStatus.DRAFT
 
 
@@ -17,6 +18,7 @@ class ProjectResponse(TimestampedResponse):
     description: str | None
     target_platforms: list[str]
     tags: list[str]
+    visual_asset_library_json: dict
     status: ProjectStatus
 
 
@@ -44,6 +46,31 @@ class ProviderReadinessResponse(BaseModel):
     summary: dict = Field(default_factory=dict)
 
 
+class VisualAssetLibraryEntry(BaseModel):
+    asset_key: str | None = None
+    name: str | None = None
+    main_reference_url: str | None = None
+    must_keep: list[str] = Field(default_factory=list)
+    avoid: list[str] = Field(default_factory=list)
+
+
+class VisualAssetRefs(BaseModel):
+    characters: list[VisualAssetLibraryEntry] = Field(default_factory=list)
+    scene: VisualAssetLibraryEntry | None = None
+    props: list[VisualAssetLibraryEntry] = Field(default_factory=list)
+
+
+class ProjectVisualAssetLibrary(BaseModel):
+    project_id: int
+    characters_count: int
+    scenes_count: int
+    props_count: int
+    characters: list[dict] = Field(default_factory=list)
+    scenes: list[dict] = Field(default_factory=list)
+    props: list[dict] = Field(default_factory=list)
+    next_action: str
+
+
 class ProjectImagePromptItem(BaseModel):
     asset_task_id: int
     internal_shot_id: int
@@ -60,6 +87,10 @@ class ProjectImagePromptItem(BaseModel):
     subtitle_text: str | None = None
     sfx: str | None = None
     editing_notes: str | None = None
+    character_asset_keys: list[str] = Field(default_factory=list)
+    scene_asset_key: str | None = None
+    prop_asset_keys: list[str] = Field(default_factory=list)
+    visual_asset_refs: VisualAssetRefs = Field(default_factory=VisualAssetRefs)
     base_prompt: str
     enhanced_prompt: str
     negative_prompt: str
@@ -90,6 +121,10 @@ class ProjectVideoPromptItem(BaseModel):
     subtitle_text: str | None = None
     sfx: str | None = None
     editing_notes: str | None = None
+    character_asset_keys: list[str] = Field(default_factory=list)
+    scene_asset_key: str | None = None
+    prop_asset_keys: list[str] = Field(default_factory=list)
+    visual_asset_refs: VisualAssetRefs = Field(default_factory=VisualAssetRefs)
     base_video_prompt: str
     copy_ready_video_prompt: str
     negative_prompt: str
@@ -270,6 +305,10 @@ class EditingShotBoardItem(BaseModel):
     subtitle_text: str | None = None
     sfx: str | None = None
     editing_notes: str | None = None
+    character_asset_keys: list[str] = Field(default_factory=list)
+    scene_asset_key: str | None = None
+    prop_asset_keys: list[str] = Field(default_factory=list)
+    visual_asset_refs: VisualAssetRefs = Field(default_factory=VisualAssetRefs)
     ready_for_editing: bool
     blocking_issues: list[str] = Field(default_factory=list)
 

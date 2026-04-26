@@ -1125,3 +1125,78 @@ They are primarily used for:
 - anime-comic frame editing guidance
 - pseudo-motion planning for static-image workflows
 - richer manual video prompt export
+
+### Visual Asset Library
+
+Projects can now optionally store:
+
+- `visual_asset_library_json` at project level
+
+This library is intended for:
+
+- character reference packs
+- scene reference packs
+- prop reference packs
+
+Supported shot-level reference fields:
+
+- `character_asset_keys: string[]`
+- `scene_asset_key: string`
+- `prop_asset_keys: string[]`
+
+These reference fields are stored in `Shot.metadata_json` and can be used by:
+
+- `GET /projects/{project_id}/visual-asset-library`
+- `GET /projects/{project_id}/image-prompts`
+- `GET /projects/{project_id}/editing-shot-board`
+
+### GET `/projects/{project_id}/visual-asset-library`
+
+Project-level export of the Visual Asset Library.
+
+Response example:
+
+```json
+{
+  "project_id": 1,
+  "characters_count": 3,
+  "scenes_count": 1,
+  "props_count": 1,
+  "characters": [],
+  "scenes": [],
+  "props": [],
+  "next_action": "ready_for_reference_guided_image_generation"
+}
+```
+
+Rules:
+
+- if no visual asset library exists, returns empty arrays
+- does not call any real API
+- is safe to use in manual image generation workflows
+
+### image-prompts visual reference fields
+
+`GET /projects/{project_id}/image-prompts` now includes:
+
+- `character_asset_keys`
+- `scene_asset_key`
+- `prop_asset_keys`
+- `visual_asset_refs`
+
+`copy_ready_prompt` may append:
+
+- Recommended character reference
+- Recommended scene reference
+- Recommended prop reference
+- Must keep
+- Avoid
+
+### editing-shot-board visual reference fields
+
+`GET /projects/{project_id}/editing-shot-board` now includes:
+
+- `character_asset_keys`
+- `scene_asset_key`
+- `prop_asset_keys`
+- `visual_asset_refs`

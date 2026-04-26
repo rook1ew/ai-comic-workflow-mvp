@@ -32,11 +32,14 @@ from app.schemas.project import ProjectManualVideoProgress
 from app.schemas.project import ProjectManualVideoProgressItem
 from app.schemas.project import ProjectPublishReadiness
 from app.schemas.project import ProjectSummary
+from app.schemas.project import ProjectVisualAssetLibrary
 from app.schemas.project import ManualFinalChecklistChecks
 from app.schemas.project import PublishReadinessChecks
 from app.schemas.project import PublishReadinessSummary
 from app.schemas.project import ProjectVideoReadiness
 from app.schemas.project import ProjectVideoReadinessItem
+from app.schemas.project import VisualAssetRefs
+from app.schemas.project import VisualAssetLibraryEntry
 from app.services.prompt_enhancer import build_image_enhanced_prompt
 from app.services.repository import create_and_refresh
 
@@ -160,6 +163,21 @@ def get_project_summary(db: Session, project_id: int) -> ProjectSummary:
     )
 
 
+def get_project_visual_asset_library(db: Session, project_id: int) -> ProjectVisualAssetLibrary:
+    project = get_project_or_404(db, project_id)
+    library = _get_visual_asset_library(project)
+    return ProjectVisualAssetLibrary(
+        project_id=project_id,
+        characters_count=len(library["characters"]),
+        scenes_count=len(library["scenes"]),
+        props_count=len(library["props"]),
+        characters=library["characters"],
+        scenes=library["scenes"],
+        props=library["props"],
+        next_action="ready_for_reference_guided_image_generation",
+    )
+
+
 def _extract_project_style(project: Project) -> str | None:
     if project.description:
         for line in project.description.splitlines():
@@ -240,6 +258,122 @@ def _build_copy_ready_prompt(enhanced_prompt: str, negative_prompt: str) -> str:
     ).strip()
 
 
+def _get_visual_asset_library(project: Project) -> dict:
+    library = project.visual_asset_library_json or {}
+    if not isinstance(library, dict):
+        return {"characters": [], "scenes": [], "props": []}
+    return {
+        "characters": library.get("characters") if isinstance(library.get("characters"), list) else [],
+        "scenes": library.get("scenes") if isinstance(library.get("scenes"), list) else [],
+        "props": library.get("props") if isinstance(library.get("props"), list) else [],
+    }
+
+
+def _build_visual_asset_lookup(project: Project) -> dict[str, dict[str, dict]]:
+    library = _get_visual_asset_library(project)
+    return {
+        "characters": {
+            str(item.get("asset_key")): item
+            for item in library["characters"]
+            if isinstance(item, dict) and str(item.get("asset_key") or "").strip()
+        },
+        "scenes": {
+            str(item.get("asset_key")): item
+            for item in library["scenes"]
+            if isinstance(item, dict) and str(item.get("asset_key") or "").strip()
+        },
+        "props": {
+            str(item.get("asset_key")): item
+            for item in library["props"]
+            if isinstance(item, dict) and str(item.get("asset_key") or "").strip()
+        },
+    }
+
+
+def _to_visual_asset_entry(item: dict | None) -> VisualAssetLibraryEntry | None:
+    if not isinstance(item, dict):
+        return None
+    return VisualAssetLibraryEntry(
+        asset_key=item.get("asset_key"),
+        name=item.get("name"),
+        main_reference_url=item.get("main_reference_url"),
+        must_keep=item.get("must_keep") if isinstance(item.get("must_keep"), list) else [],
+        avoid=item.get("avoid") if isinstance(item.get("avoid"), list) else [],
+    )
+
+
+def _resolve_visual_asset_refs(project: Project, shot_metadata: dict) -> VisualAssetRefs:
+    lookup = _build_visual_asset_lookup(project)
+    character_asset_keys = shot_metadata.get("character_asset_keys")
+    if not isinstance(character_asset_keys, list):
+        character_asset_keys = []
+    prop_asset_keys = shot_metadata.get("prop_asset_keys")
+    if not isinstance(prop_asset_keys, list):
+        prop_asset_keys = []
+    scene_asset_key = shot_metadata.get("scene_asset_key")
+
+    return VisualAssetRefs(
+        characters=[
+            entry
+            for entry in (_to_visual_asset_entry(lookup["characters"].get(str(asset_key))) for asset_key in character_asset_keys)
+            if entry is not None
+        ],
+        scene=_to_visual_asset_entry(lookup["scenes"].get(str(scene_asset_key))) if scene_asset_key else None,
+        props=[
+            entry
+            for entry in (_to_visual_asset_entry(lookup["props"].get(str(asset_key))) for asset_key in prop_asset_keys)
+            if entry is not None
+        ],
+    )
+
+
+def _build_visual_reference_prompt_suffix(visual_asset_refs: VisualAssetRefs) -> str:
+    lines: list[str] = []
+    if visual_asset_refs.characters:
+        character = visual_asset_refs.characters[0]
+        lines.append(
+            "Recommended character reference: "
+            f"{character.name or character.asset_key or 'unknown'}"
+            + (f" ({character.main_reference_url})" if character.main_reference_url else "")
+        )
+        if character.must_keep:
+            lines.append(f"Must keep: {', '.join(character.must_keep[:4])}")
+        if character.avoid:
+            lines.append(f"Avoid: {', '.join(character.avoid[:4])}")
+    if visual_asset_refs.scene:
+        scene = visual_asset_refs.scene
+        lines.append(
+            "Recommended scene reference: "
+            f"{scene.name or scene.asset_key or 'unknown'}"
+            + (f" ({scene.main_reference_url})" if scene.main_reference_url else "")
+        )
+        if scene.must_keep:
+            lines.append(f"Scene must keep: {', '.join(scene.must_keep[:4])}")
+        if scene.avoid:
+            lines.append(f"Scene avoid: {', '.join(scene.avoid[:4])}")
+    if visual_asset_refs.props:
+        prop_names = [prop.name or prop.asset_key or "unknown" for prop in visual_asset_refs.props[:3]]
+        lines.append(f"Recommended prop reference: {', '.join(prop_names)}")
+    return "\n".join(lines).strip()
+
+
+def _build_visual_reference_cue_suffix(
+    character_asset_keys: list[str],
+    scene_asset_key: str | None,
+    prop_asset_keys: list[str],
+) -> str | None:
+    cue_parts: list[str] = []
+    if character_asset_keys:
+        cue_parts.append(f"角色 {', '.join(character_asset_keys)}")
+    if scene_asset_key:
+        cue_parts.append(f"场景 {scene_asset_key}")
+    if prop_asset_keys:
+        cue_parts.append(f"道具 {', '.join(prop_asset_keys)}")
+    if not cue_parts:
+        return None
+    return f"参考素材: {' / '.join(cue_parts)}"
+
+
 def _build_copy_ready_video_prompt(
     *,
     image_asset_url: str | None,
@@ -304,6 +438,7 @@ def export_project_image_prompts(db: Session, project_id: int) -> ProjectImagePr
     for task in tasks:
         shot = task.shot
         shot_metadata = shot.metadata_json or {}
+        visual_asset_refs = _resolve_visual_asset_refs(project, shot_metadata)
         asset = _get_preferred_task_asset(db, asset_task_id=task.id, modality=AssetModality.IMAGE)
 
         asset_input_payload = {}
@@ -338,6 +473,9 @@ def export_project_image_prompts(db: Session, project_id: int) -> ProjectImagePr
             )
         )
         copy_ready_prompt = _build_copy_ready_prompt(enhanced_prompt, MANUAL_IMAGE_NEGATIVE_PROMPT)
+        visual_reference_suffix = _build_visual_reference_prompt_suffix(visual_asset_refs)
+        if visual_reference_suffix:
+            copy_ready_prompt = f"{copy_ready_prompt}\n{visual_reference_suffix}".strip()
 
         items.append(
             ProjectImagePromptItem(
@@ -356,6 +494,10 @@ def export_project_image_prompts(db: Session, project_id: int) -> ProjectImagePr
                 subtitle_text=shot_metadata.get("subtitle_text"),
                 sfx=shot_metadata.get("sfx"),
                 editing_notes=shot_metadata.get("editing_notes"),
+                character_asset_keys=shot_metadata.get("character_asset_keys") if isinstance(shot_metadata.get("character_asset_keys"), list) else [],
+                scene_asset_key=shot_metadata.get("scene_asset_key"),
+                prop_asset_keys=shot_metadata.get("prop_asset_keys") if isinstance(shot_metadata.get("prop_asset_keys"), list) else [],
+                visual_asset_refs=visual_asset_refs,
                 base_prompt=base_prompt,
                 enhanced_prompt=enhanced_prompt,
                 negative_prompt=MANUAL_IMAGE_NEGATIVE_PROMPT,
@@ -371,7 +513,7 @@ def export_project_image_prompts(db: Session, project_id: int) -> ProjectImagePr
 
 
 def export_project_video_prompts(db: Session, project_id: int) -> ProjectVideoPromptExport:
-    get_project_or_404(db, project_id)
+    project = get_project_or_404(db, project_id)
 
     tasks = (
         db.query(AssetTask)
@@ -387,6 +529,7 @@ def export_project_video_prompts(db: Session, project_id: int) -> ProjectVideoPr
     for task in tasks:
         shot = task.shot
         shot_metadata = shot.metadata_json or {}
+        visual_asset_refs = _resolve_visual_asset_refs(project, shot_metadata)
         image_asset = _get_preferred_shot_asset(db, shot_id=shot.id, modality=AssetModality.IMAGE)
         image_asset_url = image_asset.file_url if image_asset is not None else None
         duration = _extract_video_duration(task, shot)
@@ -434,6 +577,10 @@ def export_project_video_prompts(db: Session, project_id: int) -> ProjectVideoPr
                 subtitle_text=shot_metadata.get("subtitle_text"),
                 sfx=shot_metadata.get("sfx"),
                 editing_notes=shot_metadata.get("editing_notes"),
+                character_asset_keys=shot_metadata.get("character_asset_keys") if isinstance(shot_metadata.get("character_asset_keys"), list) else [],
+                scene_asset_key=shot_metadata.get("scene_asset_key"),
+                prop_asset_keys=shot_metadata.get("prop_asset_keys") if isinstance(shot_metadata.get("prop_asset_keys"), list) else [],
+                visual_asset_refs=visual_asset_refs,
                 base_video_prompt=base_video_prompt,
                 copy_ready_video_prompt=copy_ready_video_prompt,
                 negative_prompt=MANUAL_VIDEO_NEGATIVE_PROMPT,
@@ -878,7 +1025,7 @@ def get_project_manual_final_checklist(db: Session, project_id: int) -> ProjectM
 
 
 def get_project_editing_shot_board(db: Session, project_id: int) -> ProjectEditingShotBoard:
-    get_project_or_404(db, project_id)
+    project = get_project_or_404(db, project_id)
 
     shots = (
         db.query(Shot)
@@ -897,6 +1044,7 @@ def get_project_editing_shot_board(db: Session, project_id: int) -> ProjectEditi
 
     for shot in shots:
         shot_metadata = shot.metadata_json or {}
+        visual_asset_refs = _resolve_visual_asset_refs(project, shot_metadata)
         image_asset = _get_preferred_shot_asset(db, shot_id=shot.id, modality=AssetModality.IMAGE)
         image_asset_url = image_asset.file_url if image_asset is not None else None
         has_image_asset = bool(image_asset_url)
@@ -935,6 +1083,10 @@ def get_project_editing_shot_board(db: Session, project_id: int) -> ProjectEditi
                 subtitle_text=shot_metadata.get("subtitle_text"),
                 sfx=shot_metadata.get("sfx"),
                 editing_notes=shot_metadata.get("editing_notes"),
+                character_asset_keys=shot_metadata.get("character_asset_keys") if isinstance(shot_metadata.get("character_asset_keys"), list) else [],
+                scene_asset_key=shot_metadata.get("scene_asset_key"),
+                prop_asset_keys=shot_metadata.get("prop_asset_keys") if isinstance(shot_metadata.get("prop_asset_keys"), list) else [],
+                visual_asset_refs=visual_asset_refs,
                 ready_for_editing=ready_for_editing,
                 blocking_issues=blocking_issues,
             )

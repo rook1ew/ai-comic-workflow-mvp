@@ -125,6 +125,7 @@
 
 - 会创建 `provider_name = manual` 的视频 Asset
 - 对应 video task 会更新为 `succeeded`
+- 如果同一个 video task 或同一个 shot 下同时保留了 mock asset 和 manual asset，人工流程相关读取接口会优先使用 `manual_upload = true` 的 asset
 
 ## 检查单个视频任务
 

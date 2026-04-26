@@ -179,6 +179,51 @@ def _get_first_confirmed_character_reference(db: Session, project_id: int) -> st
     return character.main_reference_url
 
 
+def _select_preferred_asset(assets: list[Asset]) -> Asset | None:
+    if not assets:
+        return None
+
+    manual_assets = [
+        asset
+        for asset in assets
+        if bool((asset.metadata_json or {}).get("manual_upload"))
+    ]
+    if manual_assets:
+        return max(manual_assets, key=lambda asset: asset.id)
+
+    return max(assets, key=lambda asset: asset.id)
+
+
+def _get_preferred_task_asset(
+    db: Session,
+    *,
+    asset_task_id: int,
+    modality: AssetModality,
+) -> Asset | None:
+    assets = (
+        db.query(Asset)
+        .filter(Asset.asset_task_id == asset_task_id, Asset.modality == modality)
+        .order_by(Asset.id.asc())
+        .all()
+    )
+    return _select_preferred_asset(assets)
+
+
+def _get_preferred_shot_asset(
+    db: Session,
+    *,
+    shot_id: int,
+    modality: AssetModality,
+) -> Asset | None:
+    assets = (
+        db.query(Asset)
+        .filter(Asset.shot_id == shot_id, Asset.modality == modality)
+        .order_by(Asset.id.asc())
+        .all()
+    )
+    return _select_preferred_asset(assets)
+
+
 def _build_copy_ready_prompt(enhanced_prompt: str, negative_prompt: str) -> str:
     return "\n".join(
         [
@@ -239,12 +284,7 @@ def export_project_image_prompts(db: Session, project_id: int) -> ProjectImagePr
     for task in tasks:
         shot = task.shot
         shot_metadata = shot.metadata_json or {}
-        asset = (
-            db.query(Asset)
-            .filter(Asset.asset_task_id == task.id, Asset.modality == AssetModality.IMAGE)
-            .order_by(Asset.id.asc())
-            .first()
-        )
+        asset = _get_preferred_task_asset(db, asset_task_id=task.id, modality=AssetModality.IMAGE)
 
         asset_input_payload = {}
         if asset is not None:
@@ -320,12 +360,7 @@ def export_project_video_prompts(db: Session, project_id: int) -> ProjectVideoPr
     for task in tasks:
         shot = task.shot
         shot_metadata = shot.metadata_json or {}
-        image_asset = (
-            db.query(Asset)
-            .filter(Asset.shot_id == shot.id, Asset.modality == AssetModality.IMAGE)
-            .order_by(Asset.id.asc())
-            .first()
-        )
+        image_asset = _get_preferred_shot_asset(db, shot_id=shot.id, modality=AssetModality.IMAGE)
         image_asset_url = image_asset.file_url if image_asset is not None else None
         duration = _extract_video_duration(task, shot)
         blocking_issues: list[str] = []
@@ -393,12 +428,7 @@ def get_project_manual_image_progress(db: Session, project_id: int) -> ProjectMa
     for task in tasks:
         shot = task.shot
         shot_metadata = shot.metadata_json or {}
-        asset = (
-            db.query(Asset)
-            .filter(Asset.asset_task_id == task.id, Asset.modality == AssetModality.IMAGE)
-            .order_by(Asset.id.asc())
-            .first()
-        )
+        asset = _get_preferred_task_asset(db, asset_task_id=task.id, modality=AssetModality.IMAGE)
         has_asset = asset is not None and bool(asset.file_url)
         manual_upload = bool((asset.metadata_json or {}).get("manual_upload")) if asset is not None else False
         if has_asset:
@@ -466,12 +496,7 @@ def get_project_video_readiness(db: Session, project_id: int) -> ProjectVideoRea
     for task in tasks:
         shot = task.shot
         shot_metadata = shot.metadata_json or {}
-        image_asset = (
-            db.query(Asset)
-            .filter(Asset.shot_id == shot.id, Asset.modality == AssetModality.IMAGE)
-            .order_by(Asset.id.asc())
-            .first()
-        )
+        image_asset = _get_preferred_shot_asset(db, shot_id=shot.id, modality=AssetModality.IMAGE)
         has_image_asset = image_asset is not None and bool(image_asset.file_url)
         duration = _extract_video_duration(task, shot)
         has_duration = duration is not None
@@ -544,12 +569,7 @@ def get_project_manual_video_progress(db: Session, project_id: int) -> ProjectMa
     for task in tasks:
         shot = task.shot
         shot_metadata = shot.metadata_json or {}
-        asset = (
-            db.query(Asset)
-            .filter(Asset.asset_task_id == task.id, Asset.modality == AssetModality.VIDEO)
-            .order_by(Asset.id.asc())
-            .first()
-        )
+        asset = _get_preferred_task_asset(db, asset_task_id=task.id, modality=AssetModality.VIDEO)
         has_asset = asset is not None and bool(asset.file_url)
         manual_upload = bool((asset.metadata_json or {}).get("manual_upload")) if asset is not None else False
         duration = _extract_video_duration(task, shot)

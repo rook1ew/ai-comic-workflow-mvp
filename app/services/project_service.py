@@ -15,9 +15,18 @@ from app.models.shot import Shot
 from app.schemas.project import ProjectCreate
 from app.schemas.project import ProjectImagePromptExport
 from app.schemas.project import ProjectImagePromptItem
+from app.schemas.project import ProjectManualProductionSummary
+from app.schemas.project import ManualProductionBlockingSummary
 from app.schemas.project import ProjectManualImageProgress
 from app.schemas.project import ProjectManualImageProgressItem
+from app.schemas.project import ProjectManualFinalChecklist
+from app.schemas.project import ProjectManualVideoProgress
+from app.schemas.project import ProjectManualVideoProgressItem
+from app.schemas.project import ProjectPublishReadiness
 from app.schemas.project import ProjectSummary
+from app.schemas.project import ManualFinalChecklistChecks
+from app.schemas.project import PublishReadinessChecks
+from app.schemas.project import PublishReadinessSummary
 from app.schemas.project import ProjectVideoReadiness
 from app.schemas.project import ProjectVideoReadinessItem
 from app.services.prompt_enhancer import build_image_enhanced_prompt
@@ -404,4 +413,274 @@ def get_project_video_readiness(db: Session, project_id: int) -> ProjectVideoRea
         blocked_video_tasks_count=blocked_video_tasks_count,
         items=items,
         next_action=next_action,
+    )
+
+
+def get_project_manual_video_progress(db: Session, project_id: int) -> ProjectManualVideoProgress:
+    get_project_or_404(db, project_id)
+
+    tasks = (
+        db.query(AssetTask)
+        .join(Shot, AssetTask.shot_id == Shot.id)
+        .join(Scene, Shot.scene_id == Scene.id)
+        .join(Episode, Scene.episode_id == Episode.id)
+        .filter(Episode.project_id == project_id, AssetTask.modality == AssetModality.VIDEO)
+        .order_by(AssetTask.id.asc())
+        .all()
+    )
+
+    items: list[ProjectManualVideoProgressItem] = []
+    completed_video_tasks_count = 0
+    manual_uploaded_count = 0
+
+    for task in tasks:
+        shot = task.shot
+        shot_metadata = shot.metadata_json or {}
+        asset = (
+            db.query(Asset)
+            .filter(Asset.asset_task_id == task.id, Asset.modality == AssetModality.VIDEO)
+            .order_by(Asset.id.asc())
+            .first()
+        )
+        has_asset = asset is not None and bool(asset.file_url)
+        manual_upload = bool((asset.metadata_json or {}).get("manual_upload")) if asset is not None else False
+        duration = _extract_video_duration(task, shot)
+        if has_asset:
+            completed_video_tasks_count += 1
+        if manual_upload:
+            manual_uploaded_count += 1
+
+        items.append(
+            ProjectManualVideoProgressItem(
+                asset_task_id=task.id,
+                internal_shot_id=shot.id,
+                source_shot_id=shot_metadata.get("source_shot_id"),
+                status=task.status.value,
+                has_asset=has_asset,
+                asset_url=asset.file_url if asset is not None else None,
+                manual_upload=manual_upload,
+                needs_manual_video=not has_asset,
+                character=shot_metadata.get("character"),
+                location=shot_metadata.get("location"),
+                emotion=shot_metadata.get("emotion"),
+                duration=duration,
+            )
+        )
+
+    video_tasks_count = len(items)
+    missing_video_tasks_count = video_tasks_count - completed_video_tasks_count
+    next_action = "manual_videos_completed" if video_tasks_count > 0 and missing_video_tasks_count == 0 else "continue_manual_video_generation"
+
+    return ProjectManualVideoProgress(
+        project_id=project_id,
+        video_tasks_count=video_tasks_count,
+        completed_video_tasks_count=completed_video_tasks_count,
+        missing_video_tasks_count=missing_video_tasks_count,
+        manual_uploaded_count=manual_uploaded_count,
+        items=items,
+        next_action=next_action,
+    )
+
+
+def get_project_manual_production_summary(db: Session, project_id: int) -> ProjectManualProductionSummary:
+    get_project_or_404(db, project_id)
+
+    image = get_project_manual_image_progress(db, project_id)
+    video_readiness = get_project_video_readiness(db, project_id)
+    video = get_project_manual_video_progress(db, project_id)
+
+    blocking_summary = ManualProductionBlockingSummary(
+        missing_image_tasks_count=image.missing_image_tasks_count,
+        blocked_video_tasks_count=video_readiness.blocked_video_tasks_count,
+        missing_video_tasks_count=video.missing_video_tasks_count,
+    )
+
+    recommended_steps: list[str] = []
+    if image.missing_image_tasks_count > 0:
+        stage = "manual_image_generation"
+        next_action = "continue_manual_image_generation"
+        recommended_steps = [
+            "Continue generating missing images from image-prompts.",
+            "Upload generated images with manual-asset.",
+            "Run video-readiness again before manual video generation.",
+        ]
+    elif video_readiness.blocked_video_tasks_count > 0:
+        stage = "video_input_fixing"
+        next_action = "fix_video_inputs"
+        recommended_steps = [
+            "Review blocked video tasks in video-readiness.",
+            "Fix missing image assets or duration before generating video.",
+            "Re-run video-readiness until all video tasks are ready.",
+        ]
+    elif video.missing_video_tasks_count > 0:
+        stage = "manual_video_generation"
+        next_action = "continue_manual_video_generation"
+        recommended_steps = [
+            "Generate missing videos with Seedance or another manual video tool.",
+            "Upload generated videos with manual-video-asset.",
+            "Check manual-video-progress until every video task has an asset.",
+        ]
+    else:
+        stage = "manual_production_completed"
+        next_action = "ready_for_publish_or_composition"
+        recommended_steps = [
+            "Review the completed manual production assets.",
+            "Proceed to composition, publishing, or final QA.",
+        ]
+
+    return ProjectManualProductionSummary(
+        project_id=project_id,
+        stage=stage,
+        next_action=next_action,
+        image=image,
+        video_readiness=video_readiness,
+        video=video,
+        blocking_summary=blocking_summary,
+        recommended_steps=recommended_steps,
+    )
+
+
+def get_project_publish_readiness(db: Session, project_id: int) -> ProjectPublishReadiness:
+    get_project_or_404(db, project_id)
+
+    manual_production = get_project_manual_production_summary(db, project_id)
+    project_summary = get_project_summary(db, project_id)
+
+    checks = PublishReadinessChecks(
+        manual_production_completed=manual_production.stage == "manual_production_completed",
+        all_image_tasks_have_assets=manual_production.image.missing_image_tasks_count == 0,
+        all_video_tasks_have_assets=manual_production.video.missing_video_tasks_count == 0,
+        has_failed_tasks=project_summary.failed_tasks_count > 0,
+        has_needs_human_revision_tasks=project_summary.needs_human_revision_count > 0,
+        has_publish_record=project_summary.publish_records_count > 0,
+    )
+
+    summary = PublishReadinessSummary(
+        image_tasks_count=manual_production.image.image_tasks_count,
+        completed_image_tasks_count=manual_production.image.completed_image_tasks_count,
+        video_tasks_count=manual_production.video.video_tasks_count,
+        completed_video_tasks_count=manual_production.video.completed_video_tasks_count,
+        publish_records_count=project_summary.publish_records_count,
+    )
+
+    blocking_issues: list[str] = []
+    warnings: list[str] = []
+
+    if not checks.all_image_tasks_have_assets:
+        stage = "manual_image_generation"
+        next_action = "continue_manual_image_generation"
+        ready_for_publish = False
+        blocking_issues.append("missing_image_assets")
+    elif not checks.all_video_tasks_have_assets:
+        stage = "manual_video_generation"
+        next_action = "continue_manual_video_generation"
+        ready_for_publish = False
+        blocking_issues.append("missing_video_assets")
+    elif checks.has_failed_tasks:
+        stage = "review_failed_tasks"
+        next_action = "review_failed_tasks"
+        ready_for_publish = False
+        blocking_issues.append("failed_tasks_exist")
+    elif checks.has_needs_human_revision_tasks:
+        stage = "review_human_revision_tasks"
+        next_action = "review_human_revision_tasks"
+        ready_for_publish = False
+        blocking_issues.append("needs_human_revision_tasks_exist")
+    elif checks.has_publish_record:
+        stage = "published"
+        next_action = "completed"
+        ready_for_publish = True
+    else:
+        stage = "ready_for_publish"
+        next_action = "create_publish_record"
+        ready_for_publish = True
+        warnings.append("No publish record exists yet.")
+
+    return ProjectPublishReadiness(
+        project_id=project_id,
+        ready_for_publish=ready_for_publish,
+        stage=stage,
+        next_action=next_action,
+        checks=checks,
+        blocking_issues=blocking_issues,
+        warnings=warnings,
+        summary=summary,
+    )
+
+
+def get_project_manual_final_checklist(db: Session, project_id: int) -> ProjectManualFinalChecklist:
+    project = get_project_or_404(db, project_id)
+    manual_production = get_project_manual_production_summary(db, project_id)
+    publish_readiness = get_project_publish_readiness(db, project_id)
+
+    checks = ManualFinalChecklistChecks(
+        images_completed=manual_production.image.missing_image_tasks_count == 0,
+        videos_completed=manual_production.video.missing_video_tasks_count == 0,
+        video_inputs_ready=manual_production.video_readiness.blocked_video_tasks_count == 0,
+        no_failed_tasks="failed_tasks_exist" not in publish_readiness.blocking_issues,
+        no_human_revision_tasks="needs_human_revision_tasks_exist" not in publish_readiness.blocking_issues,
+        publish_record_exists=publish_readiness.checks.has_publish_record,
+    )
+
+    blocking_issues: list[str] = []
+    warnings = list(publish_readiness.warnings)
+    recommended_steps: list[str] = []
+
+    if manual_production.stage != "manual_production_completed":
+        ready_for_delivery = False
+        next_action = manual_production.next_action
+        blocking_issues.append("manual_production_not_completed")
+        blocking_issues.extend(publish_readiness.blocking_issues)
+        recommended_steps = list(manual_production.recommended_steps)
+    elif not publish_readiness.ready_for_publish:
+        ready_for_delivery = False
+        next_action = publish_readiness.next_action
+        blocking_issues.extend(publish_readiness.blocking_issues)
+        if publish_readiness.stage == "review_failed_tasks":
+            recommended_steps = [
+                "Review failed tasks before moving into delivery.",
+                "Re-run or manually fix the failed tasks.",
+            ]
+        elif publish_readiness.stage == "review_human_revision_tasks":
+            recommended_steps = [
+                "Review tasks marked as needs_human_revision.",
+                "Fix the blocking tasks before publish or composition.",
+            ]
+        else:
+            recommended_steps = list(manual_production.recommended_steps)
+    elif publish_readiness.checks.has_publish_record:
+        ready_for_delivery = True
+        next_action = "completed"
+        recommended_steps = [
+            "Publish record already exists.",
+            "Proceed to final delivery, composition, or archive workflow.",
+        ]
+    else:
+        ready_for_delivery = True
+        next_action = "create_publish_record"
+        recommended_steps = [
+            "Create publish record or proceed to final composition/export.",
+        ]
+
+    # De-duplicate while preserving order.
+    seen: set[str] = set()
+    deduped_blocking_issues: list[str] = []
+    for item in blocking_issues:
+        if item and item not in seen:
+            seen.add(item)
+            deduped_blocking_issues.append(item)
+
+    return ProjectManualFinalChecklist(
+        project_id=project_id,
+        ready_for_delivery=ready_for_delivery,
+        production_stage=manual_production.stage,
+        publish_stage=publish_readiness.stage,
+        project_status=project.status,
+        has_publish_record=publish_readiness.checks.has_publish_record,
+        next_action=next_action,
+        checks=checks,
+        blocking_issues=deduped_blocking_issues,
+        warnings=warnings,
+        summary=publish_readiness.summary,
+        recommended_steps=recommended_steps,
     )

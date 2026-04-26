@@ -6,6 +6,10 @@ from app.schemas.project import (
     ProjectCreate,
     ProjectImagePromptExport,
     ProjectManualImageProgress,
+    ProjectManualFinalChecklist,
+    ProjectManualProductionSummary,
+    ProjectManualVideoProgress,
+    ProjectPublishReadiness,
     ProjectResponse,
     ProjectSummary,
     ProjectVideoReadiness,
@@ -17,6 +21,10 @@ from app.services.project_service import (
     export_project_image_prompts,
     get_project_or_404,
     get_project_manual_image_progress,
+    get_project_manual_final_checklist,
+    get_project_manual_production_summary,
+    get_project_manual_video_progress,
+    get_project_publish_readiness,
     get_project_summary,
     get_project_video_readiness,
     list_projects,
@@ -63,3 +71,23 @@ def get_project_manual_image_progress_route(project_id: int, db: Session = Depen
 @router.get("/projects/{project_id}/video-readiness", response_model=ProjectVideoReadiness)
 def get_project_video_readiness_route(project_id: int, db: Session = Depends(get_db)) -> ProjectVideoReadiness:
     return get_project_video_readiness(db, project_id)
+
+
+@router.get("/projects/{project_id}/manual-video-progress", response_model=ProjectManualVideoProgress)
+def get_project_manual_video_progress_route(project_id: int, db: Session = Depends(get_db)) -> ProjectManualVideoProgress:
+    return get_project_manual_video_progress(db, project_id)
+
+
+@router.get("/projects/{project_id}/manual-production-summary", response_model=ProjectManualProductionSummary)
+def get_project_manual_production_summary_route(project_id: int, db: Session = Depends(get_db)) -> ProjectManualProductionSummary:
+    return get_project_manual_production_summary(db, project_id)
+
+
+@router.get("/projects/{project_id}/publish-readiness", response_model=ProjectPublishReadiness)
+def get_project_publish_readiness_route(project_id: int, db: Session = Depends(get_db)) -> ProjectPublishReadiness:
+    return get_project_publish_readiness(db, project_id)
+
+
+@router.get("/projects/{project_id}/manual-final-checklist", response_model=ProjectManualFinalChecklist)
+def get_project_manual_final_checklist_route(project_id: int, db: Session = Depends(get_db)) -> ProjectManualFinalChecklist:
+    return get_project_manual_final_checklist(db, project_id)

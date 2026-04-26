@@ -113,3 +113,97 @@ class ProjectVideoReadiness(BaseModel):
     blocked_video_tasks_count: int
     items: list[ProjectVideoReadinessItem] = Field(default_factory=list)
     next_action: str
+
+
+class ProjectManualVideoProgressItem(BaseModel):
+    asset_task_id: int
+    internal_shot_id: int
+    source_shot_id: str | None = None
+    status: str
+    has_asset: bool
+    asset_url: str | None = None
+    manual_upload: bool
+    needs_manual_video: bool
+    character: str | None = None
+    location: str | None = None
+    emotion: str | None = None
+    duration: int | float | None = None
+
+
+class ProjectManualVideoProgress(BaseModel):
+    project_id: int
+    video_tasks_count: int
+    completed_video_tasks_count: int
+    missing_video_tasks_count: int
+    manual_uploaded_count: int
+    items: list[ProjectManualVideoProgressItem] = Field(default_factory=list)
+    next_action: str
+
+
+class ManualProductionBlockingSummary(BaseModel):
+    missing_image_tasks_count: int
+    blocked_video_tasks_count: int
+    missing_video_tasks_count: int
+
+
+class ProjectManualProductionSummary(BaseModel):
+    project_id: int
+    stage: str
+    next_action: str
+    image: ProjectManualImageProgress
+    video_readiness: ProjectVideoReadiness
+    video: ProjectManualVideoProgress
+    blocking_summary: ManualProductionBlockingSummary
+    recommended_steps: list[str] = Field(default_factory=list)
+
+
+class PublishReadinessChecks(BaseModel):
+    manual_production_completed: bool
+    all_image_tasks_have_assets: bool
+    all_video_tasks_have_assets: bool
+    has_failed_tasks: bool
+    has_needs_human_revision_tasks: bool
+    has_publish_record: bool
+
+
+class PublishReadinessSummary(BaseModel):
+    image_tasks_count: int
+    completed_image_tasks_count: int
+    video_tasks_count: int
+    completed_video_tasks_count: int
+    publish_records_count: int
+
+
+class ProjectPublishReadiness(BaseModel):
+    project_id: int
+    ready_for_publish: bool
+    stage: str
+    next_action: str
+    checks: PublishReadinessChecks
+    blocking_issues: list[str] = Field(default_factory=list)
+    warnings: list[str] = Field(default_factory=list)
+    summary: PublishReadinessSummary
+
+
+class ManualFinalChecklistChecks(BaseModel):
+    images_completed: bool
+    videos_completed: bool
+    video_inputs_ready: bool
+    no_failed_tasks: bool
+    no_human_revision_tasks: bool
+    publish_record_exists: bool
+
+
+class ProjectManualFinalChecklist(BaseModel):
+    project_id: int
+    ready_for_delivery: bool
+    production_stage: str
+    publish_stage: str
+    project_status: ProjectStatus
+    has_publish_record: bool
+    next_action: str
+    checks: ManualFinalChecklistChecks
+    blocking_issues: list[str] = Field(default_factory=list)
+    warnings: list[str] = Field(default_factory=list)
+    summary: PublishReadinessSummary
+    recommended_steps: list[str] = Field(default_factory=list)

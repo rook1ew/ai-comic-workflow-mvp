@@ -484,6 +484,58 @@ Example response:
 }
 ```
 
+### GET `/projects/{project_id}/manual-video-progress`
+
+Project-level progress view for manual video generation and manual video asset registration.
+
+Use cases:
+
+- quickly see which video tasks already have videos
+- find which video tasks still need manual video generation
+- confirm whether the project has completed the manual video stage before publish or composition
+
+Behavior:
+
+- only counts `video` asset tasks
+- if a video task already has an asset URL, `has_asset = true`
+- if `metadata_json.manual_upload = true`, `manual_upload = true`
+- if a video task has no asset URL, `needs_manual_video = true`
+- duration priority is:
+  1. `Shot.metadata_json.duration_sec`
+  2. `task.input_payload.duration`
+  3. `task.input_payload.duration_sec`
+- if all video tasks are completed, `next_action = manual_videos_completed`
+- otherwise `next_action = continue_manual_video_generation`
+
+Example response:
+
+```json
+{
+  "project_id": 1,
+  "video_tasks_count": 5,
+  "completed_video_tasks_count": 2,
+  "missing_video_tasks_count": 3,
+  "manual_uploaded_count": 2,
+  "items": [
+    {
+      "asset_task_id": 10,
+      "internal_shot_id": 1,
+      "source_shot_id": "SH01",
+      "status": "succeeded",
+      "has_asset": true,
+      "asset_url": "file:///D:/ai-comic-assets/SH01_video.mp4",
+      "manual_upload": true,
+      "needs_manual_video": false,
+      "character": "Lin Xia",
+      "location": "Meeting Room",
+      "emotion": "nervous",
+      "duration": 3
+    }
+  ],
+  "next_action": "manual_videos_completed"
+}
+```
+
 Response example:
 
 ```json
@@ -634,3 +686,162 @@ Response example:
   "next_action": "completed"
 }
 ```
+
+### GET `/projects/{project_id}/manual-production-summary`
+
+Project-level overview for the full manual production chain.
+
+Use cases:
+
+- check the current manual production stage with a single request
+- decide whether to continue manual image generation, fix video inputs, or continue manual video generation
+- give Coze or an operator one summary view before opening more detailed endpoints
+
+Response example:
+
+```json
+{
+  "project_id": 1,
+  "stage": "manual_image_generation",
+  "next_action": "continue_manual_image_generation",
+  "image": {
+    "image_tasks_count": 5,
+    "completed_image_tasks_count": 2,
+    "missing_image_tasks_count": 3,
+    "manual_uploaded_count": 2,
+    "next_action": "continue_manual_image_generation"
+  },
+  "video_readiness": {
+    "video_tasks_count": 5,
+    "ready_video_tasks_count": 2,
+    "blocked_video_tasks_count": 3,
+    "next_action": "continue_manual_image_generation"
+  },
+  "video": {
+    "video_tasks_count": 5,
+    "completed_video_tasks_count": 0,
+    "missing_video_tasks_count": 5,
+    "manual_uploaded_count": 0,
+    "next_action": "continue_manual_video_generation"
+  },
+  "blocking_summary": {
+    "missing_image_tasks_count": 3,
+    "blocked_video_tasks_count": 3,
+    "missing_video_tasks_count": 5
+  },
+  "recommended_steps": [
+    "Continue generating missing images from image-prompts.",
+    "Upload generated images with manual-asset.",
+    "Run video-readiness again before manual video generation."
+  ]
+}
+```
+
+Stage rules:
+
+- if image tasks are still missing assets: `stage = manual_image_generation`
+- if all images are done but video inputs are still blocked: `stage = video_input_fixing`
+- if video inputs are ready but video assets are still missing: `stage = manual_video_generation`
+- if both image and video assets are complete: `stage = manual_production_completed`
+
+### GET `/projects/{project_id}/publish-readiness`
+
+Final project-level check before publish, composition, or release.
+
+Use cases:
+
+- check whether all manual image tasks and manual video tasks are complete
+- detect failed tasks or human-revision tasks before creating a publish record
+- decide whether the project can move into publish or composition
+
+Response example:
+
+```json
+{
+  "project_id": 1,
+  "ready_for_publish": true,
+  "stage": "ready_for_publish",
+  "next_action": "create_publish_record",
+  "checks": {
+    "manual_production_completed": true,
+    "all_image_tasks_have_assets": true,
+    "all_video_tasks_have_assets": true,
+    "has_failed_tasks": false,
+    "has_needs_human_revision_tasks": false,
+    "has_publish_record": false
+  },
+  "blocking_issues": [],
+  "warnings": [
+    "No publish record exists yet."
+  ],
+  "summary": {
+    "image_tasks_count": 5,
+    "completed_image_tasks_count": 5,
+    "video_tasks_count": 5,
+    "completed_video_tasks_count": 5,
+    "publish_records_count": 0
+  }
+}
+```
+
+Decision rules:
+
+- missing image assets: `stage = manual_image_generation`
+- missing video assets: `stage = manual_video_generation`
+- failed tasks exist: `stage = review_failed_tasks`
+- needs-human-revision tasks exist: `stage = review_human_revision_tasks`
+- everything complete and no publish record yet: `stage = ready_for_publish`
+- publish record already exists: `stage = published`
+
+### GET `/projects/{project_id}/manual-final-checklist`
+
+Final delivery checklist for the manual production path.
+
+Use cases:
+
+- check whether the project is fully ready for composition, publish, or delivery
+- combine manual production stage and publish readiness into one final decision
+- let Coze or an operator read one endpoint before the final handoff
+
+Response example:
+
+```json
+{
+  "project_id": 1,
+  "ready_for_delivery": true,
+  "production_stage": "manual_production_completed",
+  "publish_stage": "ready_for_publish",
+  "project_status": "draft",
+  "has_publish_record": false,
+  "next_action": "create_publish_record",
+  "checks": {
+    "images_completed": true,
+    "videos_completed": true,
+    "video_inputs_ready": true,
+    "no_failed_tasks": true,
+    "no_human_revision_tasks": true,
+    "publish_record_exists": false
+  },
+  "blocking_issues": [],
+  "warnings": [
+    "No publish record exists yet."
+  ],
+  "summary": {
+    "image_tasks_count": 5,
+    "completed_image_tasks_count": 5,
+    "video_tasks_count": 5,
+    "completed_video_tasks_count": 5,
+    "publish_records_count": 0
+  },
+  "recommended_steps": [
+    "Create publish record or proceed to final composition/export."
+  ]
+}
+```
+
+Decision rules:
+
+- if manual production is not complete, this endpoint blocks delivery first
+- if publish-readiness is blocked, this endpoint follows the publish-readiness stage
+- if production is complete and publish-readiness is ready, delivery is allowed
+- if a publish record already exists, `next_action = completed`

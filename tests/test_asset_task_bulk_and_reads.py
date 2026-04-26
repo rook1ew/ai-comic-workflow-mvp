@@ -536,6 +536,684 @@ def test_video_readiness_missing_project_returns_404(client):
     assert response.status_code == 404
 
 
+def test_manual_video_progress_returns_all_project_video_tasks(client):
+    project, shot1, shot2 = _create_project_graph(client)
+    client.post("/asset-tasks", json={"shot_id": shot1["id"], "modality": "video", "provider_name": "mock"})
+    client.post("/asset-tasks", json={"shot_id": shot2["id"], "modality": "video", "provider_name": "mock"})
+
+    response = client.get(f"/projects/{project['id']}/manual-video-progress")
+    assert response.status_code == 200
+    body = response.json()
+    assert body["project_id"] == project["id"]
+    assert body["video_tasks_count"] == 2
+    assert len(body["items"]) == 2
+
+
+def test_manual_video_progress_shows_manual_uploaded_task(client):
+    project, shot1, _ = _create_project_graph(client)
+    image_task = client.post("/asset-tasks", json={"shot_id": shot1["id"], "modality": "image", "provider_name": "mock"}).json()
+    client.post(
+        f"/asset-tasks/{image_task['id']}/manual-asset",
+        json={"asset_url": "file:///D:/ai-comic-assets/SH01.png", "asset_type": "image", "notes": "manual image"},
+    )
+    video_task = client.post(
+        "/asset-tasks",
+        json={"shot_id": shot1["id"], "modality": "video", "provider_name": "mock", "input_payload": {"duration": 3}},
+    ).json()
+    client.post(
+        f"/asset-tasks/{video_task['id']}/manual-video-asset",
+        json={"asset_url": "file:///D:/ai-comic-assets/SH01_video.mp4", "asset_type": "video", "notes": "manual video"},
+    )
+
+    response = client.get(f"/projects/{project['id']}/manual-video-progress")
+    assert response.status_code == 200
+    item = next(exported for exported in response.json()["items"] if exported["asset_task_id"] == video_task["id"])
+    assert item["has_asset"] is True
+    assert item["manual_upload"] is True
+    assert item["needs_manual_video"] is False
+    assert item["asset_url"] == "file:///D:/ai-comic-assets/SH01_video.mp4"
+    assert item["duration"] == 3
+
+
+def test_manual_video_progress_shows_missing_items_and_continue_action(client):
+    project, shot1, shot2 = _create_project_graph(client)
+    image_task = client.post("/asset-tasks", json={"shot_id": shot1["id"], "modality": "image", "provider_name": "mock"}).json()
+    client.post(
+        f"/asset-tasks/{image_task['id']}/manual-asset",
+        json={"asset_url": "file:///D:/ai-comic-assets/SH01.png", "asset_type": "image", "notes": "manual image"},
+    )
+    ready_video_task = client.post(
+        "/asset-tasks",
+        json={"shot_id": shot1["id"], "modality": "video", "provider_name": "mock", "input_payload": {"duration": 3}},
+    ).json()
+    missing_video_task = client.post(
+        "/asset-tasks",
+        json={"shot_id": shot2["id"], "modality": "video", "provider_name": "mock"},
+    ).json()
+    client.post(
+        f"/asset-tasks/{ready_video_task['id']}/manual-video-asset",
+        json={"asset_url": "file:///D:/ai-comic-assets/SH01_video.mp4", "asset_type": "video", "notes": "manual video"},
+    )
+
+    response = client.get(f"/projects/{project['id']}/manual-video-progress")
+    body = response.json()
+    item = next(exported for exported in body["items"] if exported["asset_task_id"] == missing_video_task["id"])
+    assert item["has_asset"] is False
+    assert item["needs_manual_video"] is True
+    assert body["completed_video_tasks_count"] == 1
+    assert body["missing_video_tasks_count"] == 1
+    assert body["manual_uploaded_count"] == 1
+    assert body["next_action"] == "continue_manual_video_generation"
+
+
+def test_manual_video_progress_all_completed_returns_manual_videos_completed(client):
+    project, shot1, shot2 = _create_project_graph(client)
+    image_task_1 = client.post("/asset-tasks", json={"shot_id": shot1["id"], "modality": "image", "provider_name": "mock"}).json()
+    image_task_2 = client.post("/asset-tasks", json={"shot_id": shot2["id"], "modality": "image", "provider_name": "mock"}).json()
+    client.post(
+        f"/asset-tasks/{image_task_1['id']}/manual-asset",
+        json={"asset_url": "file:///D:/ai-comic-assets/SH01.png", "asset_type": "image", "notes": "manual image 1"},
+    )
+    client.post(
+        f"/asset-tasks/{image_task_2['id']}/manual-asset",
+        json={"asset_url": "file:///D:/ai-comic-assets/SH02.png", "asset_type": "image", "notes": "manual image 2"},
+    )
+    video_task_1 = client.post(
+        "/asset-tasks",
+        json={"shot_id": shot1["id"], "modality": "video", "provider_name": "mock", "input_payload": {"duration": 3}},
+    ).json()
+    video_task_2 = client.post(
+        "/asset-tasks",
+        json={"shot_id": shot2["id"], "modality": "video", "provider_name": "mock", "input_payload": {"duration": 5}},
+    ).json()
+    client.post(
+        f"/asset-tasks/{video_task_1['id']}/manual-video-asset",
+        json={"asset_url": "file:///D:/ai-comic-assets/SH01_video.mp4", "asset_type": "video", "notes": "manual video 1"},
+    )
+    client.post(
+        f"/asset-tasks/{video_task_2['id']}/manual-video-asset",
+        json={"asset_url": "file:///D:/ai-comic-assets/SH02_video.mp4", "asset_type": "video", "notes": "manual video 2"},
+    )
+
+    response = client.get(f"/projects/{project['id']}/manual-video-progress")
+    body = response.json()
+    assert body["completed_video_tasks_count"] == 2
+    assert body["missing_video_tasks_count"] == 0
+    assert body["manual_uploaded_count"] == 2
+    assert body["next_action"] == "manual_videos_completed"
+
+
+def test_manual_video_progress_missing_project_returns_404(client):
+    response = client.get("/projects/9999/manual-video-progress")
+    assert response.status_code == 404
+
+
+def test_manual_production_summary_returns_three_sections(client):
+    project, shot1, shot2 = _create_project_graph(client)
+    client.post("/asset-tasks", json={"shot_id": shot1["id"], "modality": "image", "provider_name": "mock"})
+    client.post("/asset-tasks", json={"shot_id": shot2["id"], "modality": "image", "provider_name": "mock"})
+    client.post("/asset-tasks", json={"shot_id": shot1["id"], "modality": "video", "provider_name": "mock", "input_payload": {"duration": 3}})
+    client.post("/asset-tasks", json={"shot_id": shot2["id"], "modality": "video", "provider_name": "mock"})
+
+    response = client.get(f"/projects/{project['id']}/manual-production-summary")
+    assert response.status_code == 200
+    body = response.json()
+    assert "image" in body
+    assert "video_readiness" in body
+    assert "video" in body
+
+
+def test_manual_production_summary_stage_manual_image_generation(client):
+    project, shot1, shot2 = _create_project_graph(client)
+    image_task_1 = client.post("/asset-tasks", json={"shot_id": shot1["id"], "modality": "image", "provider_name": "mock"}).json()
+    client.post("/asset-tasks", json={"shot_id": shot2["id"], "modality": "image", "provider_name": "mock"})
+    client.post(
+        f"/asset-tasks/{image_task_1['id']}/manual-asset",
+        json={"asset_url": "file:///D:/ai-comic-assets/SH01.png", "asset_type": "image", "notes": "manual image"},
+    )
+    client.post("/asset-tasks", json={"shot_id": shot1["id"], "modality": "video", "provider_name": "mock", "input_payload": {"duration": 3}})
+
+    response = client.get(f"/projects/{project['id']}/manual-production-summary")
+    body = response.json()
+    assert body["stage"] == "manual_image_generation"
+    assert body["next_action"] == "continue_manual_image_generation"
+
+
+def test_manual_production_summary_stage_video_input_fixing(client):
+    project, shot1, shot2 = _create_project_graph(client)
+    image_task_1 = client.post("/asset-tasks", json={"shot_id": shot1["id"], "modality": "image", "provider_name": "mock"}).json()
+    image_task_2 = client.post("/asset-tasks", json={"shot_id": shot2["id"], "modality": "image", "provider_name": "mock"}).json()
+    client.post(
+        f"/asset-tasks/{image_task_1['id']}/manual-asset",
+        json={"asset_url": "file:///D:/ai-comic-assets/SH01.png", "asset_type": "image", "notes": "manual image 1"},
+    )
+    client.post(
+        f"/asset-tasks/{image_task_2['id']}/manual-asset",
+        json={"asset_url": "file:///D:/ai-comic-assets/SH02.png", "asset_type": "image", "notes": "manual image 2"},
+    )
+    client.post("/asset-tasks", json={"shot_id": shot1["id"], "modality": "video", "provider_name": "mock", "input_payload": {"duration": 3}})
+    client.post("/asset-tasks", json={"shot_id": shot2["id"], "modality": "video", "provider_name": "mock"})
+
+    response = client.get(f"/projects/{project['id']}/manual-production-summary")
+    body = response.json()
+    assert body["stage"] == "video_input_fixing"
+    assert body["next_action"] == "fix_video_inputs"
+
+
+def test_manual_production_summary_stage_manual_video_generation(client):
+    project, shot1, shot2 = _create_project_graph(client)
+    image_task_1 = client.post("/asset-tasks", json={"shot_id": shot1["id"], "modality": "image", "provider_name": "mock"}).json()
+    image_task_2 = client.post("/asset-tasks", json={"shot_id": shot2["id"], "modality": "image", "provider_name": "mock"}).json()
+    client.post(
+        f"/asset-tasks/{image_task_1['id']}/manual-asset",
+        json={"asset_url": "file:///D:/ai-comic-assets/SH01.png", "asset_type": "image", "notes": "manual image 1"},
+    )
+    client.post(
+        f"/asset-tasks/{image_task_2['id']}/manual-asset",
+        json={"asset_url": "file:///D:/ai-comic-assets/SH02.png", "asset_type": "image", "notes": "manual image 2"},
+    )
+    client.post("/asset-tasks", json={"shot_id": shot1["id"], "modality": "video", "provider_name": "mock", "input_payload": {"duration": 3}})
+    client.post("/asset-tasks", json={"shot_id": shot2["id"], "modality": "video", "provider_name": "mock", "input_payload": {"duration": 5}})
+
+    response = client.get(f"/projects/{project['id']}/manual-production-summary")
+    body = response.json()
+    assert body["stage"] == "manual_video_generation"
+    assert body["next_action"] == "continue_manual_video_generation"
+
+
+def test_manual_production_summary_stage_completed(client):
+    project, shot1, shot2 = _create_project_graph(client)
+    image_task_1 = client.post("/asset-tasks", json={"shot_id": shot1["id"], "modality": "image", "provider_name": "mock"}).json()
+    image_task_2 = client.post("/asset-tasks", json={"shot_id": shot2["id"], "modality": "image", "provider_name": "mock"}).json()
+    client.post(
+        f"/asset-tasks/{image_task_1['id']}/manual-asset",
+        json={"asset_url": "file:///D:/ai-comic-assets/SH01.png", "asset_type": "image", "notes": "manual image 1"},
+    )
+    client.post(
+        f"/asset-tasks/{image_task_2['id']}/manual-asset",
+        json={"asset_url": "file:///D:/ai-comic-assets/SH02.png", "asset_type": "image", "notes": "manual image 2"},
+    )
+    video_task_1 = client.post(
+        "/asset-tasks",
+        json={"shot_id": shot1["id"], "modality": "video", "provider_name": "mock", "input_payload": {"duration": 3}},
+    ).json()
+    video_task_2 = client.post(
+        "/asset-tasks",
+        json={"shot_id": shot2["id"], "modality": "video", "provider_name": "mock", "input_payload": {"duration": 5}},
+    ).json()
+    client.post(
+        f"/asset-tasks/{video_task_1['id']}/manual-video-asset",
+        json={"asset_url": "file:///D:/ai-comic-assets/SH01_video.mp4", "asset_type": "video", "notes": "manual video 1"},
+    )
+    client.post(
+        f"/asset-tasks/{video_task_2['id']}/manual-video-asset",
+        json={"asset_url": "file:///D:/ai-comic-assets/SH02_video.mp4", "asset_type": "video", "notes": "manual video 2"},
+    )
+
+    response = client.get(f"/projects/{project['id']}/manual-production-summary")
+    body = response.json()
+    assert body["stage"] == "manual_production_completed"
+    assert body["next_action"] == "ready_for_publish_or_composition"
+
+
+def test_manual_production_summary_recommended_steps_not_empty(client):
+    project, shot1, _ = _create_project_graph(client)
+    client.post("/asset-tasks", json={"shot_id": shot1["id"], "modality": "image", "provider_name": "mock"})
+
+    response = client.get(f"/projects/{project['id']}/manual-production-summary")
+    body = response.json()
+    assert body["recommended_steps"]
+
+
+def test_manual_production_summary_missing_project_returns_404(client):
+    response = client.get("/projects/9999/manual-production-summary")
+    assert response.status_code == 404
+
+
+def test_publish_readiness_returns_missing_image_assets(client):
+    project, shot1, shot2 = _create_project_graph(client)
+    client.post("/asset-tasks", json={"shot_id": shot1["id"], "modality": "image", "provider_name": "mock"})
+    client.post("/asset-tasks", json={"shot_id": shot2["id"], "modality": "image", "provider_name": "mock"})
+    client.post("/asset-tasks", json={"shot_id": shot1["id"], "modality": "video", "provider_name": "mock", "input_payload": {"duration": 3}})
+
+    response = client.get(f"/projects/{project['id']}/publish-readiness")
+    assert response.status_code == 200
+    body = response.json()
+    assert body["ready_for_publish"] is False
+    assert body["stage"] == "manual_image_generation"
+    assert body["next_action"] == "continue_manual_image_generation"
+    assert "missing_image_assets" in body["blocking_issues"]
+
+
+def test_publish_readiness_returns_missing_video_assets(client):
+    project, shot1, shot2 = _create_project_graph(client)
+    image_task_1 = client.post("/asset-tasks", json={"shot_id": shot1["id"], "modality": "image", "provider_name": "mock"}).json()
+    image_task_2 = client.post("/asset-tasks", json={"shot_id": shot2["id"], "modality": "image", "provider_name": "mock"}).json()
+    client.post(
+        f"/asset-tasks/{image_task_1['id']}/manual-asset",
+        json={"asset_url": "file:///D:/ai-comic-assets/SH01.png", "asset_type": "image", "notes": "manual image 1"},
+    )
+    client.post(
+        f"/asset-tasks/{image_task_2['id']}/manual-asset",
+        json={"asset_url": "file:///D:/ai-comic-assets/SH02.png", "asset_type": "image", "notes": "manual image 2"},
+    )
+    client.post("/asset-tasks", json={"shot_id": shot1["id"], "modality": "video", "provider_name": "mock", "input_payload": {"duration": 3}})
+    client.post("/asset-tasks", json={"shot_id": shot2["id"], "modality": "video", "provider_name": "mock", "input_payload": {"duration": 5}})
+
+    response = client.get(f"/projects/{project['id']}/publish-readiness")
+    body = response.json()
+    assert body["ready_for_publish"] is False
+    assert body["stage"] == "manual_video_generation"
+    assert body["next_action"] == "continue_manual_video_generation"
+    assert "missing_video_assets" in body["blocking_issues"]
+
+
+def test_publish_readiness_returns_ready_when_image_and_video_complete(client):
+    project, shot1, shot2 = _create_project_graph(client)
+    image_task_1 = client.post("/asset-tasks", json={"shot_id": shot1["id"], "modality": "image", "provider_name": "mock"}).json()
+    image_task_2 = client.post("/asset-tasks", json={"shot_id": shot2["id"], "modality": "image", "provider_name": "mock"}).json()
+    client.post(
+        f"/asset-tasks/{image_task_1['id']}/manual-asset",
+        json={"asset_url": "file:///D:/ai-comic-assets/SH01.png", "asset_type": "image", "notes": "manual image 1"},
+    )
+    client.post(
+        f"/asset-tasks/{image_task_2['id']}/manual-asset",
+        json={"asset_url": "file:///D:/ai-comic-assets/SH02.png", "asset_type": "image", "notes": "manual image 2"},
+    )
+    video_task_1 = client.post(
+        "/asset-tasks",
+        json={"shot_id": shot1["id"], "modality": "video", "provider_name": "mock", "input_payload": {"duration": 3}},
+    ).json()
+    video_task_2 = client.post(
+        "/asset-tasks",
+        json={"shot_id": shot2["id"], "modality": "video", "provider_name": "mock", "input_payload": {"duration": 5}},
+    ).json()
+    client.post(
+        f"/asset-tasks/{video_task_1['id']}/manual-video-asset",
+        json={"asset_url": "file:///D:/ai-comic-assets/SH01_video.mp4", "asset_type": "video", "notes": "manual video 1"},
+    )
+    client.post(
+        f"/asset-tasks/{video_task_2['id']}/manual-video-asset",
+        json={"asset_url": "file:///D:/ai-comic-assets/SH02_video.mp4", "asset_type": "video", "notes": "manual video 2"},
+    )
+
+    response = client.get(f"/projects/{project['id']}/publish-readiness")
+    body = response.json()
+    assert body["ready_for_publish"] is True
+    assert body["stage"] == "ready_for_publish"
+    assert body["next_action"] == "create_publish_record"
+
+
+def test_publish_readiness_returns_failed_tasks_exist(client):
+    project, shot1, shot2 = _create_project_graph(client)
+    image_task_1 = client.post("/asset-tasks", json={"shot_id": shot1["id"], "modality": "image", "provider_name": "mock"}).json()
+    image_task_2 = client.post("/asset-tasks", json={"shot_id": shot2["id"], "modality": "image", "provider_name": "mock"}).json()
+    client.post(
+        f"/asset-tasks/{image_task_1['id']}/manual-asset",
+        json={"asset_url": "file:///D:/ai-comic-assets/SH01.png", "asset_type": "image", "notes": "manual image 1"},
+    )
+    client.post(
+        f"/asset-tasks/{image_task_2['id']}/manual-asset",
+        json={"asset_url": "file:///D:/ai-comic-assets/SH02.png", "asset_type": "image", "notes": "manual image 2"},
+    )
+    video_task_1 = client.post(
+        "/asset-tasks",
+        json={"shot_id": shot1["id"], "modality": "video", "provider_name": "mock", "input_payload": {"duration": 3}},
+    ).json()
+    video_task_2 = client.post(
+        "/asset-tasks",
+        json={"shot_id": shot2["id"], "modality": "video", "provider_name": "mock", "input_payload": {"duration": 5}},
+    ).json()
+    client.post(
+        f"/asset-tasks/{video_task_1['id']}/manual-video-asset",
+        json={"asset_url": "file:///D:/ai-comic-assets/SH01_video.mp4", "asset_type": "video", "notes": "manual video 1"},
+    )
+    client.post(
+        f"/asset-tasks/{video_task_2['id']}/manual-video-asset",
+        json={"asset_url": "file:///D:/ai-comic-assets/SH02_video.mp4", "asset_type": "video", "notes": "manual video 2"},
+    )
+    failing_task = client.post(
+        "/asset-tasks",
+        json={"shot_id": shot2["id"], "modality": "voice", "provider_name": "mock", "input_payload": {"should_fail": True}},
+    ).json()
+    client.post(f"/asset-tasks/{failing_task['id']}/run")
+
+    response = client.get(f"/projects/{project['id']}/publish-readiness")
+    body = response.json()
+    assert body["ready_for_publish"] is False
+    assert body["stage"] == "review_failed_tasks"
+    assert body["next_action"] == "review_failed_tasks"
+    assert "failed_tasks_exist" in body["blocking_issues"]
+
+
+def test_publish_readiness_returns_needs_human_revision_tasks_exist(client):
+    project, shot1, shot2 = _create_project_graph(client)
+    image_task_1 = client.post("/asset-tasks", json={"shot_id": shot1["id"], "modality": "image", "provider_name": "mock"}).json()
+    image_task_2 = client.post("/asset-tasks", json={"shot_id": shot2["id"], "modality": "image", "provider_name": "mock"}).json()
+    client.post(
+        f"/asset-tasks/{image_task_1['id']}/manual-asset",
+        json={"asset_url": "file:///D:/ai-comic-assets/SH01.png", "asset_type": "image", "notes": "manual image 1"},
+    )
+    client.post(
+        f"/asset-tasks/{image_task_2['id']}/manual-asset",
+        json={"asset_url": "file:///D:/ai-comic-assets/SH02.png", "asset_type": "image", "notes": "manual image 2"},
+    )
+    video_task_1 = client.post(
+        "/asset-tasks",
+        json={"shot_id": shot1["id"], "modality": "video", "provider_name": "mock", "input_payload": {"duration": 3}},
+    ).json()
+    video_task_2 = client.post(
+        "/asset-tasks",
+        json={"shot_id": shot2["id"], "modality": "video", "provider_name": "mock", "input_payload": {"duration": 5}},
+    ).json()
+    client.post(
+        f"/asset-tasks/{video_task_1['id']}/manual-video-asset",
+        json={"asset_url": "file:///D:/ai-comic-assets/SH01_video.mp4", "asset_type": "video", "notes": "manual video 1"},
+    )
+    client.post(
+        f"/asset-tasks/{video_task_2['id']}/manual-video-asset",
+        json={"asset_url": "file:///D:/ai-comic-assets/SH02_video.mp4", "asset_type": "video", "notes": "manual video 2"},
+    )
+    client.post(
+        "/asset-tasks",
+        json={"shot_id": shot2["id"], "modality": "voice", "provider_name": "mock", "retry_count": 4, "max_retries": 3},
+    )
+
+    response = client.get(f"/projects/{project['id']}/publish-readiness")
+    body = response.json()
+    assert body["ready_for_publish"] is False
+    assert body["stage"] == "review_human_revision_tasks"
+    assert body["next_action"] == "review_human_revision_tasks"
+    assert "needs_human_revision_tasks_exist" in body["blocking_issues"]
+
+
+def test_publish_readiness_returns_completed_when_publish_record_exists(client):
+    project, shot1, shot2 = _create_project_graph(client)
+    image_task_1 = client.post("/asset-tasks", json={"shot_id": shot1["id"], "modality": "image", "provider_name": "mock"}).json()
+    image_task_2 = client.post("/asset-tasks", json={"shot_id": shot2["id"], "modality": "image", "provider_name": "mock"}).json()
+    client.post(
+        f"/asset-tasks/{image_task_1['id']}/manual-asset",
+        json={"asset_url": "file:///D:/ai-comic-assets/SH01.png", "asset_type": "image", "notes": "manual image 1"},
+    )
+    client.post(
+        f"/asset-tasks/{image_task_2['id']}/manual-asset",
+        json={"asset_url": "file:///D:/ai-comic-assets/SH02.png", "asset_type": "image", "notes": "manual image 2"},
+    )
+    video_task_1 = client.post(
+        "/asset-tasks",
+        json={"shot_id": shot1["id"], "modality": "video", "provider_name": "mock", "input_payload": {"duration": 3}},
+    ).json()
+    video_task_2 = client.post(
+        "/asset-tasks",
+        json={"shot_id": shot2["id"], "modality": "video", "provider_name": "mock", "input_payload": {"duration": 5}},
+    ).json()
+    client.post(
+        f"/asset-tasks/{video_task_1['id']}/manual-video-asset",
+        json={"asset_url": "file:///D:/ai-comic-assets/SH01_video.mp4", "asset_type": "video", "notes": "manual video 1"},
+    )
+    client.post(
+        f"/asset-tasks/{video_task_2['id']}/manual-video-asset",
+        json={"asset_url": "file:///D:/ai-comic-assets/SH02_video.mp4", "asset_type": "video", "notes": "manual video 2"},
+    )
+    client.post(
+        "/publish-records",
+        json={
+            "project_id": project["id"],
+            "platform": "douyin",
+            "title": "Episode 1",
+            "published_at": "2026-04-26T10:00:00",
+            "link": "https://www.douyin.com/video/demo",
+        },
+    )
+
+    response = client.get(f"/projects/{project['id']}/publish-readiness")
+    body = response.json()
+    assert body["ready_for_publish"] is True
+    assert body["stage"] == "published"
+    assert body["next_action"] == "completed"
+    assert body["checks"]["has_publish_record"] is True
+
+
+def test_publish_readiness_missing_project_returns_404(client):
+    response = client.get("/projects/9999/publish-readiness")
+    assert response.status_code == 404
+
+
+def test_manual_final_checklist_returns_sections_and_recommended_steps(client):
+    project, shot1, _ = _create_project_graph(client)
+    client.post("/asset-tasks", json={"shot_id": shot1["id"], "modality": "image", "provider_name": "mock"})
+
+    response = client.get(f"/projects/{project['id']}/manual-final-checklist")
+    assert response.status_code == 200
+    body = response.json()
+    assert "production_stage" in body
+    assert "publish_stage" in body
+    assert "checks" in body
+    assert body["recommended_steps"]
+
+
+def test_manual_final_checklist_not_ready_when_manual_production_incomplete(client):
+    project, shot1, shot2 = _create_project_graph(client)
+    image_task_1 = client.post("/asset-tasks", json={"shot_id": shot1["id"], "modality": "image", "provider_name": "mock"}).json()
+    client.post("/asset-tasks", json={"shot_id": shot2["id"], "modality": "image", "provider_name": "mock"})
+    client.post(
+        f"/asset-tasks/{image_task_1['id']}/manual-asset",
+        json={"asset_url": "file:///D:/ai-comic-assets/SH01.png", "asset_type": "image", "notes": "manual image"},
+    )
+
+    response = client.get(f"/projects/{project['id']}/manual-final-checklist")
+    body = response.json()
+    assert body["ready_for_delivery"] is False
+    assert body["production_stage"] == "manual_image_generation"
+    assert body["next_action"] == "continue_manual_image_generation"
+    assert "manual_production_not_completed" in body["blocking_issues"]
+
+
+def test_manual_final_checklist_not_ready_when_publish_readiness_blocked(client):
+    project, shot1, shot2 = _create_project_graph(client)
+    image_task_1 = client.post("/asset-tasks", json={"shot_id": shot1["id"], "modality": "image", "provider_name": "mock"}).json()
+    image_task_2 = client.post("/asset-tasks", json={"shot_id": shot2["id"], "modality": "image", "provider_name": "mock"}).json()
+    client.post(
+        f"/asset-tasks/{image_task_1['id']}/manual-asset",
+        json={"asset_url": "file:///D:/ai-comic-assets/SH01.png", "asset_type": "image", "notes": "manual image 1"},
+    )
+    client.post(
+        f"/asset-tasks/{image_task_2['id']}/manual-asset",
+        json={"asset_url": "file:///D:/ai-comic-assets/SH02.png", "asset_type": "image", "notes": "manual image 2"},
+    )
+    video_task_1 = client.post(
+        "/asset-tasks",
+        json={"shot_id": shot1["id"], "modality": "video", "provider_name": "mock", "input_payload": {"duration": 3}},
+    ).json()
+    video_task_2 = client.post(
+        "/asset-tasks",
+        json={"shot_id": shot2["id"], "modality": "video", "provider_name": "mock", "input_payload": {"duration": 5}},
+    ).json()
+    client.post(
+        f"/asset-tasks/{video_task_1['id']}/manual-video-asset",
+        json={"asset_url": "file:///D:/ai-comic-assets/SH01_video.mp4", "asset_type": "video", "notes": "manual video 1"},
+    )
+    client.post(
+        f"/asset-tasks/{video_task_2['id']}/manual-video-asset",
+        json={"asset_url": "file:///D:/ai-comic-assets/SH02_video.mp4", "asset_type": "video", "notes": "manual video 2"},
+    )
+    failing_task = client.post(
+        "/asset-tasks",
+        json={"shot_id": shot2["id"], "modality": "voice", "provider_name": "mock", "input_payload": {"should_fail": True}},
+    ).json()
+    client.post(f"/asset-tasks/{failing_task['id']}/run")
+
+    response = client.get(f"/projects/{project['id']}/manual-final-checklist")
+    body = response.json()
+    assert body["ready_for_delivery"] is False
+    assert body["publish_stage"] == "review_failed_tasks"
+    assert "failed_tasks_exist" in body["blocking_issues"]
+
+
+def test_manual_final_checklist_ready_without_publish_record(client):
+    project, shot1, shot2 = _create_project_graph(client)
+    image_task_1 = client.post("/asset-tasks", json={"shot_id": shot1["id"], "modality": "image", "provider_name": "mock"}).json()
+    image_task_2 = client.post("/asset-tasks", json={"shot_id": shot2["id"], "modality": "image", "provider_name": "mock"}).json()
+    client.post(
+        f"/asset-tasks/{image_task_1['id']}/manual-asset",
+        json={"asset_url": "file:///D:/ai-comic-assets/SH01.png", "asset_type": "image", "notes": "manual image 1"},
+    )
+    client.post(
+        f"/asset-tasks/{image_task_2['id']}/manual-asset",
+        json={"asset_url": "file:///D:/ai-comic-assets/SH02.png", "asset_type": "image", "notes": "manual image 2"},
+    )
+    video_task_1 = client.post(
+        "/asset-tasks",
+        json={"shot_id": shot1["id"], "modality": "video", "provider_name": "mock", "input_payload": {"duration": 3}},
+    ).json()
+    video_task_2 = client.post(
+        "/asset-tasks",
+        json={"shot_id": shot2["id"], "modality": "video", "provider_name": "mock", "input_payload": {"duration": 5}},
+    ).json()
+    client.post(
+        f"/asset-tasks/{video_task_1['id']}/manual-video-asset",
+        json={"asset_url": "file:///D:/ai-comic-assets/SH01_video.mp4", "asset_type": "video", "notes": "manual video 1"},
+    )
+    client.post(
+        f"/asset-tasks/{video_task_2['id']}/manual-video-asset",
+        json={"asset_url": "file:///D:/ai-comic-assets/SH02_video.mp4", "asset_type": "video", "notes": "manual video 2"},
+    )
+
+    response = client.get(f"/projects/{project['id']}/manual-final-checklist")
+    body = response.json()
+    assert body["ready_for_delivery"] is True
+    assert body["publish_stage"] == "ready_for_publish"
+    assert body["next_action"] == "create_publish_record"
+
+
+def test_manual_final_checklist_completed_when_publish_record_exists(client):
+    project, shot1, shot2 = _create_project_graph(client)
+    image_task_1 = client.post("/asset-tasks", json={"shot_id": shot1["id"], "modality": "image", "provider_name": "mock"}).json()
+    image_task_2 = client.post("/asset-tasks", json={"shot_id": shot2["id"], "modality": "image", "provider_name": "mock"}).json()
+    client.post(
+        f"/asset-tasks/{image_task_1['id']}/manual-asset",
+        json={"asset_url": "file:///D:/ai-comic-assets/SH01.png", "asset_type": "image", "notes": "manual image 1"},
+    )
+    client.post(
+        f"/asset-tasks/{image_task_2['id']}/manual-asset",
+        json={"asset_url": "file:///D:/ai-comic-assets/SH02.png", "asset_type": "image", "notes": "manual image 2"},
+    )
+    video_task_1 = client.post(
+        "/asset-tasks",
+        json={"shot_id": shot1["id"], "modality": "video", "provider_name": "mock", "input_payload": {"duration": 3}},
+    ).json()
+    video_task_2 = client.post(
+        "/asset-tasks",
+        json={"shot_id": shot2["id"], "modality": "video", "provider_name": "mock", "input_payload": {"duration": 5}},
+    ).json()
+    client.post(
+        f"/asset-tasks/{video_task_1['id']}/manual-video-asset",
+        json={"asset_url": "file:///D:/ai-comic-assets/SH01_video.mp4", "asset_type": "video", "notes": "manual video 1"},
+    )
+    client.post(
+        f"/asset-tasks/{video_task_2['id']}/manual-video-asset",
+        json={"asset_url": "file:///D:/ai-comic-assets/SH02_video.mp4", "asset_type": "video", "notes": "manual video 2"},
+    )
+    client.post(
+        "/publish-records",
+        json={
+            "project_id": project["id"],
+            "platform": "douyin",
+            "title": "Episode 1",
+            "published_at": "2026-04-26T10:00:00",
+            "link": "https://www.douyin.com/video/demo",
+        },
+    )
+
+    response = client.get(f"/projects/{project['id']}/manual-final-checklist")
+    body = response.json()
+    assert body["ready_for_delivery"] is True
+    assert body["next_action"] == "completed"
+    assert body["checks"]["publish_record_exists"] is True
+
+
+def test_manual_final_checklist_includes_failed_tasks_exist(client):
+    project, shot1, shot2 = _create_project_graph(client)
+    image_task_1 = client.post("/asset-tasks", json={"shot_id": shot1["id"], "modality": "image", "provider_name": "mock"}).json()
+    image_task_2 = client.post("/asset-tasks", json={"shot_id": shot2["id"], "modality": "image", "provider_name": "mock"}).json()
+    client.post(
+        f"/asset-tasks/{image_task_1['id']}/manual-asset",
+        json={"asset_url": "file:///D:/ai-comic-assets/SH01.png", "asset_type": "image", "notes": "manual image 1"},
+    )
+    client.post(
+        f"/asset-tasks/{image_task_2['id']}/manual-asset",
+        json={"asset_url": "file:///D:/ai-comic-assets/SH02.png", "asset_type": "image", "notes": "manual image 2"},
+    )
+    video_task_1 = client.post(
+        "/asset-tasks",
+        json={"shot_id": shot1["id"], "modality": "video", "provider_name": "mock", "input_payload": {"duration": 3}},
+    ).json()
+    video_task_2 = client.post(
+        "/asset-tasks",
+        json={"shot_id": shot2["id"], "modality": "video", "provider_name": "mock", "input_payload": {"duration": 5}},
+    ).json()
+    client.post(
+        f"/asset-tasks/{video_task_1['id']}/manual-video-asset",
+        json={"asset_url": "file:///D:/ai-comic-assets/SH01_video.mp4", "asset_type": "video", "notes": "manual video 1"},
+    )
+    client.post(
+        f"/asset-tasks/{video_task_2['id']}/manual-video-asset",
+        json={"asset_url": "file:///D:/ai-comic-assets/SH02_video.mp4", "asset_type": "video", "notes": "manual video 2"},
+    )
+    failing_task = client.post(
+        "/asset-tasks",
+        json={"shot_id": shot2["id"], "modality": "voice", "provider_name": "mock", "input_payload": {"should_fail": True}},
+    ).json()
+    client.post(f"/asset-tasks/{failing_task['id']}/run")
+
+    response = client.get(f"/projects/{project['id']}/manual-final-checklist")
+    body = response.json()
+    assert "failed_tasks_exist" in body["blocking_issues"]
+
+
+def test_manual_final_checklist_includes_needs_human_revision_tasks_exist(client):
+    project, shot1, shot2 = _create_project_graph(client)
+    image_task_1 = client.post("/asset-tasks", json={"shot_id": shot1["id"], "modality": "image", "provider_name": "mock"}).json()
+    image_task_2 = client.post("/asset-tasks", json={"shot_id": shot2["id"], "modality": "image", "provider_name": "mock"}).json()
+    client.post(
+        f"/asset-tasks/{image_task_1['id']}/manual-asset",
+        json={"asset_url": "file:///D:/ai-comic-assets/SH01.png", "asset_type": "image", "notes": "manual image 1"},
+    )
+    client.post(
+        f"/asset-tasks/{image_task_2['id']}/manual-asset",
+        json={"asset_url": "file:///D:/ai-comic-assets/SH02.png", "asset_type": "image", "notes": "manual image 2"},
+    )
+    video_task_1 = client.post(
+        "/asset-tasks",
+        json={"shot_id": shot1["id"], "modality": "video", "provider_name": "mock", "input_payload": {"duration": 3}},
+    ).json()
+    video_task_2 = client.post(
+        "/asset-tasks",
+        json={"shot_id": shot2["id"], "modality": "video", "provider_name": "mock", "input_payload": {"duration": 5}},
+    ).json()
+    client.post(
+        f"/asset-tasks/{video_task_1['id']}/manual-video-asset",
+        json={"asset_url": "file:///D:/ai-comic-assets/SH01_video.mp4", "asset_type": "video", "notes": "manual video 1"},
+    )
+    client.post(
+        f"/asset-tasks/{video_task_2['id']}/manual-video-asset",
+        json={"asset_url": "file:///D:/ai-comic-assets/SH02_video.mp4", "asset_type": "video", "notes": "manual video 2"},
+    )
+    client.post(
+        "/asset-tasks",
+        json={"shot_id": shot2["id"], "modality": "voice", "provider_name": "mock", "retry_count": 4, "max_retries": 3},
+    )
+
+    response = client.get(f"/projects/{project['id']}/manual-final-checklist")
+    body = response.json()
+    assert "needs_human_revision_tasks_exist" in body["blocking_issues"]
+
+
+def test_manual_final_checklist_missing_project_returns_404(client):
+    response = client.get("/projects/9999/manual-final-checklist")
+    assert response.status_code == 404
+
+
 def test_project_provider_debug_summary_includes_image_enhanced_prompt(client):
     init = client.post("/coze/project/init", json={
         "project_card_json": {

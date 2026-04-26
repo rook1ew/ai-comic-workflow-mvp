@@ -2,77 +2,58 @@
 
 这是一个面向 AI 漫剧生产流程验证的 Coze-first 后端 MVP。
 
-当前目标不是做完整 SaaS，而是先把这条内部生产链路跑通：
+当前目标不是完整 SaaS，而是先把内部生产链路跑通，并为后续真实图片 / 视频 provider 接入准备可调试、可校验、可收敛的底座。
 
-`立项 -> 角色设定 -> 剧本卡 -> 分镜/镜头 -> 素材任务 -> mock provider -> 发布记录 -> Coze summary`
+当前最小链路已经覆盖：
 
-## 当前项目状态
+`立项 -> 角色设定 -> 剧本卡 -> 分镜 / 镜头 -> 素材任务 -> mock provider -> 发布记录 -> Coze summary`
 
-v0.1 已跑通：
+## 当前阶段
+
+### v0.1 已完成
 
 - Coze 固定 demo payload
-- `full-demo-flow`
+- `POST /coze/project/full-demo-flow`
 - mock provider 执行闭环
 - publish record
 
-v0.2 当前重点是 Provider Readiness：
+### v0.2 已完成
+
+v0.2 的重点是 Provider Readiness：
 
 - 校验 Coze 真实 payload 是否合格
 - 为 image task 生成 `enhanced_prompt`
 - 透传 `storyboard_context`
 - 为 video task 补齐 `image_url` 和 `duration`
-- 提供 task 级和 project 级 provider debug 读取接口
+- 提供 task 级和 project 级 provider debug 接口
 - 提供 project 级 provider readiness 检查
 
-当前仍然只使用 mock provider：
+当前仍然只使用 mock / stub 能力：
 
 - 不接真实 Image2 API
 - 不接真实 Seedance API
-- 不读取真实 API key
-- 不会产生真实费用
+- 不读取真实计费接口
+- 不会产生真实生成费用
 
-## v0.3-A Provider 配置开关
+### v0.3 当前状态
 
-当前 v0.3-A 只做真实 Image2Provider 接入前的配置和安全开关准备。
+v0.3 的重点是为真实 `Image2Provider` 接入做准备，但当前仍然停在真实调用前的准备阶段。
 
-新增配置项：
+已完成内容包括：
 
-- `IMAGE_PROVIDER_MODE`
-  - 默认 `mock`
-  - 可选：`mock / image2_stub / image2_real`
-- `IMAGE2_API_KEY`
-  - 默认空
-  - 本轮只预留，不实际调用
-- `IMAGE2_BASE_URL`
-  - 默认空
-- `IMAGE2_MODEL`
-  - 默认 `image2`
-- `ENABLE_REAL_IMAGE_PROVIDER`
-  - 默认 `false`
+- v0.3-A：配置项和安全开关
+- v0.3-B：`Image2Provider` 适配骨架
+- v0.3-C：preflight / dry-run 保护层
+- v0.3-D：`provider_audit` 审计结构
+- v0.3-D.5：本地 API key 安全配置 SOP
+- v0.3-E-Plan：第一次真实单 task 调用 runbook
 
-真实 image provider 在未来只有同时满足以下条件才允许调用：
+当前明确结论：
 
-- `IMAGE_PROVIDER_MODE=image2_real`
-- `ENABLE_REAL_IMAGE_PROVIDER=true`
-- `IMAGE2_API_KEY` 存在
-
-当前版本即使设置为 `image2_real`，也不会发出真实请求；系统会返回清晰错误并阻止调用。
-
-v0.3-C 新增的保护配置：
-
-- `IMAGE2_MAX_REAL_CALLS_PER_RUN`
-  - 默认 `1`
-- `IMAGE2_ALLOW_TASK_IDS`
-  - 默认空
-  - 只有显式列出的 `asset_task_id` 才允许进入未来真实调用路径
-- `IMAGE2_DRY_RUN`
-  - 默认 `true`
-  - 为 `true` 时只构造 request payload，不发真实请求
-
-注意：
-
-- `.env` 不允许提交到 GitHub
-- API key 只能放本地环境变量或本地 `.env`
+- 真实 Image2 调用尚未开启
+- 没有 billing / credits 前，不要进入真实调用
+- 默认配置下不会发出真实请求
+- `.env` 必须保留在本地，不能提交到 GitHub
 
 ## 本地启动
 
@@ -127,21 +108,16 @@ C:\Users\29964\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\p
 - `GET /coze/project/{project_id}/summary`
 - `POST /coze/project/full-demo-flow`
 
-## Coze-first MVP 手动测试流程
+## 推荐演示流程
 
-推荐按这个顺序演示：
+推荐按这条顺序演示：
 
 1. `POST /coze/project/validate-payload`
-   - 先检查 Coze 真实 payload 是否合格
-   - 如果有 errors，先修 payload 再继续
 2. `POST /coze/project/full-demo-flow`
-   - 一次性跑完整条 mock 演示闭环
 3. `GET /projects/{project_id}/provider-debug-summary`
-   - 查看整个项目的 provider 输入快照摘要
 4. `GET /projects/{project_id}/provider-readiness`
-   - 判断项目是否已经满足切换真实 provider 的最低条件
 
-如果你想分步演示，也可以用：
+如果你想分步演示，也可以按这条链路：
 
 1. `POST /coze/project/init`
 2. `POST /characters/{character_id}/confirm-reference`
@@ -151,19 +127,6 @@ C:\Users\29964\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\p
 6. `POST /coze/project/{project_id}/run-asset-tasks`
 7. `GET /coze/project/{project_id}/summary`
 8. `POST /coze/project/{project_id}/publish-record`
-
-## v0.2 Provider Readiness 当前能力
-
-当前已经具备的 provider readiness 能力：
-
-- `POST /coze/project/validate-payload`
-  - 校验 Coze full-demo-flow payload 是否完整
-- `GET /asset-tasks/{asset_task_id}/provider-debug`
-  - 查看单个任务最终送入 provider 的输入快照
-- `GET /projects/{project_id}/provider-debug-summary`
-  - 查看整个项目下所有任务的 provider 输入摘要
-- `GET /projects/{project_id}/provider-readiness`
-  - 判断项目是否满足切换真实 Image2 / Seedance 前的最低条件
 
 ## 示例 payload
 
@@ -176,12 +139,28 @@ C:\Users\29964\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\p
 - [coze_publish_record_payload.json](/C:/Users/29964/Documents/GitHub/ai-comic-workflow-mvp-git/examples/coze_publish_record_payload.json)
 - [coze_full_demo_flow_payload.json](/C:/Users/29964/Documents/GitHub/ai-comic-workflow-mvp-git/examples/coze_full_demo_flow_payload.json)
 
+## Image2 安全准备文档
+
+在真实 provider 真正接入前，先看这些文档：
+
+- [docs/REAL_PROVIDER_PLAN.md](/C:/Users/29964/Documents/GitHub/ai-comic-workflow-mvp-git/docs/REAL_PROVIDER_PLAN.md)
+- [docs/V0_2_SUMMARY.md](/C:/Users/29964/Documents/GitHub/ai-comic-workflow-mvp-git/docs/V0_2_SUMMARY.md)
+- [docs/V0_3_SUMMARY.md](/C:/Users/29964/Documents/GitHub/ai-comic-workflow-mvp-git/docs/V0_3_SUMMARY.md)
+- [docs/IMAGE2_API_KEY_SETUP.md](/C:/Users/29964/Documents/GitHub/ai-comic-workflow-mvp-git/docs/IMAGE2_API_KEY_SETUP.md)
+- [docs/IMAGE2_FIRST_REAL_CALL_RUNBOOK.md](/C:/Users/29964/Documents/GitHub/ai-comic-workflow-mvp-git/docs/IMAGE2_FIRST_REAL_CALL_RUNBOOK.md)
+
+当前默认安全配置应保持为：
+
+- `IMAGE_PROVIDER_MODE=mock`
+- `ENABLE_REAL_IMAGE_PROVIDER=false`
+- `IMAGE2_DRY_RUN=true`
+
 ## 当前还没有实现的内容
 
-- 真实 Image2Provider 接入
-- 真实 SeedanceVideoProvider 接入
-- 真实 API key 管理
-- 真实费用调用
+- 真实 Image2 HTTP 调用
+- 真实 SeedanceVideoProvider 调用
+- 真实 usage / cost 落库
+- 真实计费验证链路
 - n8n
 - Retrospective
 - 前端
@@ -193,17 +172,3 @@ C:\Users\29964\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\p
 cd C:\Users\29964\Documents\GitHub\ai-comic-workflow-mvp-git
 C:\Users\29964\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe -m pytest
 ```
-
-## Image2 API Key 安全配置
-
-真实 provider 默认仍然关闭。
-
-在准备真实 Image2Provider 前，请先阅读：
-
-- [docs/IMAGE2_API_KEY_SETUP.md](/C:/Users/29964/Documents/GitHub/ai-comic-workflow-mvp-git/docs/IMAGE2_API_KEY_SETUP.md)
-
-当前默认安全配置应保持为：
-
-- `IMAGE_PROVIDER_MODE=mock`
-- `ENABLE_REAL_IMAGE_PROVIDER=false`
-- `IMAGE2_DRY_RUN=true`

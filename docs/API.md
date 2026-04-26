@@ -70,6 +70,19 @@ Save Coze-generated `script_card_json` into the default episode.
 
 Import storyboard content and create episode, scene, and shot records.
 
+Supported optional storyboard shot fields for v0.4-A:
+
+- `shot_type`
+- `camera_motion`
+- `subject_motion`
+- `transition`
+- `subtitle_text`
+- `sfx`
+- `editing_notes`
+
+These fields are stored in `Shot.metadata_json` and remain backward-compatible
+with older payloads.
+
 ### POST `/coze/project/{project_id}/create-asset-tasks`
 
 Bulk-create asset tasks for the project shots.
@@ -898,6 +911,13 @@ Response example:
       "emotion": "nervous",
       "camera": "medium",
       "dialogue": "Sorry, wrong room.",
+      "shot_type": "dialogue",
+      "camera_motion": "slow_push_in",
+      "subject_motion": "blink",
+      "transition": "cut",
+      "subtitle_text": "对不起，我走错了。",
+      "sfx": "door_open",
+      "editing_notes": "Push in slightly as she enters.",
       "base_video_prompt": "video prompt 1",
       "copy_ready_video_prompt": "Use uploaded image as first frame ...",
       "negative_prompt": "Do not imitate specific IP, celebrities, film characters, or known anime characters; no scene change; no watermark; no text overlay; no distorted hands; no extra limbs; no face morphing.",
@@ -913,3 +933,24 @@ Rules:
 - only `video` asset tasks are returned
 - if the image asset is missing, the item still returns but includes `missing_image_asset`
 - if both image asset and duration are present, `ready_for_video_prompt = true`
+- if editing storyboard fields exist, they are echoed back in the item and folded
+  into `copy_ready_video_prompt`
+
+### Editing storyboard metadata fields
+
+The following optional fields are supported in storyboard shot payloads and are
+stored inside `Shot.metadata_json`:
+
+- `shot_type`
+- `camera_motion`
+- `subject_motion`
+- `transition`
+- `subtitle_text`
+- `sfx`
+- `editing_notes`
+
+They are primarily used for:
+
+- anime-comic frame editing guidance
+- pseudo-motion planning for static-image workflows
+- richer manual video prompt export

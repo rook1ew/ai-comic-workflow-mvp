@@ -9,8 +9,8 @@
 - 当前没有 OpenAI API billing
 - 不接真实 Image2 API
 - 不接真实 Seedance API
-- 希望程序负责提示词、结构化任务和项目进度跟踪
-- 希望人工在外部工具里完成图片 / 视频生成，再把素材回填
+- 程序负责提示词、结构化任务和项目进度追踪
+- 人工在外部工具中完成图片 / 视频生成，再把素材回填
 
 ## 当前流程总览
 
@@ -21,21 +21,22 @@
 3. `POST /asset-tasks/{asset_task_id}/manual-asset`
 4. `GET /projects/{project_id}/manual-image-progress`
 5. `GET /projects/{project_id}/video-readiness`
-6. `POST /asset-tasks/{asset_task_id}/manual-video-asset`
-7. `GET /projects/{project_id}/manual-video-progress`
-8. `GET /projects/{project_id}/manual-production-summary`
-9. `GET /projects/{project_id}/publish-readiness`
-10. `GET /projects/{project_id}/manual-final-checklist`
+6. `GET /projects/{project_id}/video-prompts`
+7. `POST /asset-tasks/{asset_task_id}/manual-video-asset`
+8. `GET /projects/{project_id}/manual-video-progress`
+9. `GET /projects/{project_id}/manual-production-summary`
+10. `GET /projects/{project_id}/publish-readiness`
+11. `GET /projects/{project_id}/manual-final-checklist`
 
 ## 推荐操作顺序
 
 ### 1. 先准备项目和素材任务
 
-可以用：
+可以直接使用：
 
 - `POST /coze/project/full-demo-flow`
 
-或者走分步流程，先创建 project、storyboard、asset tasks。
+或者分步创建 project、storyboard 和 asset tasks。
 
 ### 2. 导出图片提示词
 
@@ -71,14 +72,31 @@
 注意：
 
 - 只有 `video_shot_ids` 中列出的 storyboard shot 才会创建 `video` asset task
-- `video_shot_ids` 取值使用 storyboard 原始 shot 编号，例如 `SH01`
+- `video_shot_ids` 使用 storyboard 原始 shot 编号，例如 `SH01`
 
-确认每个 video task 是否已经具备：
+### 5. 导出视频提示词
 
-- 对应 image asset
-- duration
+调用：
 
-### 5. 手动生成并回填视频
+- `GET /projects/{project_id}/video-prompts`
+
+返回会自动带出：
+
+- `image_asset_url`
+- `duration`
+- `base_video_prompt`
+- `copy_ready_video_prompt`
+- `shot_type`
+- `camera_motion`
+- `subject_motion`
+- `transition`
+- `subtitle_text`
+- `sfx`
+- `editing_notes`
+
+这组字段特别适合当前的“拼帧图片漫剧 / 静态图伪动态剪辑”路线。
+
+### 6. 手动生成并回填视频
 
 在 Seedance 网页端或其他工具生成视频后，调用：
 
@@ -160,7 +178,8 @@
 
 继续：
 
-- 手动生成视频
+- 先看 `video-prompts`
+- 根据镜头运动、人物微动、字幕和音效字段生成视频
 - 回填视频
 
 ### 如果 `manual-final-checklist.ready_for_delivery = true`
@@ -170,6 +189,25 @@
 - 进入 publish record
 - 进入最终合成
 - 进入最终发布
+
+## 剪辑字段的作用
+
+当前 v0.4-A 已支持在 storyboard shot 中保存并回显这些剪辑字段：
+
+- `shot_type`
+- `camera_motion`
+- `subject_motion`
+- `transition`
+- `subtitle_text`
+- `sfx`
+- `editing_notes`
+
+用途：
+
+- 指导拼帧图片漫剧中的镜头运动
+- 指导人物微动和镜头节奏
+- 作为字幕、音效和转场的剪辑备注
+- 自动进入 `video-prompts` 的 `copy_ready_video_prompt`
 
 ## 当前明确不做的事
 
@@ -184,4 +222,5 @@
 
 - [MANUAL_IMAGE_GENERATION_SOP.md](/C:/Users/29964/Documents/GitHub/ai-comic-workflow-mvp-git/docs/MANUAL_IMAGE_GENERATION_SOP.md)
 - [MANUAL_VIDEO_GENERATION_SOP.md](/C:/Users/29964/Documents/GitHub/ai-comic-workflow-mvp-git/docs/MANUAL_VIDEO_GENERATION_SOP.md)
+- [EDITING_STORYBOARD_FIELDS.md](/C:/Users/29964/Documents/GitHub/ai-comic-workflow-mvp-git/docs/EDITING_STORYBOARD_FIELDS.md)
 - [API.md](/C:/Users/29964/Documents/GitHub/ai-comic-workflow-mvp-git/docs/API.md)

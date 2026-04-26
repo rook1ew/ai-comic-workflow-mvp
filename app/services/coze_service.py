@@ -83,6 +83,25 @@ def _build_script_card(script_card_json) -> str:
     return "\n".join(line for line in lines if line)
 
 
+def _build_shot_metadata(shot_item) -> dict:
+    return {
+        "source_shot_id": shot_item.shot_id,
+        "duration_sec": shot_item.duration_sec,
+        "character": shot_item.character,
+        "location": shot_item.location,
+        "emotion": shot_item.emotion,
+        "camera": shot_item.camera,
+        "dialogue": shot_item.dialogue,
+        "shot_type": shot_item.shot_type,
+        "camera_motion": shot_item.camera_motion,
+        "subject_motion": shot_item.subject_motion,
+        "transition": shot_item.transition,
+        "subtitle_text": shot_item.subtitle_text,
+        "sfx": shot_item.sfx,
+        "editing_notes": shot_item.editing_notes,
+    }
+
+
 def coze_validate_payload(payload: CozePayloadValidationRequest) -> CozeResponse:
     errors: list[str] = []
     warnings: list[str] = []
@@ -253,15 +272,7 @@ def coze_storyboard(db: Session, project_id: int, payload: CozeStoryboardRequest
         update_shot_metadata(
             db,
             created_shot.id,
-            {
-                "source_shot_id": shot_item.shot_id,
-                "duration_sec": shot_item.duration_sec,
-                "character": shot_item.character,
-                "location": shot_item.location,
-                "emotion": shot_item.emotion,
-                "camera": shot_item.camera,
-                "dialogue": shot_item.dialogue,
-            },
+            _build_shot_metadata(shot_item),
         )
         shots_count += 1
 

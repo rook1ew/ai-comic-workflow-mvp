@@ -53,6 +53,13 @@ class ProjectImagePromptItem(BaseModel):
     emotion: str | None = None
     camera: str | None = None
     dialogue: str | None = None
+    shot_type: str | None = None
+    camera_motion: str | None = None
+    subject_motion: str | None = None
+    transition: str | None = None
+    subtitle_text: str | None = None
+    sfx: str | None = None
+    editing_notes: str | None = None
     base_prompt: str
     enhanced_prompt: str
     negative_prompt: str
@@ -76,6 +83,13 @@ class ProjectVideoPromptItem(BaseModel):
     emotion: str | None = None
     camera: str | None = None
     dialogue: str | None = None
+    shot_type: str | None = None
+    camera_motion: str | None = None
+    subject_motion: str | None = None
+    transition: str | None = None
+    subtitle_text: str | None = None
+    sfx: str | None = None
+    editing_notes: str | None = None
     base_video_prompt: str
     copy_ready_video_prompt: str
     negative_prompt: str
@@ -128,6 +142,13 @@ class ProjectVideoReadinessItem(BaseModel):
     location: str | None = None
     emotion: str | None = None
     video_prompt: str
+    shot_type: str | None = None
+    camera_motion: str | None = None
+    subject_motion: str | None = None
+    transition: str | None = None
+    subtitle_text: str | None = None
+    sfx: str | None = None
+    editing_notes: str | None = None
 
 
 class ProjectVideoReadiness(BaseModel):

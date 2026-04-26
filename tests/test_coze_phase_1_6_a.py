@@ -57,6 +57,13 @@ def _coze_storyboard_payload():
                     "core_action": "Lin Xia opens the door",
                     "emotion": "nervous",
                     "camera": "medium",
+                    "shot_type": "dialogue",
+                    "camera_motion": "slow_push_in",
+                    "subject_motion": "blink",
+                    "transition": "cut",
+                    "subtitle_text": "对不起，我走错了。",
+                    "sfx": "door_open",
+                    "editing_notes": "Push in slightly as she enters.",
                     "dialogue": "Sorry, wrong room.",
                     "image_prompt": "image prompt 1",
                     "video_prompt": "video prompt 1",
@@ -187,6 +194,13 @@ def test_storyboard_import_saves_duration_sec(db_session):
     assert len(shots) == 2
     assert shots[0].metadata_json["source_shot_id"] == "SH01"
     assert shots[0].metadata_json["duration_sec"] == 3
+    assert shots[0].metadata_json["shot_type"] == "dialogue"
+    assert shots[0].metadata_json["camera_motion"] == "slow_push_in"
+    assert shots[0].metadata_json["subject_motion"] == "blink"
+    assert shots[0].metadata_json["transition"] == "cut"
+    assert shots[0].metadata_json["subtitle_text"] == "对不起，我走错了。"
+    assert shots[0].metadata_json["sfx"] == "door_open"
+    assert shots[0].metadata_json["editing_notes"] == "Push in slightly as she enters."
     assert shots[1].metadata_json["source_shot_id"] == "SH02"
     assert shots[1].metadata_json["duration_sec"] == 2
 

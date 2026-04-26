@@ -1,0 +1,129 @@
+{
+  "project_card_json": {
+    "project_title": "都市职场反转 3 镜头示例",
+    "genre": "urban workplace reversal",
+    "platform": "coze",
+    "target_duration": 45,
+    "target_audience": "young-adult",
+    "visual_style": "vertical anime-comic realism",
+    "core_conflict": "女主误入会议室，被羞辱后迎来身份反转",
+    "hook": "走错会议室的瞬间，所有人都看向她",
+    "ending_hook": "总裁助理一句话让全场沉默",
+    "selling_points": [
+      "快节奏反转",
+      "强情绪台词",
+      "适合拼帧漫剧"
+    ],
+    "status": "draft"
+  },
+  "characters_json": {
+    "characters": [
+      {
+        "name": "林夏",
+        "role": "lead",
+        "age_vibe": "young professional",
+        "appearance": "sharp face, neat makeup",
+        "hair": "short black hair",
+        "outfit": "simple office wear",
+        "personality": "calm but pressured",
+        "speaking_style": "measured",
+        "must_keep": [
+          "short black hair",
+          "clean office outfit"
+        ],
+        "avoid": [
+          "fantasy costume"
+        ],
+        "main_reference_confirmed": false
+      }
+    ]
+  },
+  "script_card_json": {
+    "opening_hook": "林夏推门走进会议室，发现所有人都盯着她。",
+    "conflict": "老员工当众冷笑，认为她根本不配进这个会议室。",
+    "escalation": "羞辱气氛升级，众人跟着起哄。",
+    "turning_point": "总裁助理突然进门，直接点名让林夏留下。",
+    "ending_hook": "众人脸色骤变，意识到她可能不是普通员工。"
+  },
+  "storyboard_json": {
+    "shots": [
+      {
+        "shot_id": "SH01",
+        "duration_sec": 3,
+        "character": "林夏",
+        "location": "高层会议室门口",
+        "core_action": "林夏推门进入会议室",
+        "emotion": "紧张",
+        "camera": "medium close-up",
+        "dialogue": "对不起，我走错了。",
+        "shot_type": "dialogue",
+        "camera_motion": "slow_push_in",
+        "subject_motion": "blink",
+        "transition": "cut",
+        "subtitle_text": "对不起，我走错了。",
+        "sfx": "door_open",
+        "editing_notes": "镜头轻微推进，营造误入高压空间的局促感。",
+        "image_prompt": "都市职场会议室门口，女主推门进入，紧张但克制，竖屏漫剧感",
+        "video_prompt": "女主推门进入会议室，空气突然安静，所有人看向她",
+        "voice_prompt": "紧张但礼貌地说：对不起，我走错了。",
+        "bgm_prompt": "轻微悬念感的都市职场背景音乐",
+        "status": "prompt_ready"
+      },
+      {
+        "shot_id": "SH02",
+        "duration_sec": 4,
+        "character": "老员工",
+        "location": "高层会议室内",
+        "core_action": "老员工冷笑羞辱林夏",
+        "emotion": "轻蔑",
+        "camera": "close-up",
+        "dialogue": "这种会议室，也是你能进来的？",
+        "shot_type": "reaction",
+        "camera_motion": "slow_push_in",
+        "subject_motion": "slight_body_shift",
+        "transition": "cut",
+        "subtitle_text": "这种会议室，也是你能进来的？",
+        "sfx": "chair_scrape",
+        "editing_notes": "镜头有轻微压迫感，字幕强调羞辱语气。",
+        "image_prompt": "会议室内，老员工冷笑，压迫感 close-up，竖屏漫剧风",
+        "video_prompt": "老员工冷笑抬眼，语气刻薄地当众羞辱女主",
+        "voice_prompt": "带嘲讽和轻蔑语气：这种会议室，也是你能进来的？",
+        "bgm_prompt": "压迫感增强的职场尴尬氛围音乐",
+        "status": "prompt_ready"
+      },
+      {
+        "shot_id": "SH03",
+        "duration_sec": 3,
+        "character": "总裁助理",
+        "location": "高层会议室门口",
+        "core_action": "总裁助理推门进来打断众人",
+        "emotion": "震惊",
+        "camera": "wide shot",
+        "dialogue": "林夏小姐，请您跟我来。",
+        "shot_type": "reveal",
+        "camera_motion": "zoom_in",
+        "subject_motion": "turn_head",
+        "transition": "flash",
+        "subtitle_text": "林夏小姐，请您跟我来。",
+        "sfx": "crowd_gasp",
+        "editing_notes": "用闪白转场做反转，众人表情停顿半拍。",
+        "image_prompt": "会议室门突然再度打开，总裁助理现身，众人震惊，反转感，竖屏漫剧风",
+        "video_prompt": "总裁助理推门进入，空气凝固，众人愣住，反转感爆发",
+        "voice_prompt": "冷静正式地说：林夏小姐，请您跟我来。",
+        "bgm_prompt": "反转瞬间的闪击感音效和音乐停顿",
+        "status": "prompt_ready"
+      }
+    ]
+  },
+  "video_shot_ids": [
+    "SH01",
+    "SH02",
+    "SH03"
+  ],
+  "publish_record_json": {
+    "platform": "抖音",
+    "title": "走错会议室后，全场都愣住了",
+    "published_at": "2026-04-27T10:00:00+08:00",
+    "url": "https://www.douyin.com/video/demo-urban-reversal"
+  }
+}

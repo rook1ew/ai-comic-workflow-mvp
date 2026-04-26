@@ -77,6 +77,13 @@
 
 - `image_asset_url`
 - `duration`
+- `shot_type`
+- `camera_motion`
+- `subject_motion`
+- `transition`
+- `subtitle_text`
+- `sfx`
+- `editing_notes`
 - `base_video_prompt`
 - `copy_ready_video_prompt`
 - `negative_prompt`
@@ -88,6 +95,7 @@
 - 只返回 `video` 类型 asset task
 - 如果缺少 `image_asset_url`，也会返回该 item，但会有 `missing_image_asset`
 - 如果有 `image_asset_url` 且有 `duration`，则 `ready_for_video_prompt = true`
+- 如果 payload 中提供了剪辑字段，`copy_ready_video_prompt` 会自动加入镜头运动、人物微动、字幕、音效和剪辑备注
 
 ## 手动生成视频
 

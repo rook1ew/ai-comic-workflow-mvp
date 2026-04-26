@@ -71,6 +71,13 @@ class CozeStoryboardShot(BaseModel):
     emotion: str | None = None
     camera: str | None = None
     dialogue: str | None = None
+    shot_type: str | None = None
+    camera_motion: str | None = None
+    subject_motion: str | None = None
+    transition: str | None = None
+    subtitle_text: str | None = None
+    sfx: str | None = None
+    editing_notes: str | None = None
     image_prompt: str
     video_prompt: str
     voice_prompt: str

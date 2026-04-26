@@ -312,6 +312,80 @@ def test_project_image_prompts_returns_enhanced_and_copy_ready_prompt(client):
     assert "Lin Xia" in item["copy_ready_prompt"]
 
 
+def test_project_image_prompts_include_editing_fields(client):
+    init = client.post("/coze/project/init", json={
+        "project_card_json": {
+            "project_title": "Editing Fields Demo",
+            "genre": "urban",
+            "platform": "coze",
+            "target_duration": 60,
+            "target_audience": "young-adult",
+            "visual_style": "anime-comic",
+            "core_conflict": "identity confusion",
+            "hook": "wrong room",
+            "ending_hook": "unexpected promotion",
+            "selling_points": ["fast"],
+            "status": "draft",
+        },
+        "characters_json": {
+            "characters": [
+                {
+                    "name": "Lin Xia",
+                    "role": "lead",
+                    "main_reference_confirmed": False,
+                }
+            ]
+        },
+    }).json()
+    project_id = init["data"]["project_id"]
+    character_id = init["data"]["character_ids"][0]
+    client.post(f"/characters/{character_id}/confirm-reference", json={"main_reference_url": "mock://character/reference.png"})
+    client.post(
+        f"/coze/project/{project_id}/storyboard",
+        json={
+            "script_card_json": {"opening_hook": "Opening"},
+            "storyboard_json": {
+                "shots": [
+                    {
+                        "shot_id": "SH01",
+                        "duration_sec": 3,
+                        "character": "Lin Xia",
+                        "location": "Meeting Room",
+                        "core_action": "Lin Xia opens the door",
+                        "emotion": "nervous",
+                        "camera": "medium close-up",
+                        "shot_type": "dialogue",
+                        "camera_motion": "slow_push_in",
+                        "subject_motion": "blink",
+                        "transition": "cut",
+                        "subtitle_text": "对不起，我走错了。",
+                        "sfx": "door_open",
+                        "editing_notes": "Push in slightly as she enters.",
+                        "dialogue": "Sorry, wrong room.",
+                        "image_prompt": "young woman opening a meeting room door",
+                        "video_prompt": "video prompt 1",
+                        "voice_prompt": "voice prompt 1",
+                        "bgm_prompt": "bgm prompt 1",
+                        "status": "prompt_ready",
+                    }
+                ]
+            },
+        },
+    )
+    client.post(f"/coze/project/{project_id}/create-asset-tasks", json={})
+
+    response = client.get(f"/projects/{project_id}/image-prompts")
+    assert response.status_code == 200
+    item = response.json()["items"][0]
+    assert item["shot_type"] == "dialogue"
+    assert item["camera_motion"] == "slow_push_in"
+    assert item["subject_motion"] == "blink"
+    assert item["transition"] == "cut"
+    assert item["subtitle_text"] == "对不起，我走错了。"
+    assert item["sfx"] == "door_open"
+    assert item["editing_notes"] == "Push in slightly as she enters."
+
+
 def test_project_image_prompts_unexecuted_image_task_still_returns_prompt(client):
     project, shot1, _ = _create_project_graph(client)
     task = client.post("/asset-tasks", json={"shot_id": shot1["id"], "modality": "image", "provider_name": "mock"}).json()
@@ -483,6 +557,85 @@ def test_video_readiness_ready_task_has_image_asset_and_duration(client):
     assert item["blocking_issues"] == []
 
 
+def test_video_readiness_includes_editing_fields(client):
+    init = client.post("/coze/project/init", json={
+        "project_card_json": {
+            "project_title": "Video Readiness Editing Fields Demo",
+            "genre": "urban",
+            "platform": "coze",
+            "target_duration": 60,
+            "target_audience": "young-adult",
+            "visual_style": "anime-comic",
+            "core_conflict": "identity confusion",
+            "hook": "wrong room",
+            "ending_hook": "unexpected promotion",
+            "selling_points": ["fast"],
+            "status": "draft",
+        },
+        "characters_json": {
+            "characters": [
+                {
+                    "name": "Lin Xia",
+                    "role": "lead",
+                    "main_reference_confirmed": False,
+                }
+            ]
+        },
+    }).json()
+    project_id = init["data"]["project_id"]
+    character_id = init["data"]["character_ids"][0]
+    client.post(f"/characters/{character_id}/confirm-reference", json={"main_reference_url": "mock://character/reference.png"})
+    client.post(
+        f"/coze/project/{project_id}/storyboard",
+        json={
+            "script_card_json": {"opening_hook": "Opening"},
+            "storyboard_json": {
+                "shots": [
+                    {
+                        "shot_id": "SH01",
+                        "duration_sec": 3,
+                        "character": "Lin Xia",
+                        "location": "Meeting Room",
+                        "core_action": "Lin Xia opens the door",
+                        "emotion": "nervous",
+                        "camera": "medium close-up",
+                        "shot_type": "dialogue",
+                        "camera_motion": "slow_push_in",
+                        "subject_motion": "blink",
+                        "transition": "cut",
+                        "subtitle_text": "对不起，我走错了。",
+                        "sfx": "door_open",
+                        "editing_notes": "Push in slightly as she enters.",
+                        "dialogue": "Sorry, wrong room.",
+                        "image_prompt": "young woman opening a meeting room door",
+                        "video_prompt": "office door opens, awkward pause",
+                        "voice_prompt": "voice prompt 1",
+                        "bgm_prompt": "bgm prompt 1",
+                        "status": "prompt_ready",
+                    }
+                ]
+            },
+        },
+    )
+    client.post(f"/coze/project/{project_id}/create-asset-tasks", json={"video_shot_ids": ["SH01"]})
+    image_task = next(task for task in client.get(f"/projects/{project_id}/asset-tasks").json() if task["modality"] == "image")
+    client.post(
+        f"/asset-tasks/{image_task['id']}/manual-asset",
+        json={"asset_url": "file:///D:/ai-comic-assets/SH01.png", "asset_type": "image", "notes": "manual image"},
+    )
+
+    response = client.get(f"/projects/{project_id}/video-readiness")
+    assert response.status_code == 200
+    item = response.json()["items"][0]
+    assert item["shot_type"] == "dialogue"
+    assert item["camera_motion"] == "slow_push_in"
+    assert item["subject_motion"] == "blink"
+    assert item["transition"] == "cut"
+    assert item["subtitle_text"] == "对不起，我走错了。"
+    assert item["sfx"] == "door_open"
+    assert item["editing_notes"] == "Push in slightly as she enters."
+
+
 def test_video_readiness_prefers_manual_image_asset_url_over_mock_asset(client):
     project, shot1, _ = _create_project_graph(client)
     image_task = client.post("/asset-tasks", json={"shot_id": shot1["id"], "modality": "image", "provider_name": "mock"}).json()
@@ -613,6 +766,90 @@ def test_project_video_prompts_include_image_asset_url_and_copy_ready_prompt(cli
     assert item["copy_ready_video_prompt"]
     assert item["negative_prompt"] in item["copy_ready_video_prompt"]
     assert item["ready_for_video_prompt"] is True
+
+
+def test_project_video_prompts_include_editing_fields_and_prompt_clauses(client):
+    init = client.post("/coze/project/init", json={
+        "project_card_json": {
+            "project_title": "Video Editing Fields Demo",
+            "genre": "urban",
+            "platform": "coze",
+            "target_duration": 60,
+            "target_audience": "young-adult",
+            "visual_style": "anime-comic",
+            "core_conflict": "identity confusion",
+            "hook": "wrong room",
+            "ending_hook": "unexpected promotion",
+            "selling_points": ["fast"],
+            "status": "draft",
+        },
+        "characters_json": {
+            "characters": [
+                {
+                    "name": "Lin Xia",
+                    "role": "lead",
+                    "main_reference_confirmed": False,
+                }
+            ]
+        },
+    }).json()
+    project_id = init["data"]["project_id"]
+    character_id = init["data"]["character_ids"][0]
+    client.post(f"/characters/{character_id}/confirm-reference", json={"main_reference_url": "mock://character/reference.png"})
+    client.post(
+        f"/coze/project/{project_id}/storyboard",
+        json={
+            "script_card_json": {"opening_hook": "Opening"},
+            "storyboard_json": {
+                "shots": [
+                    {
+                        "shot_id": "SH01",
+                        "duration_sec": 3,
+                        "character": "Lin Xia",
+                        "location": "Meeting Room",
+                        "core_action": "Lin Xia opens the door",
+                        "emotion": "nervous",
+                        "camera": "medium close-up",
+                        "shot_type": "dialogue",
+                        "camera_motion": "slow_push_in",
+                        "subject_motion": "natural blinking and subtle mouth movement",
+                        "transition": "cut",
+                        "subtitle_text": "对不起，我走错了。",
+                        "sfx": "door_open",
+                        "editing_notes": "Push in slightly as she enters.",
+                        "dialogue": "Sorry, wrong room.",
+                        "image_prompt": "young woman opening a meeting room door",
+                        "video_prompt": "office door opens, awkward pause",
+                        "voice_prompt": "voice prompt 1",
+                        "bgm_prompt": "bgm prompt 1",
+                        "status": "prompt_ready",
+                    }
+                ]
+            },
+        },
+    )
+    client.post(f"/coze/project/{project_id}/create-asset-tasks", json={"video_shot_ids": ["SH01"]})
+    image_task = next(task for task in client.get(f"/projects/{project_id}/asset-tasks").json() if task["modality"] == "image")
+    client.post(
+        f"/asset-tasks/{image_task['id']}/manual-asset",
+        json={"asset_url": "file:///D:/ai-comic-assets/SH01.png", "asset_type": "image", "notes": "manual image"},
+    )
+
+    response = client.get(f"/projects/{project_id}/video-prompts")
+    assert response.status_code == 200
+    item = response.json()["items"][0]
+    assert item["shot_type"] == "dialogue"
+    assert item["camera_motion"] == "slow_push_in"
+    assert item["subject_motion"] == "natural blinking and subtle mouth movement"
+    assert item["transition"] == "cut"
+    assert item["subtitle_text"] == "对不起，我走错了。"
+    assert item["sfx"] == "door_open"
+    assert item["editing_notes"] == "Push in slightly as she enters."
+    assert "Camera motion: slow_push_in" in item["copy_ready_video_prompt"]
+    assert "Subject motion: natural blinking and subtle mouth movement" in item["copy_ready_video_prompt"]
+    assert "Subtitle cue: 对不起，我走错了。" in item["copy_ready_video_prompt"]
+    assert "Sound effect cue: door_open" in item["copy_ready_video_prompt"]
+    assert "Editing notes: Push in slightly as she enters." in item["copy_ready_video_prompt"]
 
 
 def test_project_video_prompts_prefers_manual_image_asset_url_over_mock_asset(client):

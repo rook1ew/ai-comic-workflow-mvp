@@ -52,6 +52,13 @@ def _full_demo_flow_payload():
                     "core_action": "Lin Xia opens the door",
                     "emotion": "nervous",
                     "camera": "medium",
+                    "shot_type": "dialogue",
+                    "camera_motion": "slow_push_in",
+                    "subject_motion": "blink",
+                    "transition": "cut",
+                    "subtitle_text": "对不起，我走错了。",
+                    "sfx": "door_open",
+                    "editing_notes": "Push in slightly as she enters.",
                     "dialogue": "Sorry, wrong room.",
                     "image_prompt": "image prompt 1",
                     "video_prompt": "video prompt 1",
@@ -155,3 +162,10 @@ def test_full_demo_flow_saves_duration_sec(db_session):
     assert shot is not None
     assert shot.metadata_json["source_shot_id"] == "SH01"
     assert shot.metadata_json["duration_sec"] == 3
+    assert shot.metadata_json["shot_type"] == "dialogue"
+    assert shot.metadata_json["camera_motion"] == "slow_push_in"
+    assert shot.metadata_json["subject_motion"] == "blink"
+    assert shot.metadata_json["transition"] == "cut"
+    assert shot.metadata_json["subtitle_text"] == "对不起，我走错了。"
+    assert shot.metadata_json["sfx"] == "door_open"
+    assert shot.metadata_json["editing_notes"] == "Push in slightly as she enters."

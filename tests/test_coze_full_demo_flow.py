@@ -105,6 +105,42 @@ def test_coze_summary_completed_is_consistent_after_full_demo_flow(client):
     assert body["data"]["next_action"] == "completed"
 
 
+def test_full_demo_flow_creates_video_asset_task_from_video_shot_ids(client):
+    response = client.post("/coze/project/full-demo-flow", json=_full_demo_flow_payload())
+    assert response.status_code == 200
+    project_id = response.json()["data"]["project_id"]
+    assert response.json()["data"]["asset_tasks_count"] >= 4
+
+    video_readiness = client.get(f"/projects/{project_id}/video-readiness")
+    assert video_readiness.status_code == 200
+    body = video_readiness.json()
+    assert body["video_tasks_count"] >= 1
+    assert any(item["source_shot_id"] == "SH01" for item in body["items"])
+
+
+def test_full_demo_flow_with_empty_video_shot_ids_does_not_create_video_task(client):
+    payload = _full_demo_flow_payload()
+    payload["video_shot_ids"] = []
+
+    response = client.post("/coze/project/full-demo-flow", json=payload)
+    assert response.status_code == 200
+    project_id = response.json()["data"]["project_id"]
+    assert response.json()["data"]["asset_tasks_count"] == 3
+
+    video_readiness = client.get(f"/projects/{project_id}/video-readiness")
+    assert video_readiness.status_code == 200
+    assert video_readiness.json()["video_tasks_count"] == 0
+
+
+def test_full_demo_flow_with_unknown_video_shot_id_returns_clear_error(client):
+    payload = _full_demo_flow_payload()
+    payload["video_shot_ids"] = ["SH99"]
+
+    response = client.post("/coze/project/full-demo-flow", json=payload)
+    assert response.status_code == 400
+    assert "video_shot_ids contains unknown storyboard shot ids" in response.json()["detail"]
+
+
 def test_full_demo_flow_saves_duration_sec(db_session):
     response = coze_full_demo_flow(db_session, CozeFullDemoFlowRequest(**_full_demo_flow_payload()))
     project_id = response.data["project_id"]

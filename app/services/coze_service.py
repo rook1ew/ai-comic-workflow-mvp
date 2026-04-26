@@ -4,7 +4,10 @@ from sqlalchemy.orm import Session
 
 from app.models.character import Character
 from app.models.enums import AssetTaskStatus, ProjectStatus
+from app.models.episode import Episode
 from app.models.publish_record import PublishRecord
+from app.models.scene import Scene
+from app.models.shot import Shot
 from app.schemas.asset_task import BulkAssetTaskCreateRequest
 from app.schemas.character import CharacterCreate
 from app.schemas.coze import (
@@ -294,12 +297,49 @@ def _map_video_shot_ids_to_numeric(video_shot_ids: list[str]) -> list[int]:
     return mapped
 
 
+def _map_video_shot_ids_to_internal_shot_ids(db: Session, project_id: int, video_shot_ids: list[str]) -> list[int]:
+    if not video_shot_ids:
+        return []
+
+    shots = (
+        db.query(Shot)
+        .join(Scene, Shot.scene_id == Scene.id)
+        .join(Episode, Scene.episode_id == Episode.id)
+        .filter(Episode.project_id == project_id)
+        .all()
+    )
+    source_shot_id_to_internal_id: dict[str, int] = {}
+    for shot in shots:
+        source_shot_id = str((shot.metadata_json or {}).get("source_shot_id") or "").strip()
+        if source_shot_id:
+            source_shot_id_to_internal_id[source_shot_id.upper()] = shot.id
+
+    internal_ids: list[int] = []
+    missing_ids: list[str] = []
+    for shot_id in video_shot_ids:
+        normalized = shot_id.strip().upper()
+        internal_id = source_shot_id_to_internal_id.get(normalized)
+        if internal_id is None:
+            missing_ids.append(shot_id)
+            continue
+        internal_ids.append(internal_id)
+
+    if missing_ids:
+        raise HTTPException(
+            status_code=400,
+            detail=f"video_shot_ids contains unknown storyboard shot ids: {', '.join(missing_ids)}",
+        )
+
+    return internal_ids
+
+
 def coze_create_asset_tasks(db: Session, project_id: int, payload: CozeCreateAssetTasksRequest) -> CozeResponse:
     before_count = len(list_project_asset_tasks(db, project_id))
+    internal_video_shot_ids = _map_video_shot_ids_to_internal_shot_ids(db, project_id, payload.video_shot_ids)
     created = bulk_create_project_asset_tasks(
         db,
         project_id,
-        BulkAssetTaskCreateRequest(video_shot_ids=_map_video_shot_ids_to_numeric(payload.video_shot_ids)),
+        BulkAssetTaskCreateRequest(video_shot_ids=internal_video_shot_ids),
     )
     after_count = len(list_project_asset_tasks(db, project_id))
     return CozeResponse(

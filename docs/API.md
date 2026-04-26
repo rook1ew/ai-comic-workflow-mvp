@@ -845,3 +845,27 @@ Decision rules:
 - if publish-readiness is blocked, this endpoint follows the publish-readiness stage
 - if production is complete and publish-readiness is ready, delivery is allowed
 - if a publish record already exists, `next_action = completed`
+
+### `video_shot_ids` behavior in Coze asset task creation
+
+For:
+
+- `POST /coze/project/{project_id}/create-asset-tasks`
+- `POST /coze/project/full-demo-flow`
+
+the top-level field:
+
+```json
+{
+  "video_shot_ids": ["SH01", "SH07"]
+}
+```
+
+controls which storyboard shots should receive extra `video` asset tasks.
+
+Rules:
+
+- every shot still gets default `image + voice + bgm` tasks
+- only shot ids listed in `video_shot_ids` get an extra `video` task
+- the ids are matched against `storyboard_json.shots[].shot_id`, for example `SH01`
+- if a `video_shot_id` does not exist in the imported storyboard, the request returns a clear error instead of silently skipping it

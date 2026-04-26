@@ -68,6 +68,11 @@
 
 - `GET /projects/{project_id}/video-readiness`
 
+注意：
+
+- 只有 `video_shot_ids` 中列出的 storyboard shot 才会创建 `video` asset task
+- `video_shot_ids` 取值使用 storyboard 原始 shot 编号，例如 `SH01`
+
 确认每个 video task 是否已经具备：
 
 - 对应 image asset

@@ -40,6 +40,12 @@
 
 - `GET /projects/{project_id}/video-readiness`
 
+前提说明：
+
+- 只有在 `video_shot_ids` 中列出的 storyboard shot，系统才会创建 `video` 类型 asset task
+- `video_shot_ids` 使用的是 storyboard 里的源镜头编号，例如 `SH01`
+- 没有出现在 `video_shot_ids` 里的 shot，默认不会进入视频阶段
+
 重点看每个 video task：
 
 - `has_image_asset`

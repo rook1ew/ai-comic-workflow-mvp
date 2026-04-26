@@ -81,9 +81,10 @@
 4. `GET /projects/{project_id}/manual-image-progress`
 5. `GET /projects/{project_id}/editing-shot-board`
 6. `GET /projects/{project_id}/editing-timeline`
-7. 根据 shot board 和 timeline 进入人工剪辑
-8. 如需视频辅助，再看 `video-prompts` 或 `manual-video-progress`
-9. 最后看 `manual-production-summary` / `publish-readiness` / `manual-final-checklist`
+7. `GET /projects/{project_id}/editing-cue-sheet`
+8. 根据 shot board、timeline 和 cue sheet 进入人工剪辑
+9. 如需视频辅助，再看 `video-prompts` 或 `manual-video-progress`
+10. 最后看 `manual-production-summary` / `publish-readiness` / `manual-final-checklist`
 
 ## 当前限制
 

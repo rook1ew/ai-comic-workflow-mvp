@@ -310,3 +310,32 @@ class ProjectEditingTimeline(BaseModel):
     items: list[EditingTimelineItem] = Field(default_factory=list)
     blocking_issues: list[str] = Field(default_factory=list)
     next_action: str
+
+
+class EditingCueSheetItem(BaseModel):
+    order: int
+    source_shot_id: str | None = None
+    time_range: str
+    duration: int | float
+    image_asset_url: str | None = None
+    subtitle_text: str | None = None
+    sfx: str | None = None
+    camera_motion: str | None = None
+    subject_motion: str | None = None
+    transition: str | None = None
+    editing_notes: str | None = None
+    cue_line: str
+    ready_for_editing: bool
+    blocking_issues: list[str] = Field(default_factory=list)
+    warnings: list[str] = Field(default_factory=list)
+
+
+class ProjectEditingCueSheet(BaseModel):
+    project_id: int
+    shots_count: int
+    total_duration: int | float
+    ready_for_cue_sheet: bool
+    items: list[EditingCueSheetItem] = Field(default_factory=list)
+    plain_text: str
+    blocking_issues: list[str] = Field(default_factory=list)
+    next_action: str

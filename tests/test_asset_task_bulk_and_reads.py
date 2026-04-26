@@ -2362,3 +2362,289 @@ def test_editing_timeline_all_ready_returns_ready_for_manual_timeline_editing(cl
 def test_editing_timeline_missing_project_returns_404(client):
     response = client.get("/projects/999999/editing-timeline")
     assert response.status_code == 404
+
+
+def _create_editing_cue_sheet_project(
+    client,
+    *,
+    shots: list[dict],
+    upload_manual_images: bool = False,
+):
+    init = client.post("/coze/project/init", json={
+        "project_card_json": {
+            "project_title": "Editing Cue Sheet Demo",
+            "genre": "urban",
+            "platform": "coze",
+            "target_duration": 60,
+            "target_audience": "young-adult",
+            "visual_style": "anime-comic",
+            "core_conflict": "identity confusion",
+            "hook": "wrong room",
+            "ending_hook": "unexpected promotion",
+            "selling_points": ["fast"],
+            "status": "draft",
+        },
+        "characters_json": {
+            "characters": [
+                {
+                    "name": "Lin Xia",
+                    "role": "lead",
+                    "main_reference_confirmed": False,
+                }
+            ]
+        },
+    }).json()
+    project_id = init["data"]["project_id"]
+    character_id = init["data"]["character_ids"][0]
+    client.post(
+        f"/characters/{character_id}/confirm-reference",
+        json={"main_reference_url": "mock://character/reference.png"},
+    )
+    client.post(
+        f"/coze/project/{project_id}/storyboard",
+        json={
+            "script_card_json": {"opening_hook": "Opening"},
+            "storyboard_json": {"shots": shots},
+        },
+    )
+    client.post(f"/coze/project/{project_id}/create-asset-tasks", json={})
+    tasks = client.get(f"/projects/{project_id}/asset-tasks").json()
+    if upload_manual_images:
+        for task in tasks:
+            if task["modality"] == "image":
+                shot_id = task["shot_id"]
+                client.post(
+                    f"/asset-tasks/{task['id']}/manual-asset",
+                    json={
+                        "asset_url": f"file:///D:/AI漫剧图片库/shot_{shot_id}.png",
+                        "asset_type": "image",
+                        "notes": "manual image",
+                    },
+                )
+    return project_id
+
+
+def test_editing_cue_sheet_returns_items_and_plain_text(client):
+    project_id = _create_editing_cue_sheet_project(
+        client,
+        shots=[
+            {
+                "shot_id": "SH01",
+                "duration_sec": 3,
+                "character": "Lin Xia",
+                "location": "Meeting Room",
+                "core_action": "Lin Xia opens the door",
+                "emotion": "nervous",
+                "camera": "medium close-up",
+                "dialogue": "不好意思，我走错了。",
+                "shot_type": "dialogue",
+                "camera_motion": "slow_push_in",
+                "subject_motion": "blink, slight_body_shift",
+                "transition": "cut",
+                "subtitle_text": "不好意思，我走错了。",
+                "sfx": "door_open",
+                "editing_notes": "Use slight zoom-in and nervous pause.",
+                "image_prompt": "young woman opening a meeting room door",
+                "video_prompt": "office door opens, awkward pause",
+                "voice_prompt": "voice prompt 1",
+                "bgm_prompt": "bgm prompt 1",
+                "status": "prompt_ready",
+            },
+            {
+                "shot_id": "SH02",
+                "duration_sec": 5,
+                "character": "Lin Xia",
+                "location": "Meeting Room",
+                "core_action": "Coworker mocks her",
+                "emotion": "tense",
+                "camera": "close-up",
+                "dialogue": "你怎么又走错了？",
+                "shot_type": "reaction",
+                "camera_motion": "zoom_in",
+                "subject_motion": "mouth_move",
+                "transition": "cut",
+                "subtitle_text": "你怎么又走错了？",
+                "sfx": "crowd_murmur",
+                "editing_notes": "Hold for reaction beat.",
+                "image_prompt": "coworker mocking in meeting room",
+                "video_prompt": "awkward office reaction shot",
+                "voice_prompt": "voice prompt 2",
+                "bgm_prompt": "bgm prompt 2",
+                "status": "prompt_ready",
+            },
+        ],
+        upload_manual_images=True,
+    )
+
+    response = client.get(f"/projects/{project_id}/editing-cue-sheet")
+    assert response.status_code == 200
+    body = response.json()
+    assert body["shots_count"] == 2
+    assert len(body["items"]) == 2
+    assert body["plain_text"]
+    first = body["items"][0]
+    assert "SH01" in first["cue_line"]
+    assert "0.0s-3.0s" in first["cue_line"]
+    assert "图片:" in first["cue_line"]
+    assert "字幕:" in first["cue_line"]
+    assert "音效:" in first["cue_line"]
+    assert "镜头:" in first["cue_line"]
+    assert "人物微动:" in first["cue_line"]
+    assert "转场:" in first["cue_line"]
+    assert "备注:" in first["cue_line"]
+    assert first["cue_line"] in body["plain_text"]
+    assert body["items"][1]["cue_line"] in body["plain_text"]
+
+
+def test_editing_cue_sheet_prefers_manual_image_asset_url(client):
+    project_id = _create_editing_cue_sheet_project(
+        client,
+        shots=[
+            {
+                "shot_id": "SH01",
+                "duration_sec": 3,
+                "character": "Lin Xia",
+                "location": "Meeting Room",
+                "core_action": "Lin Xia opens the door",
+                "emotion": "nervous",
+                "camera": "medium close-up",
+                "dialogue": "不好意思，我走错了。",
+                "shot_type": "dialogue",
+                "camera_motion": "slow_push_in",
+                "subject_motion": "blink",
+                "transition": "cut",
+                "subtitle_text": "不好意思，我走错了。",
+                "sfx": "door_open",
+                "editing_notes": "Use slight zoom-in and nervous pause.",
+                "image_prompt": "young woman opening a meeting room door",
+                "video_prompt": "office door opens, awkward pause",
+                "voice_prompt": "voice prompt 1",
+                "bgm_prompt": "bgm prompt 1",
+                "status": "prompt_ready",
+            }
+        ],
+        upload_manual_images=True,
+    )
+
+    response = client.get(f"/projects/{project_id}/editing-cue-sheet")
+    assert response.status_code == 200
+    item = response.json()["items"][0]
+    assert item["image_asset_url"].startswith("file:///D:/AI漫剧图片库/")
+
+
+def test_editing_cue_sheet_missing_image_blocks_export(client):
+    project_id = _create_editing_cue_sheet_project(
+        client,
+        shots=[
+            {
+                "shot_id": "SH01",
+                "duration_sec": 3,
+                "character": "Lin Xia",
+                "location": "Meeting Room",
+                "core_action": "Lin Xia opens the door",
+                "emotion": "nervous",
+                "camera": "medium close-up",
+                "dialogue": "不好意思，我走错了。",
+                "shot_type": "dialogue",
+                "camera_motion": "slow_push_in",
+                "subject_motion": "blink",
+                "transition": "cut",
+                "subtitle_text": "不好意思，我走错了。",
+                "sfx": "door_open",
+                "editing_notes": "Use slight zoom-in and nervous pause.",
+                "image_prompt": "young woman opening a meeting room door",
+                "video_prompt": "office door opens, awkward pause",
+                "voice_prompt": "voice prompt 1",
+                "bgm_prompt": "bgm prompt 1",
+                "status": "prompt_ready",
+            }
+        ],
+        upload_manual_images=False,
+    )
+
+    response = client.get(f"/projects/{project_id}/editing-cue-sheet")
+    assert response.status_code == 200
+    body = response.json()
+    assert body["ready_for_cue_sheet"] is False
+    assert "missing_image_asset" in body["blocking_issues"]
+    assert body["next_action"] == "fix_editing_inputs"
+
+
+def test_editing_cue_sheet_missing_subtitle_and_sfx_add_warnings_without_blocking(client):
+    project_id = _create_editing_cue_sheet_project(
+        client,
+        shots=[
+            {
+                "shot_id": "SH01",
+                "duration_sec": 3,
+                "character": "Lin Xia",
+                "location": "Meeting Room",
+                "core_action": "Lin Xia opens the door",
+                "emotion": "nervous",
+                "camera": "medium close-up",
+                "dialogue": "不好意思，我走错了。",
+                "shot_type": "dialogue",
+                "camera_motion": "slow_push_in",
+                "subject_motion": "blink",
+                "transition": "cut",
+                "editing_notes": "Use slight zoom-in and nervous pause.",
+                "image_prompt": "young woman opening a meeting room door",
+                "video_prompt": "office door opens, awkward pause",
+                "voice_prompt": "voice prompt 1",
+                "bgm_prompt": "bgm prompt 1",
+                "status": "prompt_ready",
+            }
+        ],
+        upload_manual_images=True,
+    )
+
+    response = client.get(f"/projects/{project_id}/editing-cue-sheet")
+    assert response.status_code == 200
+    body = response.json()
+    item = body["items"][0]
+    assert "missing_subtitle_text" in item["warnings"]
+    assert "missing_sfx" in item["warnings"]
+    assert body["ready_for_cue_sheet"] is True
+    assert body["next_action"] == "ready_for_manual_editing"
+
+
+def test_editing_cue_sheet_all_ready_returns_ready_for_manual_editing(client):
+    project_id = _create_editing_cue_sheet_project(
+        client,
+        shots=[
+            {
+                "shot_id": "SH01",
+                "duration_sec": 3,
+                "character": "Lin Xia",
+                "location": "Meeting Room",
+                "core_action": "Lin Xia opens the door",
+                "emotion": "nervous",
+                "camera": "medium close-up",
+                "dialogue": "不好意思，我走错了。",
+                "shot_type": "dialogue",
+                "camera_motion": "slow_push_in",
+                "subject_motion": "blink",
+                "transition": "cut",
+                "subtitle_text": "不好意思，我走错了。",
+                "sfx": "door_open",
+                "editing_notes": "Use slight zoom-in and nervous pause.",
+                "image_prompt": "young woman opening a meeting room door",
+                "video_prompt": "office door opens, awkward pause",
+                "voice_prompt": "voice prompt 1",
+                "bgm_prompt": "bgm prompt 1",
+                "status": "prompt_ready",
+            }
+        ],
+        upload_manual_images=True,
+    )
+
+    response = client.get(f"/projects/{project_id}/editing-cue-sheet")
+    assert response.status_code == 200
+    body = response.json()
+    assert body["ready_for_cue_sheet"] is True
+    assert body["next_action"] == "ready_for_manual_editing"
+
+
+def test_editing_cue_sheet_missing_project_returns_404(client):
+    response = client.get("/projects/999999/editing-cue-sheet")
+    assert response.status_code == 404

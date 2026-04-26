@@ -26,9 +26,10 @@
 8. `GET /projects/{project_id}/manual-video-progress`
 9. `GET /projects/{project_id}/editing-shot-board`
 10. `GET /projects/{project_id}/editing-timeline`
-11. `GET /projects/{project_id}/manual-production-summary`
-12. `GET /projects/{project_id}/publish-readiness`
-13. `GET /projects/{project_id}/manual-final-checklist`
+11. `GET /projects/{project_id}/editing-cue-sheet`
+12. `GET /projects/{project_id}/manual-production-summary`
+13. `GET /projects/{project_id}/publish-readiness`
+14. `GET /projects/{project_id}/manual-final-checklist`
 
 ## 推荐操作顺序
 
@@ -134,6 +135,18 @@
 - 自动计算每个 shot 的 `start_time / end_time`
 - 输出字幕、音效、镜头运动、人物微动和转场
 - 作为剪映 / CapCut / Premiere / Coze 视频创作的时间线执行清单
+
+### 9. 导出人类可读的 cue sheet
+
+调用：
+
+- `GET /projects/{project_id}/editing-cue-sheet`
+
+用途：
+
+- 把 `editing-timeline` 转成更适合人工阅读和复制的单行清单
+- 直接复制到 Coze 视频创作、剪映备注、CapCut、Premiere、Notion 或 Excel
+- 给剪辑师一个逐镜头、逐时间段的施工单
 
 ## 三层总览接口
 

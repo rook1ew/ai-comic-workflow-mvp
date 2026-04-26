@@ -26,6 +26,8 @@ from app.schemas.project import ProjectEditingShotBoard
 from app.schemas.project import EditingShotBoardItem
 from app.schemas.project import ProjectEditingTimeline
 from app.schemas.project import EditingTimelineItem
+from app.schemas.project import ProjectEditingCueSheet
+from app.schemas.project import EditingCueSheetItem
 from app.schemas.project import ProjectManualVideoProgress
 from app.schemas.project import ProjectManualVideoProgressItem
 from app.schemas.project import ProjectPublishReadiness
@@ -1015,6 +1017,85 @@ def get_project_editing_timeline(db: Session, project_id: int) -> ProjectEditing
         total_duration=current_time,
         ready_for_timeline=ready_for_timeline,
         items=timeline_items,
+        blocking_issues=sorted(blocking_issue_set),
+        next_action=next_action,
+    )
+
+
+def get_project_editing_cue_sheet(db: Session, project_id: int) -> ProjectEditingCueSheet:
+    timeline = get_project_editing_timeline(db, project_id)
+
+    items: list[EditingCueSheetItem] = []
+    blocking_issue_set: set[str] = set(timeline.blocking_issues)
+    ready_for_cue_sheet = True
+    cue_lines: list[str] = []
+
+    for item in timeline.items:
+        item_warnings = list(item.warnings)
+        item_blocking_issues = list(item.blocking_issues)
+
+        if not item.subtitle_text:
+            item_warnings.append("missing_subtitle_text")
+        if not item.sfx:
+            item_warnings.append("missing_sfx")
+        if not item.camera_motion:
+            item_warnings.append("missing_camera_motion")
+        if not item.subject_motion:
+            item_warnings.append("missing_subject_motion")
+        if not item.transition:
+            item_warnings.append("missing_transition")
+        if not item.editing_notes:
+            item_warnings.append("missing_editing_notes")
+
+        if item_blocking_issues:
+            ready_for_cue_sheet = False
+            for issue in item_blocking_issues:
+                blocking_issue_set.add(issue)
+
+        time_range = f"{float(item.start_time):.1f}s-{float(item.end_time):.1f}s"
+        cue_segments = [
+            item.source_shot_id or f"SHOT-{item.internal_shot_id}",
+            time_range,
+            f"图片: {item.image_asset_url or '[missing image]'}",
+            f"字幕: {item.subtitle_text or '[none]'}",
+            f"音效: {item.sfx or '[none]'}",
+            f"镜头: {item.camera_motion or '[none]'}",
+            f"人物微动: {item.subject_motion or '[none]'}",
+            f"转场: {item.transition or '[none]'}",
+            f"备注: {item.editing_notes or '[none]'}",
+        ]
+        cue_line = " | ".join(cue_segments)
+        cue_lines.append(cue_line)
+
+        items.append(
+            EditingCueSheetItem(
+                order=item.order,
+                source_shot_id=item.source_shot_id,
+                time_range=time_range,
+                duration=item.duration,
+                image_asset_url=item.image_asset_url,
+                subtitle_text=item.subtitle_text,
+                sfx=item.sfx,
+                camera_motion=item.camera_motion,
+                subject_motion=item.subject_motion,
+                transition=item.transition,
+                editing_notes=item.editing_notes,
+                cue_line=cue_line,
+                ready_for_editing=item.ready_for_editing,
+                blocking_issues=item_blocking_issues,
+                warnings=item_warnings,
+            )
+        )
+
+    next_action = "ready_for_manual_editing" if ready_for_cue_sheet else "fix_editing_inputs"
+
+    return ProjectEditingCueSheet(
+        project_id=project_id,
+        shots_count=timeline.shots_count,
+        total_duration=timeline.total_duration,
+        ready_for_cue_sheet=ready_for_cue_sheet,
+        items=items,
+        plain_text="\n".join(cue_lines),
         blocking_issues=sorted(blocking_issue_set),
         next_action=next_action,
     )

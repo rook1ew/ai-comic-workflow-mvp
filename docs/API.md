@@ -1045,6 +1045,68 @@ Rules:
 - prefers a manual image asset over a mock image asset
 - if all items are ready, `next_action = ready_for_manual_timeline_editing`
 
+### GET `/projects/{project_id}/editing-cue-sheet`
+
+Project-level human-readable cue sheet export for manual editing, Coze video
+creation, Notion, Excel, CapCut, or Premiere notes.
+
+Use cases:
+
+- convert `editing-timeline` into a copy-friendly cue sheet
+- give editors a shot-by-shot checklist in plain language
+- copy all cue lines into Coze, CapCut, Premiere, Notion, or Excel
+
+Response example:
+
+```json
+{
+  "project_id": 1,
+  "shots_count": 3,
+  "total_duration": 12,
+  "ready_for_cue_sheet": true,
+  "items": [
+    {
+      "order": 1,
+      "source_shot_id": "SH01",
+      "time_range": "0.0s-3.0s",
+      "duration": 3,
+      "image_asset_url": "file:///D:/AI-comic-assets/SH01.png",
+      "subtitle_text": "不好意思，我走错了。",
+      "sfx": "door_open",
+      "camera_motion": "slow_push_in",
+      "subject_motion": "blink, slight_body_shift",
+      "transition": "cut",
+      "editing_notes": "Use slight zoom-in and nervous pause.",
+      "cue_line": "SH01 | 0.0s-3.0s | 图片: file:///D:/AI-comic-assets/SH01.png | 字幕: 不好意思，我走错了。",
+      "ready_for_editing": true,
+      "blocking_issues": [],
+      "warnings": []
+    }
+  ],
+  "plain_text": "SH01 | 0.0s-3.0s | 图片: file:///D:/AI-comic-assets/SH01.png | 字幕: 不好意思，我走错了。",
+  "blocking_issues": [],
+  "next_action": "ready_for_manual_editing"
+}
+```
+
+Rules:
+
+- returns all shots in timeline order
+- reuses `editing-timeline` rather than calculating a separate timeline
+- `cue_line` is a one-line human-readable editing instruction per shot
+- `plain_text` is the multi-line concatenation of all cue lines
+- if an image asset is missing:
+  - `ready_for_cue_sheet = false`
+  - `blocking_issues` includes `missing_image_asset`
+- if `subtitle_text` is missing:
+  - warning only, not blocking
+- if `sfx` is missing:
+  - warning only, not blocking
+- if all items are ready:
+  - `next_action = ready_for_manual_editing`
+- if any blocking issue exists:
+  - `next_action = fix_editing_inputs`
+
 ### Editing storyboard metadata fields
 
 The following optional fields are supported in storyboard shot payloads and are

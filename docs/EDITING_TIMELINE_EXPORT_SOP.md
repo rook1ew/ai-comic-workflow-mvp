@@ -182,6 +182,7 @@ GET /projects/{project_id}/editing-timeline
 ## 相关文档
 
 - [EDITING_SHOT_BOARD_SOP.md](/C:/Users/29964/Documents/GitHub/ai-comic-workflow-mvp-git/docs/EDITING_SHOT_BOARD_SOP.md)
+- [EDITING_CUE_SHEET_EXPORT_SOP.md](/C:/Users/29964/Documents/GitHub/ai-comic-workflow-mvp-git/docs/EDITING_CUE_SHEET_EXPORT_SOP.md)
 - [EDITING_STORYBOARD_FIELDS.md](/C:/Users/29964/Documents/GitHub/ai-comic-workflow-mvp-git/docs/EDITING_STORYBOARD_FIELDS.md)
 - [MANUAL_PRODUCTION_WORKFLOW.md](/C:/Users/29964/Documents/GitHub/ai-comic-workflow-mvp-git/docs/MANUAL_PRODUCTION_WORKFLOW.md)
 - [API.md](/C:/Users/29964/Documents/GitHub/ai-comic-workflow-mvp-git/docs/API.md)

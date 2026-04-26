@@ -536,6 +536,60 @@ def test_video_readiness_missing_project_returns_404(client):
     assert response.status_code == 404
 
 
+def test_project_video_prompts_returns_video_tasks(client):
+    project, shot1, shot2 = _create_project_graph(client)
+    client.post("/asset-tasks", json={"shot_id": shot1["id"], "modality": "video", "provider_name": "mock", "input_payload": {"duration": 3}})
+    client.post("/asset-tasks", json={"shot_id": shot2["id"], "modality": "video", "provider_name": "mock", "input_payload": {"duration": 5}})
+
+    response = client.get(f"/projects/{project['id']}/video-prompts")
+    assert response.status_code == 200
+    body = response.json()
+    assert body["project_id"] == project["id"]
+    assert body["items_count"] == 2
+    assert len(body["items"]) == 2
+
+
+def test_project_video_prompts_include_image_asset_url_and_copy_ready_prompt(client):
+    project, shot1, _ = _create_project_graph(client)
+    image_task = client.post("/asset-tasks", json={"shot_id": shot1["id"], "modality": "image", "provider_name": "mock"}).json()
+    client.post(
+        f"/asset-tasks/{image_task['id']}/manual-asset",
+        json={"asset_url": "file:///D:/ai-comic-assets/SH01.png", "asset_type": "image", "notes": "manual image"},
+    )
+    video_task = client.post(
+        "/asset-tasks",
+        json={"shot_id": shot1["id"], "modality": "video", "provider_name": "mock", "input_payload": {"duration": 3}},
+    ).json()
+
+    response = client.get(f"/projects/{project['id']}/video-prompts")
+    assert response.status_code == 200
+    item = next(exported for exported in response.json()["items"] if exported["asset_task_id"] == video_task["id"])
+    assert item["image_asset_url"] == "file:///D:/ai-comic-assets/SH01.png"
+    assert item["copy_ready_video_prompt"]
+    assert item["negative_prompt"] in item["copy_ready_video_prompt"]
+    assert item["ready_for_video_prompt"] is True
+
+
+def test_project_video_prompts_missing_image_asset_returns_blocking_issue(client):
+    project, shot1, _ = _create_project_graph(client)
+    video_task = client.post(
+        "/asset-tasks",
+        json={"shot_id": shot1["id"], "modality": "video", "provider_name": "mock", "input_payload": {"duration": 3}},
+    ).json()
+
+    response = client.get(f"/projects/{project['id']}/video-prompts")
+    assert response.status_code == 200
+    item = next(exported for exported in response.json()["items"] if exported["asset_task_id"] == video_task["id"])
+    assert item["image_asset_url"] is None
+    assert item["ready_for_video_prompt"] is False
+    assert "missing_image_asset" in item["blocking_issues"]
+
+
+def test_project_video_prompts_missing_project_returns_404(client):
+    response = client.get("/projects/9999/video-prompts")
+    assert response.status_code == 404
+
+
 def test_manual_video_progress_returns_all_project_video_tasks(client):
     project, shot1, shot2 = _create_project_graph(client)
     client.post("/asset-tasks", json={"shot_id": shot1["id"], "modality": "video", "provider_name": "mock"})

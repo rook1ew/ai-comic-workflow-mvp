@@ -869,3 +869,47 @@ Rules:
 - only shot ids listed in `video_shot_ids` get an extra `video` task
 - the ids are matched against `storyboard_json.shots[].shot_id`, for example `SH01`
 - if a `video_shot_id` does not exist in the imported storyboard, the request returns a clear error instead of silently skipping it
+
+### GET `/projects/{project_id}/video-prompts`
+
+Export copy-ready prompts for all video asset tasks in one project.
+
+Use cases:
+
+- manually copy prompts into Seedance web or other video tools
+- reuse the uploaded image asset as the first frame reference
+- confirm whether a video task is already ready for manual video generation
+
+Response example:
+
+```json
+{
+  "project_id": 1,
+  "items_count": 1,
+  "items": [
+    {
+      "asset_task_id": 10,
+      "internal_shot_id": 1,
+      "source_shot_id": "SH01",
+      "image_asset_url": "file:///D:/ai-comic-assets/SH01.png",
+      "duration": 3,
+      "character": "Lin Xia",
+      "location": "Meeting Room",
+      "emotion": "nervous",
+      "camera": "medium",
+      "dialogue": "Sorry, wrong room.",
+      "base_video_prompt": "video prompt 1",
+      "copy_ready_video_prompt": "Use uploaded image as first frame ...",
+      "negative_prompt": "Do not imitate specific IP, celebrities, film characters, or known anime characters; no scene change; no watermark; no text overlay; no distorted hands; no extra limbs; no face morphing.",
+      "ready_for_video_prompt": true,
+      "blocking_issues": []
+    }
+  ]
+}
+```
+
+Rules:
+
+- only `video` asset tasks are returned
+- if the image asset is missing, the item still returns but includes `missing_image_asset`
+- if both image asset and duration are present, `ready_for_video_prompt = true`

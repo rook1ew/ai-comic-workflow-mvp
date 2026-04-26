@@ -65,6 +65,30 @@ class ProjectImagePromptExport(BaseModel):
     items: list[ProjectImagePromptItem] = Field(default_factory=list)
 
 
+class ProjectVideoPromptItem(BaseModel):
+    asset_task_id: int
+    internal_shot_id: int
+    source_shot_id: str | None = None
+    image_asset_url: str | None = None
+    duration: int | float | None = None
+    character: str | None = None
+    location: str | None = None
+    emotion: str | None = None
+    camera: str | None = None
+    dialogue: str | None = None
+    base_video_prompt: str
+    copy_ready_video_prompt: str
+    negative_prompt: str
+    ready_for_video_prompt: bool
+    blocking_issues: list[str] = Field(default_factory=list)
+
+
+class ProjectVideoPromptExport(BaseModel):
+    project_id: int
+    items_count: int
+    items: list[ProjectVideoPromptItem] = Field(default_factory=list)
+
+
 class ProjectManualImageProgressItem(BaseModel):
     asset_task_id: int
     internal_shot_id: int

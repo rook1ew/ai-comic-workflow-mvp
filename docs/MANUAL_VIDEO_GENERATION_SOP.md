@@ -1,20 +1,20 @@
-# MANUAL_VIDEO_GENERATION_SOP
+﻿# MANUAL_VIDEO_GENERATION_SOP
 
 ## 目标
 
-当前项目在没有 Seedance API billing 的前提下，先走“视频就绪检查 + 人工生成视频 + 手动回填”的执行流程。
+当前项目在没有 Seedance API billing 的前提下，先跑通“视频就绪检查 + 手动生成视频 + 手动回填”的执行流程。
 
 这份 SOP 说明：
-
-1. 如何确认视频任务是否已具备生成条件
-2. 如何手动生成视频
-3. 如何回填视频 Asset
-4. 如何检查单任务和项目级视频进度
-5. 如何结合 `manual-production-summary` 判断是否已进入发布或合成阶段
+1. 如何确认视频任务是否已经具备生成条件
+2. 如何导出可直接复制的视频提示词
+3. 如何手动生成视频
+4. 如何回填视频 Asset
+5. 如何检查单任务和项目级视频进度
+6. 如何结合总览接口判断是否已经进入发布或合成阶段
 
 ## 总览接口优先
 
-推荐先调用：
+推荐先看：
 
 - `GET /projects/{project_id}/manual-production-summary`
 - `GET /projects/{project_id}/publish-readiness`
@@ -30,7 +30,7 @@
 
 - `stage = video_input_fixing`
 
-说明还不能进入视频生成，应该先修正图片缺口或 duration 等输入问题。
+说明还不能进入视频生成，应先修复图片缺口或 duration 等输入问题。
 
 `manual-production-summary` 用于看当前生产阶段，`publish-readiness` 用于在视频全部完成后做发布前放行检查，`manual-final-checklist` 用于最终交付总检查。
 
@@ -61,7 +61,35 @@
 - 缺 duration 时会有 `missing_duration`
 - 所有 video tasks 都 ready 时：`next_action = ready_for_video_generation`
 
-## 人工生成视频
+## 导出手动视频提示词
+
+调用：
+
+- `GET /projects/{project_id}/video-prompts`
+
+用途：
+
+- 导出每个 video task 的 `copy_ready_video_prompt`
+- 自动组合 image asset、duration、video prompt、core action 和 storyboard 上下文
+- 方便直接复制到 Seedance 网页端或其他人工视频工具
+
+返回重点字段：
+
+- `image_asset_url`
+- `duration`
+- `base_video_prompt`
+- `copy_ready_video_prompt`
+- `negative_prompt`
+- `ready_for_video_prompt`
+- `blocking_issues`
+
+规则：
+
+- 只返回 `video` 类型 asset task
+- 如果缺少 `image_asset_url`，也会返回该 item，但会有 `missing_image_asset`
+- 如果有 `image_asset_url` 且有 `duration`，则 `ready_for_video_prompt = true`
+
+## 手动生成视频
 
 当某个 video task 已 ready 后，可以手动在这些地方生成视频：
 
@@ -74,7 +102,7 @@
 - `source_shot_id`
 - 使用的图片 URL 或本地文件
 - 使用的 `duration`
-- 使用的 `video_prompt`
+- 使用的 `copy_ready_video_prompt`
 - 导出视频路径或 URL
 
 ## 回填视频 Asset
@@ -134,12 +162,13 @@
 
 1. 先看 `GET /projects/{project_id}/manual-production-summary`
 2. 如果 `stage = manual_video_generation`
-   - 再看 `GET /projects/{project_id}/video-readiness`
+   - 看 `GET /projects/{project_id}/video-readiness`
+   - 看 `GET /projects/{project_id}/video-prompts`
    - 手动生成视频
    - 调 `POST /asset-tasks/{asset_task_id}/manual-video-asset`
 3. 用 `GET /asset-tasks/{asset_task_id}/provider-debug` 检查单任务
 4. 用 `GET /projects/{project_id}/manual-video-progress` 看项目级视频进度
-5. 再回到 `manual-production-summary` 看是否已经完成整个手动生产链路
+5. 回到 `manual-production-summary` 看是否已经完成整个手动生产链路
 
 ## 完成判定
 

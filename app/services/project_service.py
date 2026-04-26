@@ -15,6 +15,8 @@ from app.models.shot import Shot
 from app.schemas.project import ProjectCreate
 from app.schemas.project import ProjectImagePromptExport
 from app.schemas.project import ProjectImagePromptItem
+from app.schemas.project import ProjectVideoPromptExport
+from app.schemas.project import ProjectVideoPromptItem
 from app.schemas.project import ProjectManualProductionSummary
 from app.schemas.project import ManualProductionBlockingSummary
 from app.schemas.project import ProjectManualImageProgress
@@ -35,6 +37,11 @@ from app.services.repository import create_and_refresh
 MANUAL_IMAGE_NEGATIVE_PROMPT = (
     "不要模仿具体IP、明星、影视角色或已知动漫角色；不要水印；不要乱码文字；"
     "不要多余肢体；不要低清晰度。"
+)
+
+MANUAL_VIDEO_NEGATIVE_PROMPT = (
+    "Do not imitate specific IP, celebrities, film characters, or known anime characters; "
+    "no scene change; no watermark; no text overlay; no distorted hands; no extra limbs; no face morphing."
 )
 
 
@@ -182,6 +189,37 @@ def _build_copy_ready_prompt(enhanced_prompt: str, negative_prompt: str) -> str:
     ).strip()
 
 
+def _build_copy_ready_video_prompt(
+    *,
+    image_asset_url: str | None,
+    duration: int | float | None,
+    base_video_prompt: str,
+    core_action: str,
+    character: str | None,
+    location: str | None,
+    emotion: str | None,
+    camera: str | None,
+    dialogue: str | None,
+    negative_prompt: str,
+) -> str:
+    parts = [
+        "Use uploaded image as first frame." if image_asset_url else "Image asset is missing; upload image first before video generation.",
+        f"Image asset URL: {image_asset_url}" if image_asset_url else None,
+        f"Duration: {duration} seconds." if duration is not None else "Duration is missing and must be confirmed before generation.",
+        "Format: 9:16 vertical anime-comic video.",
+        f"Base video prompt: {base_video_prompt}",
+        f"Core action: {core_action}",
+        f"Character: {character}" if character else None,
+        f"Location: {location}" if location else None,
+        f"Emotion: {emotion}" if emotion else None,
+        f"Camera: {camera}" if camera else None,
+        f"Dialogue cue: {dialogue}" if dialogue else None,
+        "Keep character identity, face, hairstyle, and outfit consistent.",
+        f"Negative prompt: {negative_prompt}",
+    ]
+    return "\n".join(part for part in parts if part).strip()
+
+
 def export_project_image_prompts(db: Session, project_id: int) -> ProjectImagePromptExport:
     project = get_project_or_404(db, project_id)
     style = _extract_project_style(project)
@@ -259,6 +297,76 @@ def export_project_image_prompts(db: Session, project_id: int) -> ProjectImagePr
         )
 
     return ProjectImagePromptExport(
+        project_id=project_id,
+        items_count=len(items),
+        items=items,
+    )
+
+
+def export_project_video_prompts(db: Session, project_id: int) -> ProjectVideoPromptExport:
+    get_project_or_404(db, project_id)
+
+    tasks = (
+        db.query(AssetTask)
+        .join(Shot, AssetTask.shot_id == Shot.id)
+        .join(Scene, Shot.scene_id == Scene.id)
+        .join(Episode, Scene.episode_id == Episode.id)
+        .filter(Episode.project_id == project_id, AssetTask.modality == AssetModality.VIDEO)
+        .order_by(AssetTask.id.asc())
+        .all()
+    )
+
+    items: list[ProjectVideoPromptItem] = []
+    for task in tasks:
+        shot = task.shot
+        shot_metadata = shot.metadata_json or {}
+        image_asset = (
+            db.query(Asset)
+            .filter(Asset.shot_id == shot.id, Asset.modality == AssetModality.IMAGE)
+            .order_by(Asset.id.asc())
+            .first()
+        )
+        image_asset_url = image_asset.file_url if image_asset is not None else None
+        duration = _extract_video_duration(task, shot)
+        blocking_issues: list[str] = []
+        if not image_asset_url:
+            blocking_issues.append("missing_image_asset")
+
+        base_video_prompt = shot.video_prompt
+        copy_ready_video_prompt = _build_copy_ready_video_prompt(
+            image_asset_url=image_asset_url,
+            duration=duration,
+            base_video_prompt=base_video_prompt,
+            core_action=shot.core_action,
+            character=shot_metadata.get("character"),
+            location=shot_metadata.get("location"),
+            emotion=shot_metadata.get("emotion"),
+            camera=shot_metadata.get("camera"),
+            dialogue=shot_metadata.get("dialogue"),
+            negative_prompt=MANUAL_VIDEO_NEGATIVE_PROMPT,
+        )
+
+        items.append(
+            ProjectVideoPromptItem(
+                asset_task_id=task.id,
+                internal_shot_id=shot.id,
+                source_shot_id=shot_metadata.get("source_shot_id"),
+                image_asset_url=image_asset_url,
+                duration=duration,
+                character=shot_metadata.get("character"),
+                location=shot_metadata.get("location"),
+                emotion=shot_metadata.get("emotion"),
+                camera=shot_metadata.get("camera"),
+                dialogue=shot_metadata.get("dialogue"),
+                base_video_prompt=base_video_prompt,
+                copy_ready_video_prompt=copy_ready_video_prompt,
+                negative_prompt=MANUAL_VIDEO_NEGATIVE_PROMPT,
+                ready_for_video_prompt=bool(image_asset_url and duration is not None),
+                blocking_issues=blocking_issues,
+            )
+        )
+
+    return ProjectVideoPromptExport(
         project_id=project_id,
         items_count=len(items),
         items=items,

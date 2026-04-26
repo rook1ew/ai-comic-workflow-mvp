@@ -5,6 +5,7 @@ from app.api.dependencies import get_db
 from app.schemas.project import (
     ProjectCreate,
     ProjectImagePromptExport,
+    ProjectVideoPromptExport,
     ProjectManualImageProgress,
     ProjectManualFinalChecklist,
     ProjectManualProductionSummary,
@@ -19,6 +20,7 @@ from app.services.asset_task_service import get_project_provider_readiness
 from app.services.project_service import (
     create_project,
     export_project_image_prompts,
+    export_project_video_prompts,
     get_project_or_404,
     get_project_manual_image_progress,
     get_project_manual_final_checklist,
@@ -61,6 +63,11 @@ def get_project_provider_readiness_route(project_id: int, db: Session = Depends(
 @router.get("/projects/{project_id}/image-prompts", response_model=ProjectImagePromptExport)
 def get_project_image_prompts_route(project_id: int, db: Session = Depends(get_db)) -> ProjectImagePromptExport:
     return export_project_image_prompts(db, project_id)
+
+
+@router.get("/projects/{project_id}/video-prompts", response_model=ProjectVideoPromptExport)
+def get_project_video_prompts_route(project_id: int, db: Session = Depends(get_db)) -> ProjectVideoPromptExport:
+    return export_project_video_prompts(db, project_id)
 
 
 @router.get("/projects/{project_id}/manual-image-progress", response_model=ProjectManualImageProgress)

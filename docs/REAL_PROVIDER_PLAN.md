@@ -9,12 +9,14 @@
 - v0.2 做了哪些 provider readiness 能力
 - v0.3 做了哪些真实 Image2 接入前准备
 - 当前为什么仍然停在真实调用前
+- 在没有 billing 时如何先走手动生图替代路径
 - 后续 v0.3-E / v0.4 应该如何推进
 
 ## 总体路线
 
 - v0.2：完成 Provider Readiness 底座
 - v0.3：完成真实 `Image2Provider` 调用前准备
+- v0.3-E-alt：在没有 billing 时提供手动生图提示词导出
 - v0.4：再考虑真实 `SeedanceVideoProvider` 接入
 
 当前明确状态：
@@ -91,6 +93,7 @@
 
 - `GET /asset-tasks/{asset_task_id}/provider-debug`
 - `GET /projects/{project_id}/provider-debug-summary`
+- `GET /projects/{project_id}/image-prompts`
 
 用途包括：
 
@@ -98,6 +101,7 @@
 - 检查 image task 是否已有 `enhanced_prompt`
 - 检查 storyboard context 是否正确透传
 - 检查 video task 是否已有 `image_url` 和 `duration`
+- 导出项目级手动生图 copy-ready prompts
 - 在接真实 provider 前做 task 级和 project 级联调排查
 
 ### 5. provider readiness
@@ -224,6 +228,34 @@
 - 失败处理
 - 回滚步骤
 
+### v0.3-E-alt Manual Image Prompt Export
+
+在用户暂时没有 OpenAI billing 的情况下，当前增加了一条完全不产生 API 费用的替代路径：
+
+- `GET /projects/{project_id}/image-prompts`
+
+这条路径会复用现有：
+
+- `enhanced_prompt`
+- `storyboard_context`
+- image task / asset metadata
+
+导出项目下所有 image asset tasks 的 copy-ready prompts，方便人工复制到 ChatGPT 或其他图片生成工具。
+
+这一能力的定位非常明确：
+
+- 不进入真实 Image2 调用
+- 不读取真实 API key
+- 不产生真实费用
+- 不影响现有 mock / dry-run / provider_audit 保护链路
+
+同时继续保持内容边界：
+
+- 不要模仿具体 IP
+- 不要模仿明星
+- 不要模仿影视角色
+- 不要模仿已知动漫角色
+
 ## 当前停在哪里
 
 v0.3 当前明确停在：
@@ -248,6 +280,17 @@ v0.3 当前明确停在：
 - 已选定单个允许真实调用的 `asset_task_id`
 
 如果这些条件没准备好，就不应该放开第一次真实调用。
+
+## 在没有 billing 时的建议流程
+
+如果当前还没有 billing，可以先按这条路径继续推进内容生产：
+
+1. `POST /coze/project/validate-payload`
+2. `POST /coze/project/full-demo-flow`
+3. `GET /projects/{project_id}/provider-debug-summary`
+4. `GET /projects/{project_id}/provider-readiness`
+5. `GET /projects/{project_id}/image-prompts`
+6. 手动复制 `copy_ready_prompt` 到 ChatGPT 或其他图片生成工具
 
 ## 进入 v0.3-E 前的建议流程
 

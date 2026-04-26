@@ -3,7 +3,15 @@ from sqlalchemy.orm import Session
 
 from app.api.dependencies import get_db
 from app.schemas.asset import AssetResponse
-from app.schemas.asset_task import AssetTaskCreate, AssetTaskResponse, BulkAssetTaskCreateRequest, BulkAssetTaskRunResponse, ProjectProviderDebugSummary, ProviderDebugSnapshot
+from app.schemas.asset_task import (
+    AssetTaskCreate,
+    AssetTaskResponse,
+    BulkAssetTaskCreateRequest,
+    BulkAssetTaskRunResponse,
+    ManualAssetRegisterRequest,
+    ProjectProviderDebugSummary,
+    ProviderDebugSnapshot,
+)
 from app.services.asset_task_service import (
     bulk_create_project_asset_tasks,
     bulk_run_project_asset_tasks,
@@ -13,6 +21,8 @@ from app.services.asset_task_service import (
     get_provider_debug_snapshot,
     list_project_asset_tasks,
     list_project_assets,
+    register_manual_asset,
+    register_manual_video_asset,
     run_asset_task,
 )
 
@@ -37,6 +47,24 @@ def run_asset_task_route(asset_task_id: int, db: Session = Depends(get_db)) -> A
 @router.get("/asset-tasks/{asset_task_id}/provider-debug", response_model=ProviderDebugSnapshot)
 def get_provider_debug_snapshot_route(asset_task_id: int, db: Session = Depends(get_db)) -> ProviderDebugSnapshot:
     return get_provider_debug_snapshot(db, asset_task_id)
+
+
+@router.post("/asset-tasks/{asset_task_id}/manual-asset", response_model=AssetTaskResponse)
+def register_manual_asset_route(
+    asset_task_id: int,
+    payload: ManualAssetRegisterRequest,
+    db: Session = Depends(get_db),
+) -> AssetTaskResponse:
+    return register_manual_asset(db, asset_task_id, payload)
+
+
+@router.post("/asset-tasks/{asset_task_id}/manual-video-asset", response_model=AssetTaskResponse)
+def register_manual_video_asset_route(
+    asset_task_id: int,
+    payload: ManualAssetRegisterRequest,
+    db: Session = Depends(get_db),
+) -> AssetTaskResponse:
+    return register_manual_video_asset(db, asset_task_id, payload)
 
 
 @router.get("/projects/{project_id}/asset-tasks", response_model=list[AssetTaskResponse])

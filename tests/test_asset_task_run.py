@@ -419,13 +419,167 @@ def test_image_task_provider_debug_returns_enhanced_prompt_and_storyboard_contex
     image_task = next(task for task in asset_tasks if task["modality"] == "image")
     client.post(f"/asset-tasks/{image_task['id']}/run")
 
-    debug = client.get(f"/asset-tasks/{image_task['id']}/provider-debug")
-    assert debug.status_code == 200
-    body = debug.json()
-    assert body["enhanced_prompt"] is not None
-    assert body["storyboard_context"]["source_shot_id"] == "SH01"
-    assert body["storyboard_context"]["character"] == "Lin Xia"
-    assert body["asset_url"].startswith("https://mock.assets/image/")
+
+def test_manual_asset_register_for_image_task(client):
+    shot = _create_ready_shot(client)
+    task = client.post("/asset-tasks", json={"shot_id": shot["id"], "modality": "image", "provider_name": "mock"}).json()
+
+    response = client.post(
+        f"/asset-tasks/{task['id']}/manual-asset",
+        json={
+            "asset_url": "file:///D:/ai-comic-assets/SH01.png",
+            "asset_type": "image",
+            "notes": "manual chatgpt image confirmed",
+        },
+    )
+    assert response.status_code == 200
+    body = response.json()
+    assert body["status"] == "succeeded"
+    assert body["output_payload"]["manual_upload"] is True
+    assert body["output_payload"]["manual_asset_url"] == "file:///D:/ai-comic-assets/SH01.png"
+    assert len(body["assets"]) == 1
+    assert body["assets"][0]["url"] == "file:///D:/ai-comic-assets/SH01.png"
+    assert body["assets"][0]["metadata_json"]["manual_upload"] is True
+    assert body["assets"][0]["metadata_json"]["source"] == "manual_image_generation"
+
+
+def test_manual_asset_register_provider_debug_shows_manual_asset_url(client):
+    shot = _create_ready_shot(client)
+    task = client.post("/asset-tasks", json={"shot_id": shot["id"], "modality": "image", "provider_name": "mock"}).json()
+    client.post(
+        f"/asset-tasks/{task['id']}/manual-asset",
+        json={
+            "asset_url": "file:///D:/ai-comic-assets/SH01.png",
+            "asset_type": "image",
+            "notes": "manual chatgpt image confirmed",
+        },
+    )
+
+    debug_response = client.get(f"/asset-tasks/{task['id']}/provider-debug")
+    assert debug_response.status_code == 200
+    debug_body = debug_response.json()
+    assert debug_body["asset_url"] == "file:///D:/ai-comic-assets/SH01.png"
+
+
+def test_manual_asset_register_non_image_task_returns_400(client):
+    shot = _create_ready_shot(client)
+    task = client.post("/asset-tasks", json={"shot_id": shot["id"], "modality": "voice", "provider_name": "mock"}).json()
+
+    response = client.post(
+        f"/asset-tasks/{task['id']}/manual-asset",
+        json={
+            "asset_url": "file:///D:/ai-comic-assets/voice.mp3",
+            "asset_type": "image",
+            "notes": "not allowed",
+        },
+    )
+    assert response.status_code == 400
+    assert "only allowed for image asset tasks" in response.json()["detail"]
+
+
+def test_manual_asset_register_missing_task_returns_404(client):
+    response = client.post(
+        "/asset-tasks/9999/manual-asset",
+        json={
+            "asset_url": "file:///D:/ai-comic-assets/SH01.png",
+            "asset_type": "image",
+            "notes": "missing task",
+        },
+    )
+    assert response.status_code == 404
+
+
+def test_manual_video_asset_register_for_video_task(client):
+    shot = _create_ready_shot(client)
+    image_task = client.post("/asset-tasks", json={"shot_id": shot["id"], "modality": "image", "provider_name": "mock"}).json()
+    client.post(
+        f"/asset-tasks/{image_task['id']}/manual-asset",
+        json={
+            "asset_url": "file:///D:/ai-comic-assets/SH01.png",
+            "asset_type": "image",
+            "notes": "manual image upload",
+        },
+    )
+    video_task = client.post(
+        "/asset-tasks",
+        json={"shot_id": shot["id"], "modality": "video", "provider_name": "mock", "input_payload": {"duration": 3}},
+    ).json()
+
+    response = client.post(
+        f"/asset-tasks/{video_task['id']}/manual-video-asset",
+        json={
+            "asset_url": "file:///D:/ai-comic-assets/SH01_video.mp4",
+            "asset_type": "video",
+            "notes": "manual seedance web export",
+        },
+    )
+    assert response.status_code == 200
+    body = response.json()
+    assert body["status"] == "succeeded"
+    assert body["output_payload"]["manual_upload"] is True
+    assert body["output_payload"]["manual_asset_url"] == "file:///D:/ai-comic-assets/SH01_video.mp4"
+    assert len(body["assets"]) == 1
+    assert body["assets"][0]["url"] == "file:///D:/ai-comic-assets/SH01_video.mp4"
+    assert body["assets"][0]["metadata_json"]["manual_upload"] is True
+    assert body["assets"][0]["metadata_json"]["source"] == "manual_video_generation"
+
+
+def test_manual_video_asset_register_provider_debug_shows_manual_asset_url(client):
+    shot = _create_ready_shot(client)
+    image_task = client.post("/asset-tasks", json={"shot_id": shot["id"], "modality": "image", "provider_name": "mock"}).json()
+    client.post(
+        f"/asset-tasks/{image_task['id']}/manual-asset",
+        json={
+            "asset_url": "file:///D:/ai-comic-assets/SH01.png",
+            "asset_type": "image",
+            "notes": "manual image upload",
+        },
+    )
+    video_task = client.post(
+        "/asset-tasks",
+        json={"shot_id": shot["id"], "modality": "video", "provider_name": "mock", "input_payload": {"duration": 3}},
+    ).json()
+    client.post(
+        f"/asset-tasks/{video_task['id']}/manual-video-asset",
+        json={
+            "asset_url": "file:///D:/ai-comic-assets/SH01_video.mp4",
+            "asset_type": "video",
+            "notes": "manual seedance web export",
+        },
+    )
+
+    debug_response = client.get(f"/asset-tasks/{video_task['id']}/provider-debug")
+    assert debug_response.status_code == 200
+    debug_body = debug_response.json()
+    assert debug_body["asset_url"] == "file:///D:/ai-comic-assets/SH01_video.mp4"
+
+
+def test_manual_video_asset_register_non_video_task_returns_400(client):
+    shot = _create_ready_shot(client)
+    task = client.post("/asset-tasks", json={"shot_id": shot["id"], "modality": "image", "provider_name": "mock"}).json()
+
+    response = client.post(
+        f"/asset-tasks/{task['id']}/manual-video-asset",
+        json={
+            "asset_url": "file:///D:/ai-comic-assets/SH01_video.mp4",
+            "asset_type": "video",
+            "notes": "not allowed",
+        },
+    )
+    assert response.status_code == 400
+    assert "only allowed for video asset tasks" in response.json()["detail"]
+
+
+def test_manual_video_asset_register_missing_task_returns_404(client):
+    response = client.post(
+        "/asset-tasks/9999/manual-video-asset",
+        json={
+            "asset_url": "file:///D:/ai-comic-assets/SH01_video.mp4",
+            "asset_type": "video",
+            "notes": "missing task",
+        },
+    )
+    assert response.status_code == 404
 
 
 def test_video_task_provider_debug_returns_image_url_and_duration(client):

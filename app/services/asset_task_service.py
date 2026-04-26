@@ -19,6 +19,7 @@ from app.schemas.asset_task import (
     BulkAssetTaskCreateRequest,
     BulkAssetTaskRunResponse,
     BulkAssetTaskRunResult,
+    ManualAssetRegisterRequest,
     ProjectProviderDebugSummary,
     ProjectProviderDebugSummaryStats,
     ProviderDebugSnapshot,
@@ -377,6 +378,76 @@ def run_asset_task(db: Session, asset_task_id: int) -> AssetTask:
     )
     db.add(asset)
     task.output_payload = result.model_dump()
+    task.status = AssetTaskStatus.SUCCEEDED
+    db.commit()
+    db.refresh(task)
+    return task
+
+
+def register_manual_asset(db: Session, asset_task_id: int, payload: ManualAssetRegisterRequest) -> AssetTask:
+    task = get_asset_task_or_404(db, asset_task_id)
+
+    if task.modality != AssetModality.IMAGE:
+        raise HTTPException(status_code=400, detail="Manual asset registration is only allowed for image asset tasks")
+    if payload.asset_type != AssetModality.IMAGE:
+        raise HTTPException(status_code=400, detail="asset_type must be image for manual asset registration")
+
+    asset = Asset(
+        shot_id=task.shot_id,
+        asset_task_id=task.id,
+        modality=AssetModality.IMAGE,
+        provider_name="manual",
+        file_url=payload.asset_url,
+        metadata_json={
+            "manual_upload": True,
+            "notes": payload.notes,
+            "source": "manual_image_generation",
+            "asset_task_id": task.id,
+            "input_payload": dict(task.input_payload or {}),
+        },
+    )
+    db.add(asset)
+    task.output_payload = {
+        "manual_asset_url": payload.asset_url,
+        "manual_upload": True,
+        "notes": payload.notes,
+    }
+    task.error_message = None
+    task.status = AssetTaskStatus.SUCCEEDED
+    db.commit()
+    db.refresh(task)
+    return task
+
+
+def register_manual_video_asset(db: Session, asset_task_id: int, payload: ManualAssetRegisterRequest) -> AssetTask:
+    task = get_asset_task_or_404(db, asset_task_id)
+
+    if task.modality != AssetModality.VIDEO:
+        raise HTTPException(status_code=400, detail="Manual asset registration is only allowed for video asset tasks")
+    if payload.asset_type != AssetModality.VIDEO:
+        raise HTTPException(status_code=400, detail="asset_type must be video for manual asset registration")
+
+    asset = Asset(
+        shot_id=task.shot_id,
+        asset_task_id=task.id,
+        modality=AssetModality.VIDEO,
+        provider_name="manual",
+        file_url=payload.asset_url,
+        metadata_json={
+            "manual_upload": True,
+            "notes": payload.notes,
+            "source": "manual_video_generation",
+            "asset_task_id": task.id,
+            "input_payload": dict(task.input_payload or {}),
+        },
+    )
+    db.add(asset)
+    task.output_payload = {
+        "manual_asset_url": payload.asset_url,
+        "manual_upload": True,
+        "notes": payload.notes,
+    }
+    task.error_message = None
     task.status = AssetTaskStatus.SUCCEEDED
     db.commit()
     db.refresh(task)

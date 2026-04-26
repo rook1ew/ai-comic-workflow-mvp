@@ -48,6 +48,12 @@ class BulkAssetTaskRunResponse(BaseModel):
     results: list[BulkAssetTaskRunResult]
 
 
+class ManualAssetRegisterRequest(BaseModel):
+    asset_url: str = Field(min_length=1, max_length=1000)
+    asset_type: AssetModality
+    notes: str | None = Field(default=None, max_length=1000)
+
+
 class ProviderDebugSnapshot(BaseModel):
     asset_task_id: int
     shot_id: str | None = None

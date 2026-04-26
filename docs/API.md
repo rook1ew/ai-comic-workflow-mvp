@@ -247,6 +247,277 @@ Example response:
 }
 ```
 
+### GET `/projects/{project_id}/image-prompts`
+
+Export copy-ready prompts for all image asset tasks in one project.
+
+Use cases:
+
+- manually copy prompts into ChatGPT image generation or other image tools
+- review `enhanced_prompt` quality before any future real Image2 integration
+- keep image production moving even when billing is not ready
+
+Behavior:
+
+- only returns `image` asset tasks
+- if the image task has already succeeded, it prefers
+  `Asset.metadata_json.input_payload.enhanced_prompt`
+- if the image task has not run yet, it falls back to the existing prompt
+  enhancer and current shot metadata
+- it does not call any real provider API
+- it does not require a real API key
+
+Example response:
+
+```json
+{
+  "project_id": 1,
+  "items_count": 1,
+  "items": [
+    {
+      "asset_task_id": 1,
+      "internal_shot_id": 1,
+      "source_shot_id": "SH01",
+      "character": "Lin Xia",
+      "location": "Meeting Room",
+      "emotion": "nervous",
+      "camera": "medium close-up",
+      "dialogue": "Sorry, wrong room.",
+      "base_prompt": "young woman opening a meeting room door",
+      "enhanced_prompt": "Base image prompt: young woman opening a meeting room door",
+      "negative_prompt": "不要模仿具体IP、明星、影视角色或已知动漫角色；不要水印；不要乱码文字；不要多余肢体；不要低清晰度。",
+      "copy_ready_prompt": "Base image prompt: young woman opening a meeting room door\nFormat: vertical anime comic style, 9:16 composition, high detail, consistent character design.\nNegative prompt: 不要模仿具体IP、明星、影视角色或已知动漫角色；不要水印；不要乱码文字；不要多余肢体；不要低清晰度。"
+    }
+  ]
+}
+```
+
+### POST `/asset-tasks/{asset_task_id}/manual-asset`
+
+Register a manually generated image back to an existing image asset task.
+
+Use cases:
+
+- after copying `copy_ready_prompt` into ChatGPT image generation or another image tool
+- after saving a manual image to a local path or hosted URL
+- when billing is not ready but you still want to complete the image task lifecycle
+
+Behavior:
+
+- only supports `image` asset tasks
+- creates a new `Asset` record with `provider_name = manual`
+- marks the target asset task as `succeeded`
+- writes manual registration info into `task.output_payload`
+- does not call any real provider API
+
+Request example:
+
+```json
+{
+  "asset_url": "file:///D:/ai-comic-assets/SH01.png",
+  "asset_type": "image",
+  "notes": "手动用 ChatGPT 生成，已确认角色一致"
+}
+```
+
+### POST `/asset-tasks/{asset_task_id}/manual-video-asset`
+
+Register a manually generated video back to an existing video asset task.
+
+Use cases:
+
+- after using Seedance web or another external tool to generate video manually
+- after saving a video to a local path or hosted URL
+- when billing is not ready but you still want to complete the video task lifecycle
+
+Behavior:
+
+- only supports `video` asset tasks
+- creates a new `Asset` record with `provider_name = manual`
+- marks the target video asset task as `succeeded`
+- writes manual registration info into `task.output_payload`
+- does not call any real provider API
+
+Request example:
+
+```json
+{
+  "asset_url": "file:///D:/ai-comic-assets/SH01_video.mp4",
+  "asset_type": "video",
+  "notes": "手动用 Seedance 网页端生成，已确认画面可用"
+}
+```
+
+Response example:
+
+```json
+{
+  "id": 10,
+  "shot_id": 1,
+  "modality": "video",
+  "status": "succeeded",
+  "retry_count": 0,
+  "max_retries": 3,
+  "error_message": null,
+  "provider_name": "mock",
+  "input_payload": {
+    "duration": 3
+  },
+  "output_payload": {
+    "manual_asset_url": "file:///D:/ai-comic-assets/SH01_video.mp4",
+    "manual_upload": true,
+    "notes": "手动用 Seedance 网页端生成，已确认画面可用"
+  },
+  "assets": [
+    {
+      "asset_task_id": 10,
+      "asset_type": "video",
+      "url": "file:///D:/ai-comic-assets/SH01_video.mp4",
+      "metadata_json": {
+        "manual_upload": true,
+        "notes": "手动用 Seedance 网页端生成，已确认画面可用",
+        "source": "manual_video_generation",
+        "asset_task_id": 10
+      }
+    }
+  ]
+}
+```
+
+### GET `/projects/{project_id}/manual-image-progress`
+
+Project-level progress view for manual image generation and manual asset registration.
+
+Use cases:
+
+- quickly see which image tasks already have images
+- find which image tasks still need manual generation
+- confirm whether the project is ready to move from image generation to the video stage
+
+Behavior:
+
+- only counts `image` asset tasks
+- if an image task already has an asset URL, `has_asset = true`
+- if `metadata_json.manual_upload = true`, `manual_upload = true`
+- if an image task has no asset URL, `needs_manual_image = true`
+- if all image tasks are completed, `next_action = manual_images_completed`
+- otherwise `next_action = continue_manual_image_generation`
+
+Example response:
+
+```json
+{
+  "project_id": 1,
+  "image_tasks_count": 5,
+  "completed_image_tasks_count": 2,
+  "missing_image_tasks_count": 3,
+  "manual_uploaded_count": 2,
+  "items": [
+    {
+      "asset_task_id": 1,
+      "internal_shot_id": 1,
+      "source_shot_id": "SH01",
+      "status": "succeeded",
+      "has_asset": true,
+      "asset_url": "file:///D:/ai-comic-assets/SH01.png",
+      "manual_upload": true,
+      "needs_manual_image": false,
+      "character": "Lin Xia",
+      "location": "Meeting Room",
+      "emotion": "nervous"
+    }
+  ],
+  "next_action": "continue_manual_image_generation"
+}
+```
+
+### GET `/projects/{project_id}/video-readiness`
+
+Project-level readiness view for all video asset tasks in one project.
+
+Use cases:
+
+- quickly see which video tasks are ready to enter video generation
+- check whether each video task already has an image asset URL
+- check whether each video task already has a duration
+- decide whether to continue manual image work or move into the video stage
+
+Behavior:
+
+- only counts `video` asset tasks
+- checks whether the same shot already has an image asset URL
+- duration priority is:
+  1. `Shot.metadata_json.duration_sec`
+  2. `task.input_payload.duration`
+  3. `task.input_payload.duration_sec`
+- if both image asset and duration exist, `ready_for_video = true`
+- if image is missing, `blocking_issues` includes `missing_image_asset`
+- if duration is missing, `blocking_issues` includes `missing_duration`
+
+Example response:
+
+```json
+{
+  "project_id": 1,
+  "video_tasks_count": 3,
+  "ready_video_tasks_count": 2,
+  "blocked_video_tasks_count": 1,
+  "items": [
+    {
+      "asset_task_id": 10,
+      "internal_shot_id": 1,
+      "source_shot_id": "SH01",
+      "status": "queued",
+      "has_image_asset": true,
+      "image_asset_url": "file:///D:/ai-comic-assets/SH01.png",
+      "has_duration": true,
+      "duration": 3,
+      "ready_for_video": true,
+      "blocking_issues": [],
+      "character": "Lin Xia",
+      "location": "Meeting Room",
+      "emotion": "nervous",
+      "video_prompt": "video prompt 1"
+    }
+  ],
+  "next_action": "ready_for_video_generation"
+}
+```
+
+Response example:
+
+```json
+{
+  "id": 1,
+  "shot_id": 1,
+  "modality": "image",
+  "status": "succeeded",
+  "retry_count": 0,
+  "max_retries": 3,
+  "error_message": null,
+  "provider_name": "mock",
+  "input_payload": {},
+  "output_payload": {
+    "manual_asset_url": "file:///D:/ai-comic-assets/SH01.png",
+    "manual_upload": true,
+    "notes": "手动用 ChatGPT 生成，已确认角色一致"
+  },
+  "assets": [
+    {
+      "asset_task_id": 1,
+      "asset_type": "image",
+      "url": "file:///D:/ai-comic-assets/SH01.png",
+      "metadata_json": {
+        "manual_upload": true,
+        "notes": "手动用 ChatGPT 生成，已确认角色一致",
+        "source": "manual_image_generation",
+        "asset_task_id": 1
+      }
+    }
+  ]
+}
+```
+
 ### POST `/coze/project/full-demo-flow`
 
 Single-call demo endpoint. It runs this full MVP sequence:

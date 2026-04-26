@@ -22,6 +22,8 @@ from app.schemas.project import ManualProductionBlockingSummary
 from app.schemas.project import ProjectManualImageProgress
 from app.schemas.project import ProjectManualImageProgressItem
 from app.schemas.project import ProjectManualFinalChecklist
+from app.schemas.project import ProjectEditingShotBoard
+from app.schemas.project import EditingShotBoardItem
 from app.schemas.project import ProjectManualVideoProgress
 from app.schemas.project import ProjectManualVideoProgressItem
 from app.schemas.project import ProjectPublishReadiness
@@ -511,6 +513,21 @@ def _extract_video_duration(task: AssetTask, shot: Shot) -> int | float | None:
     )
 
 
+def _has_basic_editing_fields(shot_metadata: dict) -> bool:
+    return any(
+        shot_metadata.get(field_name)
+        for field_name in [
+            "shot_type",
+            "camera_motion",
+            "subject_motion",
+            "transition",
+            "subtitle_text",
+            "sfx",
+            "editing_notes",
+        ]
+    )
+
+
 def get_project_video_readiness(db: Session, project_id: int) -> ProjectVideoReadiness:
     get_project_or_404(db, project_id)
 
@@ -853,4 +870,84 @@ def get_project_manual_final_checklist(db: Session, project_id: int) -> ProjectM
         warnings=warnings,
         summary=publish_readiness.summary,
         recommended_steps=recommended_steps,
+    )
+
+
+def get_project_editing_shot_board(db: Session, project_id: int) -> ProjectEditingShotBoard:
+    get_project_or_404(db, project_id)
+
+    shots = (
+        db.query(Shot)
+        .join(Scene, Shot.scene_id == Scene.id)
+        .join(Episode, Scene.episode_id == Episode.id)
+        .filter(Episode.project_id == project_id)
+        .order_by(Shot.id.asc())
+        .all()
+    )
+
+    items: list[EditingShotBoardItem] = []
+    ready_shots_count = 0
+    blocked_shots_count = 0
+    missing_image_count = 0
+    missing_editing_fields_count = 0
+
+    for shot in shots:
+        shot_metadata = shot.metadata_json or {}
+        image_asset = _get_preferred_shot_asset(db, shot_id=shot.id, modality=AssetModality.IMAGE)
+        image_asset_url = image_asset.file_url if image_asset is not None else None
+        has_image_asset = bool(image_asset_url)
+        duration = shot_metadata.get("duration_sec")
+
+        blocking_issues: list[str] = []
+        if not has_image_asset:
+            blocking_issues.append("missing_image_asset")
+            missing_image_count += 1
+
+        has_editing_fields = _has_basic_editing_fields(shot_metadata)
+        if not has_editing_fields:
+            blocking_issues.append("missing_editing_fields")
+            missing_editing_fields_count += 1
+
+        ready_for_editing = has_image_asset and has_editing_fields
+        if ready_for_editing:
+            ready_shots_count += 1
+        else:
+            blocked_shots_count += 1
+
+        items.append(
+            EditingShotBoardItem(
+                internal_shot_id=shot.id,
+                source_shot_id=shot_metadata.get("source_shot_id"),
+                character=shot_metadata.get("character"),
+                location=shot_metadata.get("location"),
+                emotion=shot_metadata.get("emotion"),
+                duration=duration,
+                image_asset_url=image_asset_url,
+                has_image_asset=has_image_asset,
+                shot_type=shot_metadata.get("shot_type"),
+                camera_motion=shot_metadata.get("camera_motion"),
+                subject_motion=shot_metadata.get("subject_motion"),
+                transition=shot_metadata.get("transition"),
+                subtitle_text=shot_metadata.get("subtitle_text"),
+                sfx=shot_metadata.get("sfx"),
+                editing_notes=shot_metadata.get("editing_notes"),
+                ready_for_editing=ready_for_editing,
+                blocking_issues=blocking_issues,
+            )
+        )
+
+    if missing_image_count > 0:
+        next_action = "continue_image_generation"
+    elif missing_editing_fields_count > 0:
+        next_action = "review_editing_fields"
+    else:
+        next_action = "ready_for_manual_editing"
+
+    return ProjectEditingShotBoard(
+        project_id=project_id,
+        shots_count=len(items),
+        ready_shots_count=ready_shots_count,
+        blocked_shots_count=blocked_shots_count,
+        items=items,
+        next_action=next_action,
     )

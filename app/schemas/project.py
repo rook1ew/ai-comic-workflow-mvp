@@ -252,3 +252,32 @@ class ProjectManualFinalChecklist(BaseModel):
     warnings: list[str] = Field(default_factory=list)
     summary: PublishReadinessSummary
     recommended_steps: list[str] = Field(default_factory=list)
+
+
+class EditingShotBoardItem(BaseModel):
+    internal_shot_id: int
+    source_shot_id: str | None = None
+    character: str | None = None
+    location: str | None = None
+    emotion: str | None = None
+    duration: int | float | None = None
+    image_asset_url: str | None = None
+    has_image_asset: bool
+    shot_type: str | None = None
+    camera_motion: str | None = None
+    subject_motion: str | None = None
+    transition: str | None = None
+    subtitle_text: str | None = None
+    sfx: str | None = None
+    editing_notes: str | None = None
+    ready_for_editing: bool
+    blocking_issues: list[str] = Field(default_factory=list)
+
+
+class ProjectEditingShotBoard(BaseModel):
+    project_id: int
+    shots_count: int
+    ready_shots_count: int
+    blocked_shots_count: int
+    items: list[EditingShotBoardItem] = Field(default_factory=list)
+    next_action: str

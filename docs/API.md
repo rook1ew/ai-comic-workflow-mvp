@@ -936,6 +936,60 @@ Rules:
 - if editing storyboard fields exist, they are echoed back in the item and folded
   into `copy_ready_video_prompt`
 
+### GET `/projects/{project_id}/editing-shot-board`
+
+Project-level shot delivery matrix for manual editing execution.
+
+Use cases:
+
+- review every shot by `source_shot_id` before entering manual editing
+- see whether each shot already has an image asset
+- read camera motion, subject motion, subtitle, sound effect, and editing notes
+- let Coze or an operator identify which shots are ready and which are blocked
+
+Response example:
+
+```json
+{
+  "project_id": 1,
+  "shots_count": 3,
+  "ready_shots_count": 2,
+  "blocked_shots_count": 1,
+  "items": [
+    {
+      "internal_shot_id": 11,
+      "source_shot_id": "SH01",
+      "character": "Lin Xia",
+      "location": "Meeting Room",
+      "emotion": "nervous",
+      "duration": 3,
+      "image_asset_url": "file:///D:/AI漫剧图片库/SH01.png",
+      "has_image_asset": true,
+      "shot_type": "dialogue",
+      "camera_motion": "slow_push_in",
+      "subject_motion": "blink, slight_body_shift",
+      "transition": "cut",
+      "subtitle_text": "Sorry, wrong room.",
+      "sfx": "door_open",
+      "editing_notes": "Use slight zoom-in and nervous pause.",
+      "ready_for_editing": true,
+      "blocking_issues": []
+    }
+  ],
+  "next_action": "ready_for_manual_editing"
+}
+```
+
+Rules:
+
+- returns all shots under the project, not just asset tasks
+- prefers a manual image asset over a mock image asset when both exist
+- if image asset is missing, `blocking_issues` includes `missing_image_asset`
+- if editing fields are missing, `blocking_issues` includes `missing_editing_fields`
+- if any shot is missing an image, `next_action = continue_image_generation`
+- if all images exist but some editing fields are missing, `next_action = review_editing_fields`
+- if everything is ready, `next_action = ready_for_manual_editing`
+
 ### Editing storyboard metadata fields
 
 The following optional fields are supported in storyboard shot payloads and are

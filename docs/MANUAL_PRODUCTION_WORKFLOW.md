@@ -24,9 +24,10 @@
 6. `GET /projects/{project_id}/video-prompts`
 7. `POST /asset-tasks/{asset_task_id}/manual-video-asset`
 8. `GET /projects/{project_id}/manual-video-progress`
-9. `GET /projects/{project_id}/manual-production-summary`
-10. `GET /projects/{project_id}/publish-readiness`
-11. `GET /projects/{project_id}/manual-final-checklist`
+9. `GET /projects/{project_id}/editing-shot-board`
+10. `GET /projects/{project_id}/manual-production-summary`
+11. `GET /projects/{project_id}/publish-readiness`
+12. `GET /projects/{project_id}/manual-final-checklist`
 
 ## 推荐操作顺序
 
@@ -107,6 +108,19 @@
 - `GET /projects/{project_id}/manual-video-progress`
 
 确认视频是否都已回填。
+
+### 7. 把 storyboard 当作剪辑施工单
+
+调用：
+
+- `GET /projects/{project_id}/editing-shot-board`
+
+用途：
+
+- 按 shot 维度查看图片是否就位
+- 查看 `shot_type / camera_motion / subject_motion / transition`
+- 查看 `subtitle_text / sfx / editing_notes`
+- 判断每个 shot 是否已经 `ready_for_editing`
 
 ## 三层总览接口
 

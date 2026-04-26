@@ -197,6 +197,14 @@
 - `GET /projects/{project_id}/image-prompts`
 - `GET /projects/{project_id}/video-prompts`
 - `GET /projects/{project_id}/video-readiness`
+- `GET /projects/{project_id}/editing-shot-board`
+
+其中 `editing-shot-board` 最适合作为人工剪辑施工单：
+
+- 按 `source_shot_id` 逐镜头查看
+- 看当前镜头有没有图片素材
+- 看当前镜头的镜头运动、人物微动、字幕、音效和备注
+- 判断该 shot 是否已经可以进入剪辑阶段
 
 ## 兼容性说明
 

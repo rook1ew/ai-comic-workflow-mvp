@@ -249,13 +249,46 @@ def _get_preferred_shot_asset(
 
 
 def _build_copy_ready_prompt(enhanced_prompt: str, negative_prompt: str) -> str:
-    return "\n".join(
-        [
-            enhanced_prompt.strip(),
-            "Format: vertical anime comic style, 9:16 composition, high detail, consistent character design.",
-            f"Negative prompt: {negative_prompt}",
-        ]
-    ).strip()
+    return "\n".join([enhanced_prompt.strip(), f"Negative prompt: {negative_prompt}"]).strip()
+
+
+def _clean_reference_url(url: str | None) -> str | None:
+    if not url:
+        return None
+    if url.startswith("mock://"):
+        return None
+    return url
+
+
+def _strip_mock_reference_urls(text: str) -> str:
+    cleaned_lines = [line for line in text.splitlines() if "mock://character/reference.png" not in line]
+    return "\n".join(cleaned_lines).strip()
+
+
+def _stringify_list(values: list[str] | None) -> str | None:
+    filtered = [str(value).strip() for value in (values or []) if str(value).strip()]
+    if not filtered:
+        return None
+    return ", ".join(filtered)
+
+
+def _build_shot_type_prompt_hint(shot_type: str | None) -> str | None:
+    normalized = (shot_type or "").strip().lower()
+    if normalized == "dialogue":
+        return "Dialogue focus: emphasize readable facial expression, mouth shape, and subtitle-safe framing."
+    if normalized == "reaction":
+        return "Reaction focus: emphasize emotional reaction and facial clarity."
+    if normalized == "reveal":
+        return "Reveal focus: emphasize a disturbing clue, changed understanding of the scene, and suspenseful reveal."
+    if normalized == "close_up":
+        return "Close-up focus: emphasize facial detail and clean framing."
+    if normalized == "transition":
+        return "Transition focus: emphasize clean composition and transition-friendly framing."
+    if normalized == "action":
+        return "Action focus: emphasize clear body movement and readable staging."
+    if normalized == "suspense":
+        return "Suspense focus: emphasize silence, negative space, tension, visual uncertainty, low light, and unease."
+    return None
 
 
 def _get_visual_asset_library(project: Project) -> dict:
@@ -355,6 +388,92 @@ def _build_visual_reference_prompt_suffix(visual_asset_refs: VisualAssetRefs) ->
         prop_names = [prop.name or prop.asset_key or "unknown" for prop in visual_asset_refs.props[:3]]
         lines.append(f"Recommended prop reference: {', '.join(prop_names)}")
     return "\n".join(lines).strip()
+
+
+def _build_production_grade_image_prompt(
+    *,
+    enhanced_prompt: str,
+    negative_prompt: str,
+    shot_metadata: dict,
+    visual_asset_refs: VisualAssetRefs,
+) -> str:
+    lines: list[str] = [
+        "Task type: storyboard shot image for a vertical AI comic drama.",
+        "Output goal: generate one single-shot storyboard keyframe for later editing.",
+        enhanced_prompt.strip(),
+        "Do not create a poster, character sheet, collage, or multi-panel comic page. not a poster. not a character sheet. not a collage. not a multi-panel comic page.",
+        "Shot clarity: show one clear narrative moment only; focus on readable acting and expression; make the character action and spatial relationship clear; maintain clean composition for later subtitle placement; suitable for storyboard-based short-drama editing.",
+        "Atmosphere: low light, narrow space, silence, unease, off-screen threat, suspenseful pause, psychological fear, cinematic horror atmosphere without gore.",
+    ]
+
+    shot_type_hint = _build_shot_type_prompt_hint(shot_metadata.get("shot_type"))
+    if shot_type_hint:
+        lines.append(shot_type_hint)
+
+    creative_pairs = [
+        ("Shot purpose", shot_metadata.get("shot_purpose")),
+        ("Conflict beat", shot_metadata.get("conflict_beat")),
+        ("Emotion shift", shot_metadata.get("emotion_shift")),
+        ("Visual focus", shot_metadata.get("visual_focus")),
+        ("Image prompt intent", shot_metadata.get("image_prompt_intent")),
+        ("Composition", shot_metadata.get("composition")),
+        ("Lighting", shot_metadata.get("lighting")),
+        ("Subtitle position", shot_metadata.get("subtitle_position")),
+        ("Shot type", shot_metadata.get("shot_type")),
+        ("Camera motion", shot_metadata.get("camera_motion")),
+        ("Subject motion", shot_metadata.get("subject_motion")),
+        ("Transition", shot_metadata.get("transition")),
+        ("Subtitle cue", shot_metadata.get("subtitle_text")),
+        ("Sound effect cue", shot_metadata.get("sfx")),
+        ("Editing notes", shot_metadata.get("editing_notes")),
+    ]
+    for label, value in creative_pairs:
+        if str(value or "").strip():
+            lines.append(f"{label}: {value}")
+
+    negative_constraints = _stringify_list(shot_metadata.get("negative_constraints"))
+    if negative_constraints:
+        lines.append(f"Shot-specific negative constraints: {negative_constraints}")
+
+    character_refs = [
+        f"{entry.name or entry.asset_key}: {_clean_reference_url(entry.main_reference_url) or '[local ref]'}"
+        for entry in visual_asset_refs.characters
+    ]
+    if character_refs:
+        lines.append(f"Recommended character reference: {'; '.join(character_refs)}")
+    if visual_asset_refs.scene is not None:
+        scene_ref_url = _clean_reference_url(visual_asset_refs.scene.main_reference_url) or "[local ref]"
+        lines.append(
+            f"Recommended scene reference: {(visual_asset_refs.scene.name or visual_asset_refs.scene.asset_key)}: {scene_ref_url}"
+        )
+    prop_refs = [
+        f"{entry.name or entry.asset_key}: {_clean_reference_url(entry.main_reference_url) or '[local ref]'}"
+        for entry in visual_asset_refs.props
+    ]
+    if prop_refs:
+        lines.append(f"Recommended prop reference: {'; '.join(prop_refs)}")
+
+    must_keep_parts: list[str] = []
+    avoid_parts: list[str] = []
+    for entry in [*visual_asset_refs.characters, *visual_asset_refs.props]:
+        must_keep_parts.extend(entry.must_keep)
+        avoid_parts.extend(entry.avoid)
+    if visual_asset_refs.scene is not None:
+        must_keep_parts.extend(visual_asset_refs.scene.must_keep)
+        avoid_parts.extend(visual_asset_refs.scene.avoid)
+    must_keep_text = _stringify_list(must_keep_parts)
+    avoid_text = _stringify_list(avoid_parts)
+    if must_keep_text:
+        lines.append(f"Must keep: {must_keep_text}")
+    if avoid_text:
+        lines.append(f"Avoid: {avoid_text}")
+
+    lines.append(
+        "Maintain character identity, face, hairstyle, outfit, body proportion, and spatial readability for later subtitle and edit timing."
+    )
+    lines.append(f"Negative prompt: {negative_prompt}")
+
+    return "\n".join(line for line in lines if str(line).strip()).strip()
 
 
 def _build_visual_reference_cue_suffix(
@@ -462,20 +581,24 @@ def export_project_image_prompts(db: Session, project_id: int) -> ProjectImagePr
                 "dialogue": shot_metadata.get("dialogue"),
             }
         )
+        clean_character_reference_url = _clean_reference_url(character_reference_url)
         enhanced_prompt = (
             asset_input_payload.get("enhanced_prompt")
             or task.input_payload.get("enhanced_prompt")
             or build_image_enhanced_prompt(
                 base_prompt=shot.image_prompt,
                 visual_style=style,
-                character_reference_url=character_reference_url,
+                character_reference_url=clean_character_reference_url,
                 storyboard_context=storyboard_context,
             )
         )
-        copy_ready_prompt = _build_copy_ready_prompt(enhanced_prompt, MANUAL_IMAGE_NEGATIVE_PROMPT)
-        visual_reference_suffix = _build_visual_reference_prompt_suffix(visual_asset_refs)
-        if visual_reference_suffix:
-            copy_ready_prompt = f"{copy_ready_prompt}\n{visual_reference_suffix}".strip()
+        enhanced_prompt = _strip_mock_reference_urls(enhanced_prompt)
+        copy_ready_prompt = _build_production_grade_image_prompt(
+            enhanced_prompt=enhanced_prompt,
+            negative_prompt=MANUAL_IMAGE_NEGATIVE_PROMPT,
+            shot_metadata=shot_metadata,
+            visual_asset_refs=visual_asset_refs,
+        )
 
         items.append(
             ProjectImagePromptItem(
@@ -494,6 +617,19 @@ def export_project_image_prompts(db: Session, project_id: int) -> ProjectImagePr
                 subtitle_text=shot_metadata.get("subtitle_text"),
                 sfx=shot_metadata.get("sfx"),
                 editing_notes=shot_metadata.get("editing_notes"),
+                shot_purpose=shot_metadata.get("shot_purpose"),
+                conflict_beat=shot_metadata.get("conflict_beat"),
+                emotion_shift=shot_metadata.get("emotion_shift"),
+                visual_focus=shot_metadata.get("visual_focus"),
+                image_prompt_intent=shot_metadata.get("image_prompt_intent"),
+                storyboard_clarity=shot_metadata.get("storyboard_clarity"),
+                pacing_note=shot_metadata.get("pacing_note"),
+                audience_feeling=shot_metadata.get("audience_feeling"),
+                reference_priority=shot_metadata.get("reference_priority"),
+                composition=shot_metadata.get("composition"),
+                lighting=shot_metadata.get("lighting"),
+                subtitle_position=shot_metadata.get("subtitle_position"),
+                negative_constraints=shot_metadata.get("negative_constraints") if isinstance(shot_metadata.get("negative_constraints"), list) else [],
                 character_asset_keys=shot_metadata.get("character_asset_keys") if isinstance(shot_metadata.get("character_asset_keys"), list) else [],
                 scene_asset_key=shot_metadata.get("scene_asset_key"),
                 prop_asset_keys=shot_metadata.get("prop_asset_keys") if isinstance(shot_metadata.get("prop_asset_keys"), list) else [],
@@ -577,6 +713,19 @@ def export_project_video_prompts(db: Session, project_id: int) -> ProjectVideoPr
                 subtitle_text=shot_metadata.get("subtitle_text"),
                 sfx=shot_metadata.get("sfx"),
                 editing_notes=shot_metadata.get("editing_notes"),
+                shot_purpose=shot_metadata.get("shot_purpose"),
+                conflict_beat=shot_metadata.get("conflict_beat"),
+                emotion_shift=shot_metadata.get("emotion_shift"),
+                visual_focus=shot_metadata.get("visual_focus"),
+                image_prompt_intent=shot_metadata.get("image_prompt_intent"),
+                storyboard_clarity=shot_metadata.get("storyboard_clarity"),
+                pacing_note=shot_metadata.get("pacing_note"),
+                audience_feeling=shot_metadata.get("audience_feeling"),
+                reference_priority=shot_metadata.get("reference_priority"),
+                composition=shot_metadata.get("composition"),
+                lighting=shot_metadata.get("lighting"),
+                subtitle_position=shot_metadata.get("subtitle_position"),
+                negative_constraints=shot_metadata.get("negative_constraints") if isinstance(shot_metadata.get("negative_constraints"), list) else [],
                 character_asset_keys=shot_metadata.get("character_asset_keys") if isinstance(shot_metadata.get("character_asset_keys"), list) else [],
                 scene_asset_key=shot_metadata.get("scene_asset_key"),
                 prop_asset_keys=shot_metadata.get("prop_asset_keys") if isinstance(shot_metadata.get("prop_asset_keys"), list) else [],
@@ -1083,6 +1232,19 @@ def get_project_editing_shot_board(db: Session, project_id: int) -> ProjectEditi
                 subtitle_text=shot_metadata.get("subtitle_text"),
                 sfx=shot_metadata.get("sfx"),
                 editing_notes=shot_metadata.get("editing_notes"),
+                shot_purpose=shot_metadata.get("shot_purpose"),
+                conflict_beat=shot_metadata.get("conflict_beat"),
+                emotion_shift=shot_metadata.get("emotion_shift"),
+                visual_focus=shot_metadata.get("visual_focus"),
+                image_prompt_intent=shot_metadata.get("image_prompt_intent"),
+                storyboard_clarity=shot_metadata.get("storyboard_clarity"),
+                pacing_note=shot_metadata.get("pacing_note"),
+                audience_feeling=shot_metadata.get("audience_feeling"),
+                reference_priority=shot_metadata.get("reference_priority"),
+                composition=shot_metadata.get("composition"),
+                lighting=shot_metadata.get("lighting"),
+                subtitle_position=shot_metadata.get("subtitle_position"),
+                negative_constraints=shot_metadata.get("negative_constraints") if isinstance(shot_metadata.get("negative_constraints"), list) else [],
                 character_asset_keys=shot_metadata.get("character_asset_keys") if isinstance(shot_metadata.get("character_asset_keys"), list) else [],
                 scene_asset_key=shot_metadata.get("scene_asset_key"),
                 prop_asset_keys=shot_metadata.get("prop_asset_keys") if isinstance(shot_metadata.get("prop_asset_keys"), list) else [],
@@ -1149,6 +1311,10 @@ def get_project_editing_timeline(db: Session, project_id: int) -> ProjectEditing
                 subject_motion=shot_item.subject_motion,
                 transition=shot_item.transition,
                 editing_notes=shot_item.editing_notes,
+                shot_purpose=shot_item.shot_purpose,
+                visual_focus=shot_item.visual_focus,
+                lighting=shot_item.lighting,
+                subtitle_position=shot_item.subtitle_position,
                 ready_for_editing=shot_item.ready_for_editing,
                 blocking_issues=item_blocking_issues,
                 warnings=warnings,
@@ -1214,6 +1380,9 @@ def get_project_editing_cue_sheet(db: Session, project_id: int) -> ProjectEditin
             f"镜头: {item.camera_motion or '[none]'}",
             f"人物微动: {item.subject_motion or '[none]'}",
             f"转场: {item.transition or '[none]'}",
+            f"剧情功能: {item.shot_purpose or '[none]'}",
+            f"视觉焦点: {item.visual_focus or '[none]'}",
+            f"打光: {item.lighting or '[none]'}",
             f"备注: {item.editing_notes or '[none]'}",
         ]
         cue_line = " | ".join(cue_segments)
@@ -1232,6 +1401,10 @@ def get_project_editing_cue_sheet(db: Session, project_id: int) -> ProjectEditin
                 subject_motion=item.subject_motion,
                 transition=item.transition,
                 editing_notes=item.editing_notes,
+                shot_purpose=item.shot_purpose,
+                visual_focus=item.visual_focus,
+                lighting=item.lighting,
+                subtitle_position=item.subtitle_position,
                 cue_line=cue_line,
                 ready_for_editing=item.ready_for_editing,
                 blocking_issues=item_blocking_issues,

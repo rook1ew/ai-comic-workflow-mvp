@@ -87,6 +87,19 @@ class ProjectImagePromptItem(BaseModel):
     subtitle_text: str | None = None
     sfx: str | None = None
     editing_notes: str | None = None
+    shot_purpose: str | None = None
+    conflict_beat: str | None = None
+    emotion_shift: str | None = None
+    visual_focus: str | None = None
+    image_prompt_intent: str | None = None
+    storyboard_clarity: str | None = None
+    pacing_note: str | None = None
+    audience_feeling: str | None = None
+    reference_priority: str | None = None
+    composition: str | None = None
+    lighting: str | None = None
+    subtitle_position: str | None = None
+    negative_constraints: list[str] = Field(default_factory=list)
     character_asset_keys: list[str] = Field(default_factory=list)
     scene_asset_key: str | None = None
     prop_asset_keys: list[str] = Field(default_factory=list)
@@ -121,6 +134,19 @@ class ProjectVideoPromptItem(BaseModel):
     subtitle_text: str | None = None
     sfx: str | None = None
     editing_notes: str | None = None
+    shot_purpose: str | None = None
+    conflict_beat: str | None = None
+    emotion_shift: str | None = None
+    visual_focus: str | None = None
+    image_prompt_intent: str | None = None
+    storyboard_clarity: str | None = None
+    pacing_note: str | None = None
+    audience_feeling: str | None = None
+    reference_priority: str | None = None
+    composition: str | None = None
+    lighting: str | None = None
+    subtitle_position: str | None = None
+    negative_constraints: list[str] = Field(default_factory=list)
     character_asset_keys: list[str] = Field(default_factory=list)
     scene_asset_key: str | None = None
     prop_asset_keys: list[str] = Field(default_factory=list)
@@ -305,6 +331,19 @@ class EditingShotBoardItem(BaseModel):
     subtitle_text: str | None = None
     sfx: str | None = None
     editing_notes: str | None = None
+    shot_purpose: str | None = None
+    conflict_beat: str | None = None
+    emotion_shift: str | None = None
+    visual_focus: str | None = None
+    image_prompt_intent: str | None = None
+    storyboard_clarity: str | None = None
+    pacing_note: str | None = None
+    audience_feeling: str | None = None
+    reference_priority: str | None = None
+    composition: str | None = None
+    lighting: str | None = None
+    subtitle_position: str | None = None
+    negative_constraints: list[str] = Field(default_factory=list)
     character_asset_keys: list[str] = Field(default_factory=list)
     scene_asset_key: str | None = None
     prop_asset_keys: list[str] = Field(default_factory=list)
@@ -336,6 +375,10 @@ class EditingTimelineItem(BaseModel):
     subject_motion: str | None = None
     transition: str | None = None
     editing_notes: str | None = None
+    shot_purpose: str | None = None
+    visual_focus: str | None = None
+    lighting: str | None = None
+    subtitle_position: str | None = None
     ready_for_editing: bool
     blocking_issues: list[str] = Field(default_factory=list)
     warnings: list[str] = Field(default_factory=list)
@@ -363,6 +406,10 @@ class EditingCueSheetItem(BaseModel):
     subject_motion: str | None = None
     transition: str | None = None
     editing_notes: str | None = None
+    shot_purpose: str | None = None
+    visual_focus: str | None = None
+    lighting: str | None = None
+    subtitle_position: str | None = None
     cue_line: str
     ready_for_editing: bool
     blocking_issues: list[str] = Field(default_factory=list)

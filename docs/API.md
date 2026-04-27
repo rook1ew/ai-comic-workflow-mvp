@@ -1200,3 +1200,145 @@ Rules:
 - `scene_asset_key`
 - `prop_asset_keys`
 - `visual_asset_refs`
+
+### v0.4-F Creative Bible and production-grade image prompts
+
+Creative payloads now support richer optional fields without blocking old flows.
+
+Character profile optional fields include:
+
+- `gender`
+- `age`
+- `appearance_summary`
+- `social_identity`
+- `first_impression`
+- `public_mask`
+- `inner_truth`
+- `core_keywords`
+- `personality_contradiction`
+- `habits`
+- `language_style`
+- `decision_style`
+- `stress_reaction`
+- `values`
+- `fear`
+- `desire`
+- `trauma`
+- `secret`
+- `family_background`
+- `growth_environment`
+- `economic_status`
+- `education_background`
+- `key_events`
+- `current_status`
+- `core_problem`
+- `relationship_status`
+- `closest_person`
+- `enemy_person`
+- `complex_relationships`
+- `emotional_bond`
+- `arc_start`
+- `arc_end`
+- `arc_type`
+- `catalyst`
+- `turning_point`
+- `growth_theme`
+- `catchphrase`
+- `signature_action`
+
+Script / episode bible optional fields include:
+
+- `logline`
+- `genre_tags`
+- `audience_profile`
+- `audience_emotion`
+- `commercial_positioning`
+- `core_hook`
+- `fear_beat`
+- `suspense_beat`
+- `misdirection_beat`
+- `reveal_beat`
+- `payoff_beat`
+- `cliffhanger`
+- `episode_theme`
+- `emotional_curve`
+- `conflict_chain`
+- `power_dynamic`
+- `secret_reveal_plan`
+- `next_episode_hook`
+
+Storyboard creative shot optional fields include:
+
+- `shot_purpose`
+- `conflict_beat`
+- `emotion_shift`
+- `visual_focus`
+- `image_prompt_intent`
+- `storyboard_clarity`
+- `pacing_note`
+- `audience_feeling`
+- `reference_priority`
+- `composition`
+- `lighting`
+- `subtitle_position`
+- `negative_constraints`
+
+These fields are stored in `Shot.metadata_json` and are surfaced by:
+
+- `GET /projects/{project_id}/image-prompts`
+- `GET /projects/{project_id}/editing-shot-board`
+- `GET /projects/{project_id}/editing-cue-sheet`
+
+### Soft validation for creative workflows
+
+`POST /coze/project/validate-payload` now follows soft validation:
+
+- structural blockers remain `errors`
+- creative quality gaps become `warnings` or `suggestions`
+
+Typical blocking errors:
+
+- `storyboard_json` is not an object
+- `storyboard_json.shots` is empty
+- `shot_id` is missing
+- `image_prompt` is missing
+- `characters_json` is not an object
+
+Typical warnings / suggestions:
+
+- missing `visual_asset_library_json`
+- missing reference packs on shots
+- missing editing fields
+- missing richer character profile fields
+- missing story bible fields
+- missing creative shot fields
+
+Response now includes:
+
+- `valid`
+- `errors`
+- `warnings`
+- `suggestions`
+
+### Production-grade image prompt export
+
+`GET /projects/{project_id}/image-prompts` now builds `copy_ready_prompt` as a
+storyboard-keyframe prompt for vertical AI comic drama workflows.
+
+The exported prompt automatically includes:
+
+- task type: storyboard shot image for a vertical AI comic drama
+- output goal: one single-shot storyboard keyframe for later editing
+- anti-poster rules:
+  - `not a poster`
+  - `not a character sheet`
+  - `not a collage`
+  - `not a multi-panel comic page`
+- shot clarity guidance for subtitle-safe editing
+- visual asset references
+- creative shot fields
+- editing fields
+- light shot-type tuning such as `dialogue`, `reaction`, `reveal`, `close_up`, `transition`, `action`, `suspense`
+- suspense / horror atmosphere guidance without gore
+
+The exported prompt should not include `mock://character/reference.png`.

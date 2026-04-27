@@ -228,6 +228,31 @@ def test_storyboard_import_saves_visual_asset_keys_to_shot_metadata(db_session):
     assert shot.metadata_json["prop_asset_keys"] == ["employee_badge"]
 
 
+def test_storyboard_import_saves_creative_fields_to_shot_metadata(db_session):
+    init_response = coze_project_init(db_session, CozeProjectInitRequest(**_coze_init_payload()))
+    project_id = init_response.data["project_id"]
+    storyboard_payload = _coze_storyboard_payload()
+    shot = storyboard_payload["storyboard_json"]["shots"][0]
+    shot["shot_purpose"] = "opening horror hook"
+    shot["conflict_beat"] = "she is afraid to look outside"
+    shot["emotion_shift"] = "sleepy to alarmed"
+    shot["visual_focus"] = "phone time and frightened face"
+    shot["image_prompt_intent"] = "single-shot suspense keyframe"
+    shot["composition"] = "tight vertical close framing"
+    shot["lighting"] = "low light from phone screen"
+    shot["subtitle_position"] = "lower center"
+    shot["negative_constraints"] = ["not a poster", "not a character sheet"]
+    coze_storyboard(db_session, project_id, CozeStoryboardRequest(**storyboard_payload))
+
+    saved_shot = db_session.query(Shot).order_by(Shot.shot_number.asc()).first()
+    assert saved_shot is not None
+    assert saved_shot.metadata_json["shot_purpose"] == "opening horror hook"
+    assert saved_shot.metadata_json["conflict_beat"] == "she is afraid to look outside"
+    assert saved_shot.metadata_json["visual_focus"] == "phone time and frightened face"
+    assert saved_shot.metadata_json["lighting"] == "low light from phone screen"
+    assert saved_shot.metadata_json["negative_constraints"] == ["not a poster", "not a character sheet"]
+
+
 def test_coze_create_asset_tasks_requires_confirmed_character(client):
     init = client.post("/coze/project/init", json=_coze_init_payload()).json()
     project_id = init["data"]["project_id"]
@@ -432,6 +457,7 @@ def test_validate_payload_returns_valid_true_for_complete_payload(client):
     body = response.json()
     assert body["data"]["valid"] is True
     assert body["data"]["errors"] == []
+    assert "suggestions" in body["data"]
     assert body["next_action"] == "ready_for_full_demo_flow"
 
 
@@ -450,8 +476,37 @@ def test_validate_payload_returns_errors_for_missing_required_fields(client):
     assert response.status_code == 200
     body = response.json()
     assert body["data"]["valid"] is False
-    assert len(body["data"]["errors"]) > 0
+    assert any("storyboard_json.shots[0].shot_id is required." in error for error in body["data"]["errors"])
+    assert any("storyboard_json.shots[0].image_prompt is required." in error for error in body["data"]["errors"])
     assert body["next_action"] == "fix_payload"
+
+
+def test_validate_payload_missing_creative_fields_returns_warnings_or_suggestions_not_errors(client):
+    response = client.post(
+        "/coze/project/validate-payload",
+        json={
+            "project_card_json": {"project_title": "Night Door"},
+            "characters_json": {"characters": [{"name": "Shen Zhixia"}]},
+            "script_card_json": {},
+            "storyboard_json": {
+                "shots": [
+                    {
+                        "shot_id": "SH01",
+                        "core_action": "She wakes up from knocking",
+                        "image_prompt": "woman startled awake at night",
+                    }
+                ]
+            },
+            "video_shot_ids": [],
+            "publish_record_json": {},
+        },
+    )
+    assert response.status_code == 200
+    body = response.json()
+    assert body["data"]["valid"] is True
+    assert body["data"]["errors"] == []
+    assert len(body["data"]["warnings"]) > 0
+    assert len(body["data"]["suggestions"]) > 0
 
 
 def test_validate_payload_warns_when_duration_sec_is_missing(client):

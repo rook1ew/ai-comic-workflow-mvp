@@ -271,4 +271,29 @@
 - [EDITING_CUE_SHEET_EXPORT_SOP.md](/C:/Users/29964/Documents/GitHub/ai-comic-workflow-mvp-git/docs/EDITING_CUE_SHEET_EXPORT_SOP.md)
 - [EDITING_STORYBOARD_FIELDS.md](/C:/Users/29964/Documents/GitHub/ai-comic-workflow-mvp-git/docs/EDITING_STORYBOARD_FIELDS.md)
 - [VISUAL_ASSET_LIBRARY.md](/C:/Users/29964/Documents/GitHub/ai-comic-workflow-mvp-git/docs/VISUAL_ASSET_LIBRARY.md)
+- [CREATIVE_STORY_BIBLE.md](/C:/Users/29964/Documents/GitHub/ai-comic-workflow-mvp-git/docs/CREATIVE_STORY_BIBLE.md)
+- [IMAGE_PROMPT_BUILDER_SOP.md](/C:/Users/29964/Documents/GitHub/ai-comic-workflow-mvp-git/docs/IMAGE_PROMPT_BUILDER_SOP.md)
 - [API.md](/C:/Users/29964/Documents/GitHub/ai-comic-workflow-mvp-git/docs/API.md)
+
+## v0.4-F 创作层增强
+
+当前手动生产闭环已经补上 Creative Bible 与 production-grade image prompt builder：
+
+- richer character profile
+- story bible / episode bible
+- creative shot fields
+- reference-guided image prompt export
+- suspense / horror friendly storyboard keyframe prompts
+
+推荐顺序：
+
+1. 先整理 `visual_asset_library_json`
+2. 再写 richer `characters_json`
+3. 再写 richer `script_card_json`
+4. 在 storyboard shot 中补：
+   - editing fields
+   - creative fields
+   - asset key references
+5. 最后导出 `image-prompts`
+
+这样程序输出的已经不是“普通生图提示词”，而是适合拼帧漫剧生产的单镜头分镜图提示词。

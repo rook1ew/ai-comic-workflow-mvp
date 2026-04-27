@@ -242,3 +242,25 @@ Visual Asset Library 是项目级的轻量参考素材库，用来管理三类�
 - `GET /projects/{project_id}/image-prompts`
 - `GET /projects/{project_id}/editing-shot-board`
 - `GET /projects/{project_id}/editing-cue-sheet`
+
+## 与 Creative Bible 和 image prompt builder 的关系
+
+在 v0.4-F 之后，Visual Asset Library 不再只是“参考图清单”，而是直接参与：
+
+- `image-prompts` 的 production-grade `copy_ready_prompt`
+- `editing-shot-board` 的镜头执行信息
+- 惊悚悬疑题材下的角色、场景、道具一致性约束
+
+`image-prompts` 会自动提取：
+
+- Recommended character reference
+- Recommended scene reference
+- Recommended prop reference
+- Must keep
+- Avoid
+
+建议把 Visual Asset Library 和 Creative Bible 一起维护：
+
+- Creative Bible 负责角色内核、恐惧节奏、镜头功能
+- Visual Asset Library 负责视觉一致性
+- storyboard shot 负责把两者绑定到具体镜头

@@ -93,3 +93,35 @@
 - 不调用真实 Seedance API
 - 不读取真实 API key
 - 不产生真实费用
+## v0.4-F Creative Bible 配合方式
+
+`editing-shot-board` 现在除了传统剪辑字段，还会尽量回显这些 creative fields：
+
+- `shot_purpose`
+- `conflict_beat`
+- `emotion_shift`
+- `visual_focus`
+- `image_prompt_intent`
+- `composition`
+- `lighting`
+- `subtitle_position`
+- `negative_constraints`
+
+建议剪辑执行时这样看：
+
+- `shot_purpose`：判断这个镜头在剧情里的功能
+- `conflict_beat`：判断当前镜头最核心的冲突点
+- `visual_focus`：提醒剪辑师不要把观众注意力切散
+- `lighting`：帮助判断画面压迫感和恐惧氛围
+- `subtitle_position`：避免字幕压脸和压关键线索
+
+如果要做“拼帧图片漫剧 / 静态图伪动态剪辑”，这些 creative fields 最好和：
+
+- `camera_motion`
+- `subject_motion`
+- `transition`
+- `subtitle_text`
+- `sfx`
+- `editing_notes`
+
+一起看。

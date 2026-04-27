@@ -209,3 +209,38 @@ def test_full_demo_flow_saves_visual_asset_library_json(db_session):
     assert project.visual_asset_library_json["characters"][0]["asset_key"] == "lin_wan"
     assert project.visual_asset_library_json["scenes"][0]["asset_key"] == "meeting_room_a"
     assert project.visual_asset_library_json["props"][0]["asset_key"] == "employee_badge"
+
+
+def test_full_demo_flow_accepts_creative_bible_payload(client):
+    payload = _full_demo_flow_payload()
+    payload["project_card_json"]["genre"] = "urban horror suspense"
+    payload["script_card_json"].update(
+        {
+            "logline": "A woman sees herself outside the peephole at 2:44 a.m.",
+            "core_hook": "The thing outside the door looks exactly like her.",
+            "fear_beat": "The hallway is silent before the second knock.",
+            "suspense_beat": "She freezes when the peephole figure does not blink.",
+            "reveal_beat": "A message says no one is outside the door.",
+            "cliffhanger": "The knocking starts again.",
+        }
+    )
+    payload["storyboard_json"]["shots"][0].update(
+        {
+            "shot_type": "suspense",
+            "shot_purpose": "three-second horror hook",
+            "conflict_beat": "sleep vs sudden threat",
+            "emotion_shift": "groggy to afraid",
+            "visual_focus": "phone screen time and doorway darkness",
+            "image_prompt_intent": "single-shot suspense keyframe",
+            "composition": "tight vertical composition with empty doorway space",
+            "lighting": "low light with cold phone glow",
+            "subtitle_position": "lower center",
+            "negative_constraints": ["not a poster", "not a character sheet"],
+        }
+    )
+
+    response = client.post("/coze/project/full-demo-flow", json=payload)
+    assert response.status_code == 200
+    body = response.json()
+    assert body["data"]["shots_count"] == 1
+    assert body["next_action"] == "completed"

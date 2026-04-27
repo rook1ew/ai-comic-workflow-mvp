@@ -1,0 +1,352 @@
+{
+  "project_card_json": {
+    "project_title": "午夜猫眼",
+    "genre": "都市怪谈 / 恐怖惊悚悬疑",
+    "platform": "coze",
+    "target_duration": 45,
+    "target_audience": "18-30 岁，偏女性向惊悚悬疑用户",
+    "visual_style": "anime-comic realism",
+    "core_conflict": "深夜门外出现和女主一模一样的人",
+    "hook": "凌晨 2:44，门外急促敲门",
+    "ending_hook": "物业消息说门外根本没有人",
+    "selling_points": [
+      "深夜独居",
+      "门外异响",
+      "身份错位",
+      "规则怪谈感"
+    ],
+    "status": "draft"
+  },
+  "visual_asset_library_json": {
+    "characters": [
+      {
+        "asset_key": "shen_zhixia",
+        "name": "沈知夏",
+        "role": "lead",
+        "main_reference_url": "file:///D:/AI漫剧角色库/ShenZhixia_main.png",
+        "must_keep": [
+          "same face shape",
+          "same straight black hair",
+          "same soft homewear silhouette"
+        ],
+        "avoid": [
+          "celebrity likeness",
+          "known anime character",
+          "changed hairstyle"
+        ]
+      },
+      {
+        "asset_key": "door_double",
+        "name": "门外的她",
+        "role": "mirror-double",
+        "main_reference_url": "file:///D:/AI漫剧角色库/DoorDouble_main.png",
+        "must_keep": [
+          "same face as Shen Zhixia",
+          "hollow expression",
+          "cold eye focus"
+        ],
+        "avoid": [
+          "monster face",
+          "gore",
+          "exaggerated creature design"
+        ]
+      },
+      {
+        "asset_key": "security_guard",
+        "name": "物业保安",
+        "role": "rule-giver",
+        "main_reference_url": "file:///D:/AI漫剧角色库/SecurityGuard_main.png",
+        "must_keep": [
+          "plain uniform",
+          "ordinary middle-aged presence"
+        ],
+        "avoid": [
+          "heroic armor",
+          "fantasy costume"
+        ]
+      }
+    ],
+    "scenes": [
+      {
+        "asset_key": "old_apartment_bedroom",
+        "name": "旧公寓卧室",
+        "main_reference_url": "file:///D:/AI漫剧场景库/old_apartment_bedroom_main.png",
+        "must_keep": [
+          "narrow room",
+          "aged wall texture",
+          "single bed",
+          "night silence"
+        ],
+        "avoid": [
+          "luxury hotel room",
+          "bright open loft"
+        ]
+      },
+      {
+        "asset_key": "apartment_entry_door",
+        "name": "公寓入户门",
+        "main_reference_url": "file:///D:/AI漫剧场景库/apartment_entry_door_main.png",
+        "must_keep": [
+          "peephole",
+          "old metal lock",
+          "narrow doorway"
+        ],
+        "avoid": [
+          "glass villa door",
+          "fantasy gate"
+        ]
+      },
+      {
+        "asset_key": "narrow_corridor",
+        "name": "狭长走廊",
+        "main_reference_url": "file:///D:/AI漫剧场景库/narrow_corridor_main.png",
+        "must_keep": [
+          "dim yellow light",
+          "tight apartment corridor",
+          "old building silence"
+        ],
+        "avoid": [
+          "mall corridor",
+          "hospital hallway"
+        ]
+      }
+    ],
+    "props": [
+      {
+        "asset_key": "smartphone",
+        "name": "手机",
+        "main_reference_url": "file:///D:/AI漫剧道具库/smartphone_main.png",
+        "must_keep": [
+          "dark phone body",
+          "bright lock screen"
+        ],
+        "avoid": [
+          "tablet",
+          "foldable fantasy device"
+        ]
+      },
+      {
+        "asset_key": "peephole",
+        "name": "猫眼",
+        "main_reference_url": "file:///D:/AI漫剧道具库/peephole_main.png",
+        "must_keep": [
+          "old apartment peephole",
+          "circular fisheye view"
+        ],
+        "avoid": [
+          "security camera screen"
+        ]
+      },
+      {
+        "asset_key": "door_lock",
+        "name": "门锁",
+        "main_reference_url": "file:///D:/AI漫剧道具库/door_lock_main.png",
+        "must_keep": [
+          "old metal lock",
+          "practical apartment hardware"
+        ],
+        "avoid": [
+          "luxury gold lock"
+        ]
+      }
+    ]
+  },
+  "characters_json": {
+    "characters": [
+      {
+        "name": "沈知夏",
+        "role": "lead",
+        "appearance": "pale oval face, straight black hair, tired eyes",
+        "gender": "female",
+        "social_identity": "独居插画师",
+        "public_mask": "谨慎冷静",
+        "inner_truth": "长期失眠，极度害怕深夜异常声音",
+        "fear": "有人闯入她的私密空间",
+        "desire": "维持可控的安全边界",
+        "secret": "她最近总梦到另一个自己站在门外",
+        "stress_reaction": "呼吸变浅，动作僵住，先观察后行动"
+      }
+    ]
+  },
+  "script_card_json": {
+    "logline": "凌晨 2:44，独居插画师被敲门声惊醒，猫眼外站着一个和自己一模一样的女人。",
+    "genre_tags": [
+      "urban legend",
+      "thriller",
+      "suspense",
+      "psychological horror"
+    ],
+    "audience_profile": "18-30 岁，偏女性向都市惊悚悬疑用户",
+    "audience_emotion": "紧张、压迫、不安、反转后发冷",
+    "commercial_positioning": "短平快深夜怪谈漫剧",
+    "core_hook": "门外的人长得和女主一模一样",
+    "opening_hook": "深夜敲门，手机时间显示 2:44",
+    "conflict": "开门确认真相还是继续躲在门后",
+    "escalation": "猫眼外的人不说话，只是盯着门内",
+    "fear_beat": "屋内安全感被门外敲击一点点打碎",
+    "suspense_beat": "走廊里只有敲门声，没有脚步声和呼吸声",
+    "misdirection_beat": "像是熟人求助，却越看越像不该存在的人",
+    "reveal_beat": "物业消息提示门外监控里根本没有人",
+    "payoff_beat": "她意识到自己刚才一直在和不存在的东西对视",
+    "cliffhanger": "敲门声再次响起，而且离她更近",
+    "episode_theme": "熟悉的自我也可能成为最可怕的陌生人",
+    "emotional_curve": "困倦 -> 警觉 -> 恐惧升级 -> 认知崩塌",
+    "conflict_chain": "深夜异常 -> 观察确认 -> 身份错位 -> 规则提示 -> 现实反转",
+    "secret_reveal_plan": "先让观众相信门外真的有人，再通过监控信息推翻",
+    "next_episode_hook": "如果门外没有人，那第二次敲门声是谁发出的？"
+  },
+  "storyboard_json": {
+    "shots": [
+      {
+        "shot_id": "SH01",
+        "duration_sec": 3,
+        "character": "沈知夏",
+        "location": "旧公寓卧室",
+        "core_action": "沈知夏被急促敲门声惊醒，抓起手机看时间",
+        "emotion": "alarm",
+        "camera": "close-up",
+        "dialogue": "谁啊……？",
+        "image_prompt": "a young woman wakes up in a dim old apartment bedroom from urgent knocking, staring at a smartphone showing 2:44 a.m.",
+        "video_prompt": "she jolts awake, looks at the phone, then freezes toward the doorway",
+        "voice_prompt": "sleepy frightened whisper",
+        "bgm_prompt": "low suspense drone with room tone",
+        "status": "prompt_ready",
+        "shot_type": "suspense",
+        "camera_motion": "slow_push_in",
+        "subject_motion": "blink, slight_body_shift",
+        "transition": "cut",
+        "subtitle_text": "谁啊……？",
+        "sfx": "urgent_knock",
+        "editing_notes": "Hold on the phone screen beat before she looks toward the door.",
+        "shot_purpose": "three-second horror hook",
+        "conflict_beat": "sleepy safety vs unknown intrusion",
+        "emotion_shift": "groggy to alarmed",
+        "visual_focus": "phone time and dark doorway",
+        "image_prompt_intent": "single-shot suspense keyframe",
+        "storyboard_clarity": "clear waking moment with readable fear",
+        "pacing_note": "short shock beat",
+        "audience_feeling": "sudden unease",
+        "reference_priority": "character first, then room mood",
+        "composition": "tight 9:16 frame with negative space toward the doorway",
+        "lighting": "low light with cold smartphone glow",
+        "subtitle_position": "lower center",
+        "negative_constraints": [
+          "not a poster",
+          "not a character sheet",
+          "no gore"
+        ],
+        "character_asset_keys": [
+          "shen_zhixia"
+        ],
+        "scene_asset_key": "old_apartment_bedroom",
+        "prop_asset_keys": [
+          "smartphone"
+        ]
+      },
+      {
+        "shot_id": "SH02",
+        "duration_sec": 4,
+        "character": "沈知夏",
+        "location": "公寓入户门 / 狭长走廊",
+        "core_action": "她贴近门口，从猫眼向外看去，看见一个和自己一模一样的女人站在昏黄走廊里",
+        "emotion": "terror",
+        "camera": "peephole POV",
+        "dialogue": "",
+        "image_prompt": "peephole view of a dim apartment corridor where a woman identical to the protagonist stands under yellow hallway light with a hollow expression",
+        "video_prompt": "use the uploaded image as first frame, subtle fisheye tension, the hallway woman barely moves while the viewer hesitates",
+        "voice_prompt": "silent breath and frozen inhale",
+        "bgm_prompt": "tighter suspense pulse with silence gaps",
+        "status": "prompt_ready",
+        "shot_type": "reveal",
+        "camera_motion": "static",
+        "subject_motion": "natural blinking and almost no body motion",
+        "transition": "cut",
+        "subtitle_text": "",
+        "sfx": "muffled_knock",
+        "editing_notes": "Keep the corridor still so the face mismatch becomes the horror point.",
+        "shot_purpose": "fear escalation and visual reveal",
+        "conflict_beat": "curiosity vs survival instinct",
+        "emotion_shift": "cautious to horrified",
+        "visual_focus": "the identical face outside the door",
+        "image_prompt_intent": "disturbing reveal keyframe",
+        "storyboard_clarity": "clear peephole POV with identity shock",
+        "pacing_note": "hold longer than comfort",
+        "audience_feeling": "creeping dread",
+        "reference_priority": "double face first, corridor second",
+        "composition": "circular peephole framing with distorted corridor depth",
+        "lighting": "dim yellow corridor light with heavy shadow",
+        "subtitle_position": "upper center",
+        "negative_constraints": [
+          "not a poster",
+          "no monster exaggeration",
+          "no gore"
+        ],
+        "character_asset_keys": [
+          "door_double"
+        ],
+        "scene_asset_key": "narrow_corridor",
+        "prop_asset_keys": [
+          "peephole",
+          "door_lock"
+        ]
+      },
+      {
+        "shot_id": "SH03",
+        "duration_sec": 4,
+        "character": "沈知夏",
+        "location": "公寓入户门",
+        "core_action": "沈知夏看着物业消息僵住，门外敲门声再次响起",
+        "emotion": "frozen dread",
+        "camera": "close-up",
+        "dialogue": "请不要开门，监控显示你门外没有人。",
+        "image_prompt": "close-up of a frightened woman staring at a phone message saying there is nobody outside while the dark door behind her feels threatening",
+        "video_prompt": "use the uploaded image as first frame, hold the frozen reaction, then let the second knock land as she cannot move",
+        "voice_prompt": "barely audible breathing",
+        "bgm_prompt": "sudden silence followed by a sharp low hit",
+        "status": "prompt_ready",
+        "shot_type": "reveal",
+        "camera_motion": "slow_push_in",
+        "subject_motion": "blink, slight_head_turn, frozen mouth",
+        "transition": "flash",
+        "subtitle_text": "请不要开门，监控显示你门外没有人。",
+        "sfx": "second_knock",
+        "editing_notes": "Let the message land first, then hit the second knock after a suspenseful pause.",
+        "shot_purpose": "ending reversal and cliffhanger",
+        "conflict_beat": "safe explanation vs impossible second knock",
+        "emotion_shift": "terror to disbelief to paralysis",
+        "visual_focus": "phone message and dark door behind her",
+        "image_prompt_intent": "reversal cliffhanger keyframe",
+        "storyboard_clarity": "clear contradiction between message and sound",
+        "pacing_note": "pause before second knock",
+        "audience_feeling": "psychological cold shock",
+        "reference_priority": "phone message first, then doorway threat",
+        "composition": "vertical close-up with phone foreground and door background",
+        "lighting": "phone-lit face against dark doorway",
+        "subtitle_position": "lower third",
+        "negative_constraints": [
+          "not a poster",
+          "no gore",
+          "no comic page layout"
+        ],
+        "character_asset_keys": [
+          "shen_zhixia"
+        ],
+        "scene_asset_key": "apartment_entry_door",
+        "prop_asset_keys": [
+          "smartphone",
+          "door_lock"
+        ]
+      }
+    ]
+  },
+  "video_shot_ids": [
+    "SH02",
+    "SH03"
+  ],
+  "publish_record_json": {
+    "platform": "manual_demo",
+    "title": "午夜猫眼 第1集",
+    "published_at": "2026-04-28T00:00:00",
+    "url": "https://example.com/manual-demo/midnight-peephole"
+  }
+}

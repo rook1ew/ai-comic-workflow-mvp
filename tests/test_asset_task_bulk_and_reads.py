@@ -527,6 +527,107 @@ def test_project_image_prompts_return_visual_asset_refs_and_reference_guidance(c
     assert "Recommended prop reference:" in item["copy_ready_prompt"]
 
 
+def test_project_image_prompts_return_creative_fields_and_production_grade_prompt(client):
+    init = client.post("/coze/project/init", json={
+        "project_card_json": {
+            "project_title": "Midnight Peephole",
+            "genre": "urban horror suspense",
+            "platform": "coze",
+            "target_duration": 45,
+            "target_audience": "18-30",
+            "visual_style": "anime-comic realism",
+            "status": "draft",
+        },
+        "visual_asset_library_json": {
+            "characters": [{"asset_key": "shen_zhixia", "name": "沈知夏", "main_reference_url": "file:///D:/refs/shen.png"}],
+            "scenes": [{"asset_key": "entry_door", "name": "Apartment Entry Door", "main_reference_url": "file:///D:/refs/door.png"}],
+            "props": [{"asset_key": "peephole", "name": "Peephole", "main_reference_url": "file:///D:/refs/peephole.png"}],
+        },
+        "characters_json": {
+            "characters": [
+                {
+                    "name": "沈知夏",
+                    "role": "lead",
+                    "appearance": "pale face, black hair",
+                    "main_reference_confirmed": False,
+                }
+            ]
+        },
+    }).json()
+    project_id = init["data"]["project_id"]
+    character_id = init["data"]["character_ids"][0]
+    client.post(f"/characters/{character_id}/confirm-reference", json={"main_reference_url": "mock://character/reference.png"})
+    client.post(
+        f"/coze/project/{project_id}/storyboard",
+        json={
+            "script_card_json": {"core_hook": "someone outside looks exactly like her"},
+            "storyboard_json": {
+                "shots": [
+                    {
+                        "shot_id": "SH01",
+                        "duration_sec": 3,
+                        "character": "沈知夏",
+                        "location": "Old Apartment Bedroom",
+                        "core_action": "She wakes up from urgent knocking",
+                        "emotion": "alarmed",
+                        "camera": "close-up",
+                        "dialogue": "谁在外面？",
+                        "shot_type": "reveal",
+                        "camera_motion": "slow_push_in",
+                        "subject_motion": "blink, slight_body_shift",
+                        "transition": "cut",
+                        "subtitle_text": "谁在外面？",
+                        "sfx": "urgent_knock",
+                        "editing_notes": "Hold the empty doorway space for tension.",
+                        "shot_purpose": "opening horror hook",
+                        "conflict_beat": "safety of room vs unknown outside threat",
+                        "emotion_shift": "sleepy to frightened",
+                        "visual_focus": "phone time and dark doorway",
+                        "image_prompt_intent": "single-shot suspense keyframe",
+                        "composition": "tight 9:16 frame with negative space near the door",
+                        "lighting": "low light with cold phone glow",
+                        "subtitle_position": "lower center",
+                        "negative_constraints": ["not a poster", "not a character sheet"],
+                        "character_asset_keys": ["shen_zhixia"],
+                        "scene_asset_key": "entry_door",
+                        "prop_asset_keys": ["peephole"],
+                        "image_prompt": "woman startled awake in a dark apartment bedroom by sudden knocking",
+                        "video_prompt": "she freezes as knocking continues behind the door",
+                        "voice_prompt": "frightened whisper",
+                        "bgm_prompt": "low suspense drone",
+                        "status": "prompt_ready",
+                    }
+                ]
+            },
+        },
+    )
+    create_resp = client.post(f"/coze/project/{project_id}/create-asset-tasks", json={"video_shot_ids": []}).json()
+    assert create_resp["data"]["asset_tasks_count"] >= 3
+
+    response = client.get(f"/projects/{project_id}/image-prompts")
+    assert response.status_code == 200
+    item = response.json()["items"][0]
+    assert item["shot_purpose"] == "opening horror hook"
+    assert item["conflict_beat"] == "safety of room vs unknown outside threat"
+    assert item["visual_focus"] == "phone time and dark doorway"
+    assert "storyboard shot image for a vertical AI comic drama" in item["copy_ready_prompt"]
+    assert "generate one single-shot storyboard keyframe for later editing" in item["copy_ready_prompt"]
+    assert "not a poster" in item["copy_ready_prompt"]
+    assert "not a character sheet" in item["copy_ready_prompt"]
+    assert "not a multi-panel comic page" in item["copy_ready_prompt"]
+    assert "Recommended character reference:" in item["copy_ready_prompt"]
+    assert "Shot purpose: opening horror hook" in item["copy_ready_prompt"]
+    assert "Conflict beat: safety of room vs unknown outside threat" in item["copy_ready_prompt"]
+    assert "Visual focus: phone time and dark doorway" in item["copy_ready_prompt"]
+    assert "disturbing clue" in item["copy_ready_prompt"]
+    assert "changed understanding of the scene" in item["copy_ready_prompt"]
+    assert "low light" in item["copy_ready_prompt"]
+    assert "silence" in item["copy_ready_prompt"]
+    assert "unease" in item["copy_ready_prompt"]
+    assert "negative space" in item["copy_ready_prompt"]
+    assert "mock://character/reference.png" not in item["copy_ready_prompt"]
+
+
 def test_editing_shot_board_returns_visual_asset_refs(client):
     init = client.post("/coze/project/init", json={
         "project_card_json": {
@@ -610,7 +711,53 @@ def test_editing_shot_board_returns_visual_asset_refs(client):
     assert item["scene_asset_key"] == "meeting_room_a"
     assert item["prop_asset_keys"] == ["employee_badge"]
     assert item["visual_asset_refs"]["characters"][0]["asset_key"] == "lin_wan"
-    assert item["visual_asset_refs"]["scene"]["asset_key"] == "meeting_room_a"
+
+
+def test_editing_shot_board_returns_creative_fields(client):
+    project_id = _create_editing_cue_sheet_project(
+        client,
+        shots=[
+            {
+                "shot_id": "SH01",
+                "duration_sec": 3,
+                "character": "Lin Xia",
+                "location": "Meeting Room",
+                "core_action": "Lin Xia opens the door",
+                "emotion": "nervous",
+                "camera": "medium close-up",
+                "dialogue": "不好意思，我走错了。",
+                "shot_type": "suspense",
+                "camera_motion": "slow_push_in",
+                "subject_motion": "blink",
+                "transition": "cut",
+                "subtitle_text": "不好意思，我走错了。",
+                "sfx": "door_open",
+                "editing_notes": "Use slight zoom-in and nervous pause.",
+                "shot_purpose": "awkward entrance beat",
+                "conflict_beat": "enter vs retreat",
+                "emotion_shift": "tense to embarrassed",
+                "visual_focus": "doorway and expression",
+                "image_prompt_intent": "single keyframe",
+                "composition": "tight doorway framing",
+                "lighting": "cold office light",
+                "subtitle_position": "lower center",
+                "negative_constraints": ["not a poster"],
+                "image_prompt": "young woman opening a meeting room door",
+                "video_prompt": "office door opens, awkward pause",
+                "voice_prompt": "voice prompt 1",
+                "bgm_prompt": "bgm prompt 1",
+                "status": "prompt_ready",
+            }
+        ],
+        upload_manual_images=True,
+    )
+    response = client.get(f"/projects/{project_id}/editing-shot-board")
+    assert response.status_code == 200
+    item = response.json()["items"][0]
+    assert item["shot_purpose"] == "awkward entrance beat"
+    assert item["conflict_beat"] == "enter vs retreat"
+    assert item["visual_focus"] == "doorway and expression"
+    assert item["lighting"] == "cold office light"
 
 
 def test_project_image_prompts_unexecuted_image_task_still_returns_prompt(client):

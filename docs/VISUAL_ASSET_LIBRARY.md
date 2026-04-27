@@ -264,3 +264,47 @@ Visual Asset Library 是项目级的轻量参考素材库，用来管理三类�
 - Creative Bible 负责角色内核、恐惧节奏、镜头功能
 - Visual Asset Library 负责视觉一致性
 - storyboard shot 负责把两者绑定到具体镜头
+
+## 新增：手动导入与候选提取
+
+当前 Visual Asset Library 支持两种来源：
+
+1. 手动导入
+2. 自动提取候选资产，再人工确认导入
+
+### 手动导入
+
+接口：
+
+- `POST /projects/{project_id}/visual-asset-library/manual-import`
+
+适合场景：
+
+- 你已经有人物、场景、道具参考图
+- 只想把 URL 和一致性规则登记进项目库
+
+### 自动提取候选资产
+
+接口：
+
+- `POST /projects/{project_id}/visual-asset-candidates/extract`
+
+适合场景：
+
+- 你先写了角色、剧本、分镜
+- 还没系统整理素材库
+- 想让系统先提取候选角色 / 场景 / 道具，再人工筛选
+
+注意：
+
+- candidates 不会直接强制入库
+- 需要人工 review 后，再调用：
+  - `POST /projects/{project_id}/visual-asset-library/import-candidates`
+
+### 推荐流程
+
+1. 先 `extract candidates`
+2. 人工 review candidates
+3. 补 `main_reference_url`
+4. 再 `import candidates`
+5. 最后去跑 `image-prompts`

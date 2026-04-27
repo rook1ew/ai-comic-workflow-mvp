@@ -1175,6 +1175,96 @@ Rules:
 - does not call any real API
 - is safe to use in manual image generation workflows
 
+Additional fields:
+
+- `missing_reference_url_count`
+- `assets_without_reference_url`
+- `next_action`
+
+`next_action` rules:
+
+- empty library: `extract_or_manual_import_assets`
+- library exists but some assets have no `main_reference_url`: `complete_reference_urls`
+- library is complete enough: `ready_for_reference_guided_image_generation`
+
+### POST `/projects/{project_id}/visual-asset-library/manual-import`
+
+Manual upsert for one visual asset entry.
+
+Request example:
+
+```json
+{
+  "asset_type": "character",
+  "asset": {
+    "asset_key": "shen_zhixia",
+    "name": "沈知夏",
+    "main_reference_url": "file:///D:/AI漫剧角色库/ShenZhixia_main.png",
+    "must_keep": ["same face shape", "same hairstyle"],
+    "avoid": ["celebrity likeness", "known anime character"]
+  },
+  "merge_mode": "upsert"
+}
+```
+
+Rules:
+
+- `asset_type` must be `character`, `scene`, or `prop`
+- `asset.asset_key` is required
+- existing `asset_key` is updated
+- new `asset_key` is appended
+- other assets are preserved
+
+### POST `/projects/{project_id}/visual-asset-candidates/extract`
+
+Extracts candidate character / scene / prop assets from current project content.
+
+Response example:
+
+```json
+{
+  "project_id": 1,
+  "characters": [],
+  "scenes": [],
+  "props": [],
+  "next_action": "review_candidates_before_import"
+}
+```
+
+Sources used:
+
+- character records
+- storyboard `character`
+- storyboard `location`
+- `character_asset_keys / scene_asset_key / prop_asset_keys`
+- simple prop keyword detection from `core_action / image_prompt / dialogue`
+
+This endpoint does not write into the formal library.
+
+### POST `/projects/{project_id}/visual-asset-library/import-candidates`
+
+Imports only the reviewed candidates you provide in the request body.
+
+Response fields:
+
+- `characters_count`
+- `scenes_count`
+- `props_count`
+- `imported_count`
+- `updated_count`
+
+### image-prompts missing visual refs compatibility
+
+`GET /projects/{project_id}/image-prompts` now also returns:
+
+- `missing_visual_asset_refs`
+
+If a shot references an unknown `asset_key`:
+
+- prompt export still succeeds
+- `visual_asset_refs` may be partially empty
+- `missing_visual_asset_refs` explains which references are missing
+
 ### image-prompts visual reference fields
 
 `GET /projects/{project_id}/image-prompts` now includes:

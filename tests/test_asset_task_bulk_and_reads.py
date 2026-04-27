@@ -402,9 +402,9 @@ def test_project_visual_asset_library_returns_characters_scenes_and_props(client
             "status": "draft",
         },
         "visual_asset_library_json": {
-            "characters": [{"asset_key": "lin_wan", "name": "Lin Xia"}],
-            "scenes": [{"asset_key": "meeting_room_a", "name": "Meeting Room A"}],
-            "props": [{"asset_key": "employee_badge", "name": "Employee Badge"}],
+            "characters": [{"asset_key": "lin_wan", "name": "Lin Xia", "main_reference_url": "file:///D:/refs/lin.png"}],
+            "scenes": [{"asset_key": "meeting_room_a", "name": "Meeting Room A", "main_reference_url": "file:///D:/refs/room.png"}],
+            "props": [{"asset_key": "employee_badge", "name": "Employee Badge", "main_reference_url": "file:///D:/refs/badge.png"}],
         },
         "characters_json": {
             "characters": [
@@ -426,6 +426,246 @@ def test_project_visual_asset_library_returns_characters_scenes_and_props(client
     assert body["props_count"] == 1
     assert body["characters"][0]["asset_key"] == "lin_wan"
     assert body["next_action"] == "ready_for_reference_guided_image_generation"
+
+
+def test_visual_asset_library_reports_missing_reference_urls(client):
+    init = client.post("/coze/project/init", json={
+        "project_card_json": {
+            "project_title": "Library Missing URLs Demo",
+            "genre": "urban",
+            "platform": "coze",
+            "target_duration": 60,
+            "target_audience": "young-adult",
+            "visual_style": "anime-comic",
+            "status": "draft",
+        },
+        "visual_asset_library_json": {
+            "characters": [{"asset_key": "lin_wan", "name": "Lin Wan"}],
+            "scenes": [{"asset_key": "meeting_room_a", "name": "Meeting Room A", "main_reference_url": "file:///D:/refs/scene.png"}],
+            "props": [{"asset_key": "employee_badge", "name": "Employee Badge"}],
+        },
+        "characters_json": {"characters": [{"name": "Lin Wan", "role": "lead"}]},
+    }).json()
+    project_id = init["data"]["project_id"]
+
+    response = client.get(f"/projects/{project_id}/visual-asset-library")
+    assert response.status_code == 200
+    body = response.json()
+    assert body["missing_reference_url_count"] == 2
+    assert body["next_action"] == "complete_reference_urls"
+    assert any(item["asset_key"] == "lin_wan" for item in body["assets_without_reference_url"])
+
+
+def test_visual_asset_library_manual_import_adds_character_asset(client):
+    project = client.post("/projects", json={"name": "Manual Asset Import Demo"}).json()
+    response = client.post(
+        f"/projects/{project['id']}/visual-asset-library/manual-import",
+        json={
+            "asset_type": "character",
+            "asset": {
+                "asset_key": "shen_zhixia",
+                "name": "Shen Zhixia",
+                "main_reference_url": "file:///D:/refs/shen.png",
+                "must_keep": ["same face shape"],
+                "avoid": ["celebrity likeness"],
+            },
+            "merge_mode": "upsert",
+        },
+    )
+    assert response.status_code == 200
+    body = response.json()
+    assert body["characters_count"] == 1
+    assert body["characters"][0]["asset_key"] == "shen_zhixia"
+    assert body["next_action"] == "ready_for_reference_guided_image_generation"
+
+
+def test_visual_asset_library_manual_import_upserts_existing_asset_key(client):
+    project = client.post("/projects", json={"name": "Manual Asset Upsert Demo"}).json()
+    client.post(
+        f"/projects/{project['id']}/visual-asset-library/manual-import",
+        json={
+            "asset_type": "character",
+            "asset": {
+                "asset_key": "shen_zhixia",
+                "name": "Shen Zhixia",
+                "main_reference_url": "file:///D:/refs/shen_v1.png",
+            },
+            "merge_mode": "upsert",
+        },
+    )
+    response = client.post(
+        f"/projects/{project['id']}/visual-asset-library/manual-import",
+        json={
+            "asset_type": "character",
+            "asset": {
+                "asset_key": "shen_zhixia",
+                "name": "Shen Zhixia Updated",
+                "main_reference_url": "file:///D:/refs/shen_v2.png",
+                "must_keep": ["same hair"],
+            },
+            "merge_mode": "upsert",
+        },
+    )
+    assert response.status_code == 200
+    body = response.json()
+    assert body["characters_count"] == 1
+    assert body["characters"][0]["name"] == "Shen Zhixia Updated"
+    assert body["characters"][0]["main_reference_url"] == "file:///D:/refs/shen_v2.png"
+
+
+def test_visual_asset_library_manual_import_missing_project_returns_404(client):
+    response = client.post(
+        "/projects/999999/visual-asset-library/manual-import",
+        json={
+            "asset_type": "character",
+            "asset": {"asset_key": "shen_zhixia"},
+            "merge_mode": "upsert",
+        },
+    )
+    assert response.status_code == 404
+
+
+def test_extract_visual_asset_candidates_returns_characters_scenes_and_props_without_modifying_library(client):
+    init = client.post("/coze/project/init", json={
+        "project_card_json": {
+            "project_title": "Candidate Extract Demo",
+            "genre": "urban thriller",
+            "platform": "coze",
+            "visual_style": "anime-comic realism",
+            "status": "draft",
+        },
+        "characters_json": {
+            "characters": [
+                {"name": "Shen Zhixia", "role": "lead", "appearance": "pale face"},
+            ]
+        },
+    }).json()
+    project_id = init["data"]["project_id"]
+    client.post(
+        f"/coze/project/{project_id}/storyboard",
+        json={
+            "script_card_json": {"core_hook": "something is outside the door"},
+            "storyboard_json": {
+                "shots": [
+                    {
+                        "shot_id": "SH01",
+                        "duration_sec": 3,
+                        "character": "Shen Zhixia",
+                        "location": "Old Apartment Bedroom",
+                        "core_action": "She wakes up holding her phone near the door lock",
+                        "emotion": "fear",
+                        "camera": "close-up",
+                        "dialogue": "Did that sound come from the peephole?",
+                        "image_prompt": "woman in old apartment looking toward the door",
+                        "video_prompt": "freeze and listen",
+                        "voice_prompt": "whisper",
+                        "bgm_prompt": "low drone",
+                        "status": "prompt_ready",
+                    }
+                ]
+            },
+        },
+    )
+
+    response = client.post(f"/projects/{project_id}/visual-asset-candidates/extract")
+    assert response.status_code == 200
+    body = response.json()
+    assert any(item["asset_key"] == "shen_zhixia" for item in body["characters"])
+    assert any(item["asset_key"] == "old_apartment_bedroom" for item in body["scenes"])
+    assert any(item["asset_key"] in {"smartphone", "peephole", "door_lock"} for item in body["props"])
+    assert body["next_action"] == "review_candidates_before_import"
+
+    library = client.get(f"/projects/{project_id}/visual-asset-library").json()
+    assert library["characters_count"] == 0
+    assert library["scenes_count"] == 0
+    assert library["props_count"] == 0
+    assert library["next_action"] == "extract_or_manual_import_assets"
+
+
+def test_import_visual_asset_candidates_writes_to_library(client):
+    project = client.post("/projects", json={"name": "Import Candidates Demo"}).json()
+    response = client.post(
+        f"/projects/{project['id']}/visual-asset-library/import-candidates",
+        json={
+            "characters": [
+                {
+                    "asset_key": "shen_zhixia",
+                    "name": "Shen Zhixia",
+                    "main_reference_url": "file:///D:/refs/shen.png",
+                    "must_keep": ["same face"],
+                    "avoid": ["celebrity likeness"],
+                }
+            ],
+            "scenes": [
+                {
+                    "asset_key": "old_apartment_bedroom",
+                    "name": "Old Apartment Bedroom",
+                    "main_reference_url": "file:///D:/refs/room.png"
+                }
+            ],
+            "props": [],
+            "merge_mode": "upsert",
+        },
+    )
+    assert response.status_code == 200
+    body = response.json()
+    assert body["characters_count"] == 1
+    assert body["scenes_count"] == 1
+    assert body["imported_count"] == 2
+    library = client.get(f"/projects/{project['id']}/visual-asset-library").json()
+    assert library["characters"][0]["asset_key"] == "shen_zhixia"
+
+
+def test_image_prompts_with_missing_asset_keys_do_not_crash(client):
+    init = client.post("/coze/project/init", json={
+        "project_card_json": {
+            "project_title": "Missing Asset Keys Demo",
+            "genre": "urban",
+            "platform": "coze",
+            "visual_style": "anime-comic",
+            "status": "draft",
+        },
+        "characters_json": {"characters": [{"name": "Lin Xia", "role": "lead"}]},
+    }).json()
+    project_id = init["data"]["project_id"]
+    character_id = init["data"]["character_ids"][0]
+    client.post(f"/characters/{character_id}/confirm-reference", json={"main_reference_url": "mock://character/reference.png"})
+    client.post(
+        f"/coze/project/{project_id}/storyboard",
+        json={
+            "script_card_json": {"opening_hook": "Opening"},
+            "storyboard_json": {
+                "shots": [
+                    {
+                        "shot_id": "SH01",
+                        "duration_sec": 3,
+                        "character": "Lin Xia",
+                        "location": "Meeting Room",
+                        "core_action": "Lin Xia opens the door",
+                        "emotion": "nervous",
+                        "camera": "medium",
+                        "character_asset_keys": ["missing_character"],
+                        "scene_asset_key": "missing_scene",
+                        "prop_asset_keys": ["missing_prop"],
+                        "dialogue": "Sorry, wrong room.",
+                        "image_prompt": "young woman opening a meeting room door",
+                        "video_prompt": "video prompt 1",
+                        "voice_prompt": "voice prompt 1",
+                        "bgm_prompt": "bgm prompt 1",
+                        "status": "prompt_ready",
+                    }
+                ]
+            },
+        },
+    )
+    client.post(f"/coze/project/{project_id}/create-asset-tasks", json={})
+    response = client.get(f"/projects/{project_id}/image-prompts")
+    assert response.status_code == 200
+    item = response.json()["items"][0]
+    assert item["visual_asset_refs"]["characters"] == []
+    assert item["visual_asset_refs"]["scene"] is None
+    assert item["visual_asset_refs"]["props"] == []
+    assert "missing_character_asset:missing_character" in item["missing_visual_asset_refs"]
 
 
 def test_project_image_prompts_return_visual_asset_refs_and_reference_guidance(client):

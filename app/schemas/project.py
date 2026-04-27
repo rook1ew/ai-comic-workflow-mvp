@@ -65,9 +65,62 @@ class ProjectVisualAssetLibrary(BaseModel):
     characters_count: int
     scenes_count: int
     props_count: int
+    missing_reference_url_count: int = 0
+    assets_without_reference_url: list[dict] = Field(default_factory=list)
     characters: list[dict] = Field(default_factory=list)
     scenes: list[dict] = Field(default_factory=list)
     props: list[dict] = Field(default_factory=list)
+    next_action: str
+
+
+class VisualAssetLibraryManualImportAsset(BaseModel):
+    asset_key: str
+    name: str | None = None
+    main_reference_url: str | None = None
+    must_keep: list[str] = Field(default_factory=list)
+    avoid: list[str] = Field(default_factory=list)
+
+
+class VisualAssetLibraryManualImportRequest(BaseModel):
+    asset_type: str
+    asset: VisualAssetLibraryManualImportAsset
+    merge_mode: str = "upsert"
+
+
+class VisualAssetCandidate(BaseModel):
+    asset_key: str
+    name: str
+    asset_type: str
+    reason: str
+    source: str
+    suggested_main_reference_url: str | None = None
+    must_keep: list[str] = Field(default_factory=list)
+    avoid: list[str] = Field(default_factory=list)
+    already_in_library: bool = False
+
+
+class ProjectVisualAssetCandidates(BaseModel):
+    project_id: int
+    characters: list[VisualAssetCandidate] = Field(default_factory=list)
+    scenes: list[VisualAssetCandidate] = Field(default_factory=list)
+    props: list[VisualAssetCandidate] = Field(default_factory=list)
+    next_action: str
+
+
+class VisualAssetLibraryImportCandidatesRequest(BaseModel):
+    characters: list[VisualAssetLibraryManualImportAsset] = Field(default_factory=list)
+    scenes: list[VisualAssetLibraryManualImportAsset] = Field(default_factory=list)
+    props: list[VisualAssetLibraryManualImportAsset] = Field(default_factory=list)
+    merge_mode: str = "upsert"
+
+
+class VisualAssetLibraryImportCandidatesResponse(BaseModel):
+    project_id: int
+    characters_count: int
+    scenes_count: int
+    props_count: int
+    imported_count: int
+    updated_count: int
     next_action: str
 
 
@@ -104,6 +157,7 @@ class ProjectImagePromptItem(BaseModel):
     scene_asset_key: str | None = None
     prop_asset_keys: list[str] = Field(default_factory=list)
     visual_asset_refs: VisualAssetRefs = Field(default_factory=VisualAssetRefs)
+    missing_visual_asset_refs: list[str] = Field(default_factory=list)
     base_prompt: str
     enhanced_prompt: str
     negative_prompt: str

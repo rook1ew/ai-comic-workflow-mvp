@@ -1,3 +1,5 @@
+import re
+
 from fastapi import HTTPException
 from sqlalchemy import func
 from sqlalchemy.orm import Session
@@ -32,6 +34,7 @@ from app.schemas.project import ProjectManualVideoProgress
 from app.schemas.project import ProjectManualVideoProgressItem
 from app.schemas.project import ProjectPublishReadiness
 from app.schemas.project import ProjectSummary
+from app.schemas.project import ProjectVisualAssetCandidates
 from app.schemas.project import ProjectVisualAssetLibrary
 from app.schemas.project import ManualFinalChecklistChecks
 from app.schemas.project import PublishReadinessChecks
@@ -40,6 +43,10 @@ from app.schemas.project import ProjectVideoReadiness
 from app.schemas.project import ProjectVideoReadinessItem
 from app.schemas.project import VisualAssetRefs
 from app.schemas.project import VisualAssetLibraryEntry
+from app.schemas.project import VisualAssetCandidate
+from app.schemas.project import VisualAssetLibraryImportCandidatesRequest
+from app.schemas.project import VisualAssetLibraryImportCandidatesResponse
+from app.schemas.project import VisualAssetLibraryManualImportRequest
 from app.services.prompt_enhancer import build_image_enhanced_prompt
 from app.services.repository import create_and_refresh
 
@@ -166,15 +173,39 @@ def get_project_summary(db: Session, project_id: int) -> ProjectSummary:
 def get_project_visual_asset_library(db: Session, project_id: int) -> ProjectVisualAssetLibrary:
     project = get_project_or_404(db, project_id)
     library = _get_visual_asset_library(project)
+    assets_without_reference_url: list[dict] = []
+    for bucket_name in ("characters", "scenes", "props"):
+        for item in library[bucket_name]:
+            if not isinstance(item, dict):
+                continue
+            if str(item.get("main_reference_url") or "").strip():
+                continue
+            assets_without_reference_url.append(
+                {
+                    "asset_type": bucket_name[:-1] if bucket_name.endswith("s") else bucket_name,
+                    "asset_key": item.get("asset_key"),
+                    "name": item.get("name"),
+                }
+            )
+
+    if not any(library.values()):
+        next_action = "extract_or_manual_import_assets"
+    elif assets_without_reference_url:
+        next_action = "complete_reference_urls"
+    else:
+        next_action = "ready_for_reference_guided_image_generation"
+
     return ProjectVisualAssetLibrary(
         project_id=project_id,
         characters_count=len(library["characters"]),
         scenes_count=len(library["scenes"]),
         props_count=len(library["props"]),
+        missing_reference_url_count=len(assets_without_reference_url),
+        assets_without_reference_url=assets_without_reference_url,
         characters=library["characters"],
         scenes=library["scenes"],
         props=library["props"],
-        next_action="ready_for_reference_guided_image_generation",
+        next_action=next_action,
     )
 
 
@@ -302,6 +333,51 @@ def _get_visual_asset_library(project: Project) -> dict:
     }
 
 
+def _normalize_asset_type(asset_type: str) -> tuple[str, str]:
+    normalized = (asset_type or "").strip().lower()
+    mapping = {
+        "character": ("character", "characters"),
+        "scene": ("scene", "scenes"),
+        "prop": ("prop", "props"),
+    }
+    if normalized not in mapping:
+        raise HTTPException(status_code=400, detail="asset_type must be one of: character, scene, prop")
+    return mapping[normalized]
+
+
+def _slugify_asset_key(value: str) -> str:
+    normalized = re.sub(r"[^a-zA-Z0-9\u4e00-\u9fff]+", "_", (value or "").strip().lower())
+    normalized = re.sub(r"_+", "_", normalized).strip("_")
+    return normalized or "asset"
+
+
+def _upsert_visual_asset_entry(existing_items: list[dict], asset: dict) -> tuple[list[dict], bool]:
+    incoming_key = str(asset.get("asset_key") or "").strip()
+    if not incoming_key:
+        raise HTTPException(status_code=400, detail="asset.asset_key is required")
+
+    updated = False
+    next_items: list[dict] = []
+    for item in existing_items:
+        if isinstance(item, dict) and str(item.get("asset_key") or "").strip() == incoming_key:
+            merged = dict(item)
+            merged.update(asset)
+            next_items.append(merged)
+            updated = True
+        else:
+            next_items.append(item)
+    if not updated:
+        next_items.append(asset)
+    return next_items, updated
+
+
+def _save_visual_asset_library(project: Project, library: dict, db: Session) -> None:
+    project.visual_asset_library_json = library
+    db.add(project)
+    db.commit()
+    db.refresh(project)
+
+
 def _build_visual_asset_lookup(project: Project) -> dict[str, dict[str, dict]]:
     library = _get_visual_asset_library(project)
     return {
@@ -321,6 +397,246 @@ def _build_visual_asset_lookup(project: Project) -> dict[str, dict[str, dict]]:
             if isinstance(item, dict) and str(item.get("asset_key") or "").strip()
         },
     }
+
+
+def manual_import_project_visual_asset(
+    db: Session,
+    project_id: int,
+    payload: VisualAssetLibraryManualImportRequest,
+) -> ProjectVisualAssetLibrary:
+    project = get_project_or_404(db, project_id)
+    _, bucket = _normalize_asset_type(payload.asset_type)
+    if payload.merge_mode != "upsert":
+        raise HTTPException(status_code=400, detail="merge_mode must be upsert")
+
+    library = _get_visual_asset_library(project)
+    asset_data = payload.asset.model_dump()
+    bucket_items, _ = _upsert_visual_asset_entry(library[bucket], asset_data)
+    library[bucket] = bucket_items
+    _save_visual_asset_library(project, library, db)
+    return get_project_visual_asset_library(db, project_id)
+
+
+def _candidate_from_parts(
+    *,
+    asset_key: str,
+    name: str,
+    asset_type: str,
+    reason: str,
+    source: str,
+    already_in_library: bool,
+) -> VisualAssetCandidate:
+    return VisualAssetCandidate(
+        asset_key=asset_key,
+        name=name,
+        asset_type=asset_type,
+        reason=reason,
+        source=source,
+        suggested_main_reference_url="",
+        must_keep=[],
+        avoid=[],
+        already_in_library=already_in_library,
+    )
+
+
+def _extract_prop_candidates_from_text(text: str) -> list[tuple[str, str]]:
+    normalized = (text or "").lower()
+    keyword_map = [
+        ("smartphone", ["smartphone", "phone", "手机"]),
+        ("peephole", ["peephole", "猫眼"]),
+        ("door_lock", ["door lock", "doorlock", "门锁"]),
+        ("employee_badge", ["badge", "工牌"]),
+        ("folder", ["folder", "文件夹"]),
+        ("contract", ["contract", "合同"]),
+        ("invitation", ["invitation", "邀请函"]),
+        ("champagne", ["champagne", "香槟"]),
+    ]
+    found: list[tuple[str, str]] = []
+    for asset_key, keywords in keyword_map:
+        if any(keyword in normalized for keyword in keywords):
+            found.append((asset_key, keywords[0]))
+    return found
+
+
+def extract_project_visual_asset_candidates(db: Session, project_id: int) -> ProjectVisualAssetCandidates:
+    project = get_project_or_404(db, project_id)
+    library = _get_visual_asset_library(project)
+    lookup = _build_visual_asset_lookup(project)
+
+    characters_by_key: dict[str, VisualAssetCandidate] = {}
+    scenes_by_key: dict[str, VisualAssetCandidate] = {}
+    props_by_key: dict[str, VisualAssetCandidate] = {}
+
+    character_records = db.query(Character).filter(Character.project_id == project_id).order_by(Character.id.asc()).all()
+    for character in character_records:
+        asset_key = _slugify_asset_key(character.name)
+        characters_by_key.setdefault(
+            asset_key,
+            _candidate_from_parts(
+                asset_key=asset_key,
+                name=character.name,
+                asset_type="character",
+                reason="character record exists in project",
+                source="character records",
+                already_in_library=asset_key in lookup["characters"],
+            ),
+        )
+
+    shots = (
+        db.query(Shot)
+        .join(Scene, Shot.scene_id == Scene.id)
+        .join(Episode, Scene.episode_id == Episode.id)
+        .filter(Episode.project_id == project_id)
+        .order_by(Shot.id.asc())
+        .all()
+    )
+    for shot in shots:
+        metadata = shot.metadata_json or {}
+        character_name = str(metadata.get("character") or "").strip()
+        if character_name:
+            asset_key = _slugify_asset_key(character_name)
+            characters_by_key.setdefault(
+                asset_key,
+                _candidate_from_parts(
+                    asset_key=asset_key,
+                    name=character_name,
+                    asset_type="character",
+                    reason="character appears in storyboard shots",
+                    source="storyboard.character",
+                    already_in_library=asset_key in lookup["characters"],
+                ),
+            )
+        for asset_key in metadata.get("character_asset_keys") or []:
+            normalized_key = str(asset_key).strip()
+            if not normalized_key:
+                continue
+            characters_by_key.setdefault(
+                normalized_key,
+                _candidate_from_parts(
+                    asset_key=normalized_key,
+                    name=character_name or normalized_key,
+                    asset_type="character",
+                    reason="character asset key referenced by storyboard shot",
+                    source="storyboard.character_asset_keys",
+                    already_in_library=normalized_key in lookup["characters"],
+                ),
+            )
+
+        location_name = str(metadata.get("location") or "").strip()
+        if location_name:
+            scene_key = _slugify_asset_key(location_name)
+            scenes_by_key.setdefault(
+                scene_key,
+                _candidate_from_parts(
+                    asset_key=scene_key,
+                    name=location_name,
+                    asset_type="scene",
+                    reason=f"main setting used in {metadata.get('source_shot_id') or f'Shot {shot.id}'}",
+                    source="storyboard.location",
+                    already_in_library=scene_key in lookup["scenes"],
+                ),
+            )
+        scene_asset_key = str(metadata.get("scene_asset_key") or "").strip()
+        if scene_asset_key:
+            scenes_by_key.setdefault(
+                scene_asset_key,
+                _candidate_from_parts(
+                    asset_key=scene_asset_key,
+                    name=location_name or scene_asset_key,
+                    asset_type="scene",
+                    reason="scene asset key referenced by storyboard shot",
+                    source="storyboard.scene_asset_key",
+                    already_in_library=scene_asset_key in lookup["scenes"],
+                ),
+            )
+
+        for prop_key in metadata.get("prop_asset_keys") or []:
+            normalized_key = str(prop_key).strip()
+            if not normalized_key:
+                continue
+            props_by_key.setdefault(
+                normalized_key,
+                _candidate_from_parts(
+                    asset_key=normalized_key,
+                    name=normalized_key.replace("_", " "),
+                    asset_type="prop",
+                    reason="prop asset key referenced by storyboard shot",
+                    source="storyboard.prop_asset_keys",
+                    already_in_library=normalized_key in lookup["props"],
+                ),
+            )
+
+        searchable_text = " ".join(
+            [
+                str(shot.core_action or ""),
+                str(shot.image_prompt or ""),
+                str(metadata.get("dialogue") or shot.dialogue or ""),
+            ]
+        )
+        for prop_key, keyword in _extract_prop_candidates_from_text(searchable_text):
+            props_by_key.setdefault(
+                prop_key,
+                _candidate_from_parts(
+                    asset_key=prop_key,
+                    name=prop_key.replace("_", " "),
+                    asset_type="prop",
+                    reason=f"key object inferred from shot text via keyword '{keyword}'",
+                    source="storyboard/core_action/image_prompt/dialogue",
+                    already_in_library=prop_key in lookup["props"],
+                ),
+            )
+
+    return ProjectVisualAssetCandidates(
+        project_id=project_id,
+        characters=list(characters_by_key.values()),
+        scenes=list(scenes_by_key.values()),
+        props=list(props_by_key.values()),
+        next_action="review_candidates_before_import",
+    )
+
+
+def import_project_visual_asset_candidates(
+    db: Session,
+    project_id: int,
+    payload: VisualAssetLibraryImportCandidatesRequest,
+) -> VisualAssetLibraryImportCandidatesResponse:
+    project = get_project_or_404(db, project_id)
+    if payload.merge_mode != "upsert":
+        raise HTTPException(status_code=400, detail="merge_mode must be upsert")
+
+    library = _get_visual_asset_library(project)
+    imported_count = 0
+    updated_count = 0
+
+    for bucket, assets in (
+        ("characters", payload.characters),
+        ("scenes", payload.scenes),
+        ("props", payload.props),
+    ):
+        bucket_items = library[bucket]
+        for asset in assets:
+            before_exists = any(
+                isinstance(item, dict) and str(item.get("asset_key") or "").strip() == asset.asset_key
+                for item in bucket_items
+            )
+            bucket_items, updated = _upsert_visual_asset_entry(bucket_items, asset.model_dump())
+            if updated or before_exists:
+                updated_count += 1
+            else:
+                imported_count += 1
+        library[bucket] = bucket_items
+
+    _save_visual_asset_library(project, library, db)
+    refreshed = _get_visual_asset_library(project)
+    return VisualAssetLibraryImportCandidatesResponse(
+        project_id=project_id,
+        characters_count=len(refreshed["characters"]),
+        scenes_count=len(refreshed["scenes"]),
+        props_count=len(refreshed["props"]),
+        imported_count=imported_count,
+        updated_count=updated_count,
+        next_action="ready_for_reference_guided_image_generation",
+    )
 
 
 def _to_visual_asset_entry(item: dict | None) -> VisualAssetLibraryEntry | None:
@@ -493,6 +809,23 @@ def _build_visual_reference_cue_suffix(
     return f"参考素材: {' / '.join(cue_parts)}"
 
 
+def _get_missing_visual_asset_refs(project: Project, shot_metadata: dict) -> list[str]:
+    lookup = _build_visual_asset_lookup(project)
+    missing: list[str] = []
+    for asset_key in shot_metadata.get("character_asset_keys") or []:
+        key = str(asset_key).strip()
+        if key and key not in lookup["characters"]:
+            missing.append(f"missing_character_asset:{key}")
+    scene_asset_key = str(shot_metadata.get("scene_asset_key") or "").strip()
+    if scene_asset_key and scene_asset_key not in lookup["scenes"]:
+        missing.append(f"missing_scene_asset:{scene_asset_key}")
+    for asset_key in shot_metadata.get("prop_asset_keys") or []:
+        key = str(asset_key).strip()
+        if key and key not in lookup["props"]:
+            missing.append(f"missing_prop_asset:{key}")
+    return missing
+
+
 def _build_copy_ready_video_prompt(
     *,
     image_asset_url: str | None,
@@ -558,6 +891,7 @@ def export_project_image_prompts(db: Session, project_id: int) -> ProjectImagePr
         shot = task.shot
         shot_metadata = shot.metadata_json or {}
         visual_asset_refs = _resolve_visual_asset_refs(project, shot_metadata)
+        missing_visual_asset_refs = _get_missing_visual_asset_refs(project, shot_metadata)
         asset = _get_preferred_task_asset(db, asset_task_id=task.id, modality=AssetModality.IMAGE)
 
         asset_input_payload = {}
@@ -634,6 +968,7 @@ def export_project_image_prompts(db: Session, project_id: int) -> ProjectImagePr
                 scene_asset_key=shot_metadata.get("scene_asset_key"),
                 prop_asset_keys=shot_metadata.get("prop_asset_keys") if isinstance(shot_metadata.get("prop_asset_keys"), list) else [],
                 visual_asset_refs=visual_asset_refs,
+                missing_visual_asset_refs=missing_visual_asset_refs,
                 base_prompt=base_prompt,
                 enhanced_prompt=enhanced_prompt,
                 negative_prompt=MANUAL_IMAGE_NEGATIVE_PROMPT,

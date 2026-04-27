@@ -16,15 +16,20 @@ from app.schemas.project import (
     ProjectPublishReadiness,
     ProjectResponse,
     ProjectSummary,
+    ProjectVisualAssetCandidates,
     ProjectVisualAssetLibrary,
     ProjectVideoReadiness,
     ProviderReadinessResponse,
+    VisualAssetLibraryImportCandidatesRequest,
+    VisualAssetLibraryImportCandidatesResponse,
+    VisualAssetLibraryManualImportRequest,
 )
 from app.services.asset_task_service import get_project_provider_readiness
 from app.services.project_service import (
     create_project,
     export_project_image_prompts,
     export_project_video_prompts,
+    extract_project_visual_asset_candidates,
     get_project_or_404,
     get_project_manual_image_progress,
     get_project_manual_final_checklist,
@@ -38,6 +43,8 @@ from app.services.project_service import (
     get_project_visual_asset_library,
     get_project_video_readiness,
     list_projects,
+    import_project_visual_asset_candidates,
+    manual_import_project_visual_asset,
 )
 
 router = APIRouter()
@@ -71,6 +78,32 @@ def get_project_provider_readiness_route(project_id: int, db: Session = Depends(
 @router.get("/projects/{project_id}/visual-asset-library", response_model=ProjectVisualAssetLibrary)
 def get_project_visual_asset_library_route(project_id: int, db: Session = Depends(get_db)) -> ProjectVisualAssetLibrary:
     return get_project_visual_asset_library(db, project_id)
+
+
+@router.post("/projects/{project_id}/visual-asset-library/manual-import", response_model=ProjectVisualAssetLibrary)
+def manual_import_project_visual_asset_route(
+    project_id: int,
+    payload: VisualAssetLibraryManualImportRequest,
+    db: Session = Depends(get_db),
+) -> ProjectVisualAssetLibrary:
+    return manual_import_project_visual_asset(db, project_id, payload)
+
+
+@router.post("/projects/{project_id}/visual-asset-candidates/extract", response_model=ProjectVisualAssetCandidates)
+def extract_project_visual_asset_candidates_route(
+    project_id: int,
+    db: Session = Depends(get_db),
+) -> ProjectVisualAssetCandidates:
+    return extract_project_visual_asset_candidates(db, project_id)
+
+
+@router.post("/projects/{project_id}/visual-asset-library/import-candidates", response_model=VisualAssetLibraryImportCandidatesResponse)
+def import_project_visual_asset_candidates_route(
+    project_id: int,
+    payload: VisualAssetLibraryImportCandidatesRequest,
+    db: Session = Depends(get_db),
+) -> VisualAssetLibraryImportCandidatesResponse:
+    return import_project_visual_asset_candidates(db, project_id, payload)
 
 
 @router.get("/projects/{project_id}/image-prompts", response_model=ProjectImagePromptExport)

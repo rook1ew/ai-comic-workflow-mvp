@@ -288,6 +288,8 @@
 推荐顺序：
 
 1. 先整理 `visual_asset_library_json`
+   - 如果还没有整理好，可先用 `POST /projects/{project_id}/visual-asset-candidates/extract`
+   - 再用 `POST /projects/{project_id}/visual-asset-library/import-candidates`
 2. 再写 richer `characters_json`
 3. 再写 richer `script_card_json`
 4. 在 storyboard shot 中补：
@@ -297,3 +299,26 @@
 5. 最后导出 `image-prompts`
 
 这样程序输出的已经不是“普通生图提示词”，而是适合拼帧漫剧生产的单镜头分镜图提示词。
+
+## v0.4-G Visual Asset Candidate workflow
+
+当前素材库准备可以走两条路：
+
+1. 手动导入
+   - `POST /projects/{project_id}/visual-asset-library/manual-import`
+2. 自动候选提取
+   - `POST /projects/{project_id}/visual-asset-candidates/extract`
+   - review
+   - `POST /projects/{project_id}/visual-asset-library/import-candidates`
+
+推荐顺序：
+
+1. 先看 `GET /projects/{project_id}/visual-asset-library`
+2. 如果库为空：
+   - `next_action = extract_or_manual_import_assets`
+3. 如果有资产但缺 URL：
+   - `next_action = complete_reference_urls`
+4. 资产完整后，再进入：
+   - `image-prompts`
+   - `editing-shot-board`
+   - `editing-cue-sheet`

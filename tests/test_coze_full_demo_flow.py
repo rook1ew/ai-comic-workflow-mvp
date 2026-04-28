@@ -244,3 +244,19 @@ def test_full_demo_flow_accepts_creative_bible_payload(client):
     body = response.json()
     assert body["data"]["shots_count"] == 1
     assert body["next_action"] == "completed"
+
+
+def test_full_demo_flow_accepts_compound_core_action_without_500(client):
+    payload = _full_demo_flow_payload()
+    payload["project_card_json"]["genre"] = "urban horror suspense"
+    payload["storyboard_json"]["shots"][0]["core_action"] = "She wakes up from urgent knocking, grabs the phone, and checks the time"
+    payload["storyboard_json"]["shots"][0]["shot_type"] = "suspense"
+    payload["storyboard_json"]["shots"][0]["visual_focus"] = "phone screen and doorway"
+    payload["storyboard_json"]["shots"][0]["editing_notes"] = "Keep the phone check as a secondary beat."
+
+    response = client.post("/coze/project/full-demo-flow", json=payload)
+    assert response.status_code == 200
+    body = response.json()
+    assert body["data"]["shots_count"] == 1
+    assert body["data"]["asset_tasks_count"] >= 3
+    assert body["next_action"] == "completed"

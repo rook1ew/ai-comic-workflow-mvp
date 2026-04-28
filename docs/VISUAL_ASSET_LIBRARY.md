@@ -304,6 +304,29 @@ Visual Asset Library 是项目级的轻量参考素材库，用来管理三类�
 ### 推荐流程
 
 1. 先 `extract candidates`
+2. `import candidates`
+3. 用 `manual-import` 补 `main_reference_url / must_keep / avoid`
+4. 跑 `reference-coverage-report`
+5. 再进入 `image-prompts`
+
+## Reference Coverage Report
+
+新增：
+
+- `GET /projects/{project_id}/reference-coverage-report`
+
+用途：
+
+- 在生图前检查每个 shot 的角色 / 场景 / 道具参考覆盖情况
+- 检查绑定的 `asset_key` 是否真实存在
+- 检查资产是否缺 `main_reference_url`
+- 判断哪些 shot 已经适合进入 `reference-guided image generation`
+
+注意：
+
+- 它默认只返回 `warnings / suggestions`
+- 不会因为缺参考就直接阻塞旧流程
+- 更适合做长篇漫剧的一致性巡检
 2. 人工 review candidates
 3. 补 `main_reference_url`
 4. 再 `import candidates`

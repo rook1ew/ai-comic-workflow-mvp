@@ -33,6 +33,7 @@ from app.schemas.project import EditingCueSheetItem
 from app.schemas.project import ProjectManualVideoProgress
 from app.schemas.project import ProjectManualVideoProgressItem
 from app.schemas.project import ProjectPublishReadiness
+from app.schemas.project import ProjectReferenceCoverageReport
 from app.schemas.project import ProjectSummary
 from app.schemas.project import ProjectVisualAssetCandidates
 from app.schemas.project import ProjectVisualAssetLibrary
@@ -47,6 +48,8 @@ from app.schemas.project import VisualAssetCandidate
 from app.schemas.project import VisualAssetLibraryImportCandidatesRequest
 from app.schemas.project import VisualAssetLibraryImportCandidatesResponse
 from app.schemas.project import VisualAssetLibraryManualImportRequest
+from app.schemas.project import ReferenceCoverageItem
+from app.schemas.project import ReferenceCoverageMissingAsset
 from app.services.prompt_enhancer import build_image_enhanced_prompt
 from app.services.repository import create_and_refresh
 
@@ -205,6 +208,200 @@ def get_project_visual_asset_library(db: Session, project_id: int) -> ProjectVis
         characters=library["characters"],
         scenes=library["scenes"],
         props=library["props"],
+        next_action=next_action,
+    )
+
+
+def get_project_reference_coverage_report(db: Session, project_id: int) -> ProjectReferenceCoverageReport:
+    project = get_project_or_404(db, project_id)
+    library = _get_visual_asset_library(project)
+    lookup = _build_visual_asset_lookup(project)
+
+    shots = (
+        db.query(Shot)
+        .join(Scene, Shot.scene_id == Scene.id)
+        .join(Episode, Scene.episode_id == Episode.id)
+        .filter(Episode.project_id == project_id)
+        .order_by(Shot.id.asc())
+        .all()
+    )
+
+    items: list[ReferenceCoverageItem] = []
+    ready_shots_count = 0
+    missing_reference_url_count = 0
+    missing_asset_key_count = 0
+    shots_missing_all_bindings = 0
+    report_warnings: list[str] = []
+    report_suggestions: list[str] = []
+
+    for shot in shots:
+        shot_metadata = shot.metadata_json or {}
+        character_asset_keys = shot_metadata.get("character_asset_keys")
+        if not isinstance(character_asset_keys, list):
+            character_asset_keys = []
+        character_asset_keys = [str(key).strip() for key in character_asset_keys if str(key).strip()]
+
+        scene_asset_key = str(shot_metadata.get("scene_asset_key") or "").strip() or None
+
+        prop_asset_keys = shot_metadata.get("prop_asset_keys")
+        if not isinstance(prop_asset_keys, list):
+            prop_asset_keys = []
+        prop_asset_keys = [str(key).strip() for key in prop_asset_keys if str(key).strip()]
+
+        warnings: list[str] = []
+        suggestions: list[str] = []
+        missing_character_asset_keys: list[str] = []
+        missing_prop_asset_keys: list[str] = []
+        missing_scene_asset_key: str | None = None
+        assets_missing_reference_url: list[ReferenceCoverageMissingAsset] = []
+
+        if not character_asset_keys:
+            warnings.append("missing_character_asset_keys")
+            suggestions.append("Bind character reference assets to this shot before image generation.")
+        if not scene_asset_key:
+            warnings.append("missing_scene_asset_key")
+            suggestions.append("Bind a scene reference asset to this shot for stronger environment consistency.")
+        if not prop_asset_keys:
+            suggestions.append("consider_prop_reference_if_key_object_exists")
+
+        for asset_key in character_asset_keys:
+            asset = lookup["characters"].get(asset_key)
+            if asset is None:
+                missing_character_asset_keys.append(asset_key)
+            elif not str(asset.get("main_reference_url") or "").strip():
+                assets_missing_reference_url.append(
+                    ReferenceCoverageMissingAsset(
+                        asset_type="character",
+                        asset_key=asset.get("asset_key"),
+                        name=asset.get("name"),
+                    )
+                )
+
+        if scene_asset_key:
+            scene_asset = lookup["scenes"].get(scene_asset_key)
+            if scene_asset is None:
+                missing_scene_asset_key = scene_asset_key
+            elif not str(scene_asset.get("main_reference_url") or "").strip():
+                assets_missing_reference_url.append(
+                    ReferenceCoverageMissingAsset(
+                        asset_type="scene",
+                        asset_key=scene_asset.get("asset_key"),
+                        name=scene_asset.get("name"),
+                    )
+                )
+
+        for asset_key in prop_asset_keys:
+            asset = lookup["props"].get(asset_key)
+            if asset is None:
+                missing_prop_asset_keys.append(asset_key)
+            elif not str(asset.get("main_reference_url") or "").strip():
+                assets_missing_reference_url.append(
+                    ReferenceCoverageMissingAsset(
+                        asset_type="prop",
+                        asset_key=asset.get("asset_key"),
+                        name=asset.get("name"),
+                    )
+                )
+
+        if missing_character_asset_keys or missing_scene_asset_key or missing_prop_asset_keys:
+            warnings.append("missing_visual_asset_ref")
+            if missing_character_asset_keys:
+                suggestions.append(
+                    f"Import or correct missing character asset keys: {', '.join(missing_character_asset_keys)}."
+                )
+            if missing_scene_asset_key:
+                suggestions.append(f"Import or correct missing scene asset key: {missing_scene_asset_key}.")
+            if missing_prop_asset_keys:
+                suggestions.append(f"Import or correct missing prop asset keys: {', '.join(missing_prop_asset_keys)}.")
+
+        if assets_missing_reference_url:
+            warnings.append("reference_url_missing")
+            for asset in assets_missing_reference_url:
+                asset_type_label = asset.asset_type
+                asset_key_label = asset.asset_key or asset.name or "unknown_asset"
+                suggestions.append(
+                    f"Add main_reference_url for {asset_type_label} {asset_key_label} before generating this shot."
+                )
+
+        warnings = list(dict.fromkeys(warnings))
+        suggestions = list(dict.fromkeys(suggestions))
+
+        character_refs_found = bool(character_asset_keys) and not missing_character_asset_keys
+        scene_ref_found = bool(scene_asset_key) and missing_scene_asset_key is None
+        prop_refs_found = bool(prop_asset_keys) and not missing_prop_asset_keys
+
+        character_refs_complete = character_refs_found and all(
+            str((lookup["characters"].get(asset_key) or {}).get("main_reference_url") or "").strip()
+            for asset_key in character_asset_keys
+        )
+        scene_ref_complete = bool(scene_asset_key) and missing_scene_asset_key is None and bool(
+            str((lookup["scenes"].get(scene_asset_key) or {}).get("main_reference_url") or "").strip()
+        )
+        ready_for_reference_guided_image = character_refs_complete and scene_ref_complete
+
+        if not character_asset_keys and not scene_asset_key and not prop_asset_keys:
+            shots_missing_all_bindings += 1
+
+        if ready_for_reference_guided_image:
+            ready_shots_count += 1
+
+        missing_reference_url_count += len(assets_missing_reference_url)
+        missing_asset_key_count += (
+            len(missing_character_asset_keys)
+            + len(missing_prop_asset_keys)
+            + (1 if missing_scene_asset_key else 0)
+        )
+        report_warnings.extend(warnings)
+        report_suggestions.extend(suggestions)
+
+        items.append(
+            ReferenceCoverageItem(
+                internal_shot_id=shot.id,
+                source_shot_id=shot_metadata.get("source_shot_id"),
+                character=shot_metadata.get("character"),
+                location=shot_metadata.get("location"),
+                character_asset_keys=character_asset_keys,
+                scene_asset_key=scene_asset_key,
+                prop_asset_keys=prop_asset_keys,
+                character_refs_found=character_refs_found,
+                scene_ref_found=scene_ref_found,
+                prop_refs_found=prop_refs_found,
+                missing_character_asset_keys=missing_character_asset_keys,
+                missing_scene_asset_key=missing_scene_asset_key,
+                missing_prop_asset_keys=missing_prop_asset_keys,
+                assets_missing_reference_url=assets_missing_reference_url,
+                ready_for_reference_guided_image=ready_for_reference_guided_image,
+                warnings=warnings,
+                suggestions=suggestions,
+            )
+        )
+
+    report_warnings = list(dict.fromkeys(report_warnings))
+    report_suggestions = list(dict.fromkeys(report_suggestions))
+
+    if not any(library.values()):
+        report_suggestions.insert(0, "Visual Asset Library is empty. Extract or manually import reference assets first.")
+        next_action = "extract_or_manual_import_assets"
+    elif missing_asset_key_count > 0:
+        next_action = "review_missing_asset_keys"
+    elif missing_reference_url_count > 0:
+        next_action = "complete_reference_urls"
+    elif shots and shots_missing_all_bindings > (len(shots) / 2):
+        next_action = "bind_reference_assets_to_shots"
+    else:
+        next_action = "ready_for_reference_guided_image_generation"
+
+    return ProjectReferenceCoverageReport(
+        project_id=project_id,
+        shots_count=len(items),
+        ready_shots_count=ready_shots_count,
+        warning_shots_count=len(items) - ready_shots_count,
+        missing_reference_url_count=missing_reference_url_count,
+        missing_asset_key_count=missing_asset_key_count,
+        items=items,
+        blocking_issues=[],
+        warnings=report_warnings,
+        suggestions=report_suggestions,
         next_action=next_action,
     )
 

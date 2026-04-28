@@ -115,6 +115,15 @@ Use cases:
 - check whether a real Coze payload is complete enough before calling full-demo-flow
 - catch blocking field issues before the workflow starts
 - surface warnings such as missing `visual_style` or `duration_sec`
+- surface soft warnings such as `core_action_may_contain_multiple_actions`
+
+`core_action` is not hard-blocked for creative payloads. The recommended style is
+"one primary action", while secondary beats can move to:
+
+- `visual_focus`
+- `editing_notes`
+- `pacing_note`
+- `image_prompt_intent`
 
 Example response:
 
@@ -259,6 +268,76 @@ Example response:
   "summary": {}
 }
 ```
+
+## Visual Asset Library Endpoints
+
+### GET `/projects/{project_id}/visual-asset-library`
+
+Read the project-level visual asset library for:
+
+- character reference packs
+- scene reference packs
+- prop reference packs
+
+Enhanced response fields include:
+
+- `missing_reference_url_count`
+- `assets_without_reference_url`
+- `next_action`
+
+`next_action` meanings:
+
+- `extract_or_manual_import_assets`
+- `complete_reference_urls`
+- `ready_for_reference_guided_image_generation`
+
+### GET `/projects/{project_id}/reference-coverage-report`
+
+Soft-check each shot's reference coverage before image generation.
+
+This endpoint does not hard-block the workflow. It returns per-shot:
+
+- bound `character_asset_keys / scene_asset_key / prop_asset_keys`
+- whether the referenced assets exist in `visual_asset_library_json`
+- which referenced assets are missing
+- which referenced assets still lack `main_reference_url`
+- whether the shot is ready for `reference-guided image generation`
+- `warnings`
+- `suggestions`
+
+Typical `next_action` values:
+
+- `extract_or_manual_import_assets`
+- `review_missing_asset_keys`
+- `complete_reference_urls`
+- `bind_reference_assets_to_shots`
+- `ready_for_reference_guided_image_generation`
+
+### POST `/projects/{project_id}/visual-asset-library/manual-import`
+
+Manually add or upsert one visual asset into the project library.
+
+Supported `asset_type`:
+
+- `character`
+- `scene`
+- `prop`
+
+### POST `/projects/{project_id}/visual-asset-candidates/extract`
+
+Extract candidate visual assets from:
+
+- character records
+- storyboard character / location / prop bindings
+- selected prop-like keywords in storyboard text
+
+Candidates are returned for human review and are not written into the formal
+library automatically.
+
+### POST `/projects/{project_id}/visual-asset-library/import-candidates`
+
+Import reviewed candidates into `Project.visual_asset_library_json` with
+`upsert` merge behavior.
 
 ### GET `/projects/{project_id}/image-prompts`
 

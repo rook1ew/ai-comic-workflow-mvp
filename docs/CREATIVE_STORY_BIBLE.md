@@ -173,3 +173,31 @@ shot 里再通过：
 4. 导出 `image-prompts`
 5. 人工生图并回填
 6. 再进入 `editing-shot-board / editing-timeline / editing-cue-sheet`
+## 11. core_action 的写法建议
+
+`core_action` 最好写成“一个主动作”。
+
+推荐：
+
+- `沈知夏被急促敲门声惊醒`
+- `她从猫眼向外看去`
+- `沈知夏盯着物业消息僵住`
+
+不推荐把太多次要动作都塞进同一个 `core_action`：
+
+- `被敲门声惊醒，抓起手机看时间，又抬头看向门口`
+
+更好的拆法是：
+
+- 主动作留在 `core_action`
+- 次要动作、镜头节奏、信息焦点放到：
+  - `visual_focus`
+  - `editing_notes`
+  - `pacing_note`
+  - `image_prompt_intent`
+
+当前系统不会因为复合动作描述而硬阻塞 `full-demo-flow`。
+如果 `core_action` 看起来包含多个动作，`validate-payload` 只会给：
+
+- warning: `core_action_may_contain_multiple_actions`
+- suggestion: 把次要细节移到 `editing_notes / visual_focus / pacing_note`

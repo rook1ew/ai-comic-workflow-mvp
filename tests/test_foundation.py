@@ -60,22 +60,18 @@ def test_shot_schema_requires_all_prompts():
     assert shot.status == ShotStatus.PROMPT_READY
 
 
-def test_shot_core_action_rejects_multiple_actions():
-    try:
-        ShotCreate(
-            scene_id=1,
-            shot_number=1,
-            framing="medium",
-            core_action="角色推门进入，然后转身挥手",
-            image_prompt="图片提示词",
-            video_prompt="视频提示词",
-            voice_prompt="配音提示词",
-            bgm_prompt="BGM 提示词",
-        )
-    except ValueError as exc:
-        assert "one core action" in str(exc)
-    else:
-        raise AssertionError("Expected validation error for multiple actions")
+def test_shot_core_action_allows_compound_action_descriptions():
+    shot = ShotCreate(
+        scene_id=1,
+        shot_number=1,
+        framing="medium",
+        core_action="角色推门进入，然后转身挥手",
+        image_prompt="图片提示词",
+        video_prompt="视频提示词",
+        voice_prompt="配音提示词",
+        bgm_prompt="BGM 提示词",
+    )
+    assert shot.core_action == "角色推门进入，然后转身挥手"
 
 
 def test_asset_task_defaults(db_session):

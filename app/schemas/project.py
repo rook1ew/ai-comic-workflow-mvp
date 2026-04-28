@@ -73,6 +73,46 @@ class ProjectVisualAssetLibrary(BaseModel):
     next_action: str
 
 
+class ReferenceCoverageMissingAsset(BaseModel):
+    asset_type: str
+    asset_key: str | None = None
+    name: str | None = None
+
+
+class ReferenceCoverageItem(BaseModel):
+    internal_shot_id: int
+    source_shot_id: str | None = None
+    character: str | None = None
+    location: str | None = None
+    character_asset_keys: list[str] = Field(default_factory=list)
+    scene_asset_key: str | None = None
+    prop_asset_keys: list[str] = Field(default_factory=list)
+    character_refs_found: bool
+    scene_ref_found: bool
+    prop_refs_found: bool
+    missing_character_asset_keys: list[str] = Field(default_factory=list)
+    missing_scene_asset_key: str | None = None
+    missing_prop_asset_keys: list[str] = Field(default_factory=list)
+    assets_missing_reference_url: list[ReferenceCoverageMissingAsset] = Field(default_factory=list)
+    ready_for_reference_guided_image: bool
+    warnings: list[str] = Field(default_factory=list)
+    suggestions: list[str] = Field(default_factory=list)
+
+
+class ProjectReferenceCoverageReport(BaseModel):
+    project_id: int
+    shots_count: int
+    ready_shots_count: int
+    warning_shots_count: int
+    missing_reference_url_count: int
+    missing_asset_key_count: int
+    items: list[ReferenceCoverageItem] = Field(default_factory=list)
+    blocking_issues: list[str] = Field(default_factory=list)
+    warnings: list[str] = Field(default_factory=list)
+    suggestions: list[str] = Field(default_factory=list)
+    next_action: str
+
+
 class VisualAssetLibraryManualImportAsset(BaseModel):
     asset_key: str
     name: str | None = None

@@ -18,19 +18,20 @@
 
 1. `POST /coze/project/full-demo-flow`
 2. `GET /projects/{project_id}/visual-asset-library`
-3. `GET /projects/{project_id}/image-prompts`
-4. `POST /asset-tasks/{asset_task_id}/manual-asset`
-5. `GET /projects/{project_id}/manual-image-progress`
-6. `GET /projects/{project_id}/video-readiness`
-7. `GET /projects/{project_id}/video-prompts`
-8. `POST /asset-tasks/{asset_task_id}/manual-video-asset`
-9. `GET /projects/{project_id}/manual-video-progress`
-10. `GET /projects/{project_id}/editing-shot-board`
-11. `GET /projects/{project_id}/editing-timeline`
-12. `GET /projects/{project_id}/editing-cue-sheet`
-13. `GET /projects/{project_id}/manual-production-summary`
-14. `GET /projects/{project_id}/publish-readiness`
-15. `GET /projects/{project_id}/manual-final-checklist`
+3. `GET /projects/{project_id}/reference-coverage-report`
+4. `GET /projects/{project_id}/image-prompts`
+5. `POST /asset-tasks/{asset_task_id}/manual-asset`
+6. `GET /projects/{project_id}/manual-image-progress`
+7. `GET /projects/{project_id}/video-readiness`
+8. `GET /projects/{project_id}/video-prompts`
+9. `POST /asset-tasks/{asset_task_id}/manual-video-asset`
+10. `GET /projects/{project_id}/manual-video-progress`
+11. `GET /projects/{project_id}/editing-shot-board`
+12. `GET /projects/{project_id}/editing-timeline`
+13. `GET /projects/{project_id}/editing-cue-sheet`
+14. `GET /projects/{project_id}/manual-production-summary`
+15. `GET /projects/{project_id}/publish-readiness`
+16. `GET /projects/{project_id}/manual-final-checklist`
 
 ## 推荐操作顺序
 
@@ -44,7 +45,17 @@
 
 ### 2. 导出图片提示词
 
-调用：
+如果项目已经开始使用 Visual Asset Library，建议先调用：
+
+- `GET /projects/{project_id}/reference-coverage-report`
+
+用途：
+
+- 检查每个 shot 是否已经绑定角色 / 场景 / 道具参考
+- 检查是否还有缺失的 `asset_key`
+- 检查是否缺 `main_reference_url`
+
+然后再调用：
 
 - `GET /projects/{project_id}/image-prompts`
 

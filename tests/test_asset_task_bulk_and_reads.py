@@ -1012,6 +1012,277 @@ def test_project_image_prompts_unexecuted_image_task_still_returns_prompt(client
     assert item["base_prompt"] == "image prompt 1"
 
 
+def _create_reference_coverage_project(
+    client,
+    *,
+    visual_asset_library_json=None,
+    shots=None,
+):
+    init_payload = {
+        "project_card_json": {
+            "project_title": "Reference Coverage Demo",
+            "genre": "urban suspense",
+            "platform": "coze",
+            "visual_style": "anime-comic realism",
+            "status": "draft",
+        },
+        "characters_json": {
+            "characters": [
+                {
+                    "name": "Shen Zhixia",
+                    "role": "lead",
+                    "main_reference_confirmed": False,
+                }
+            ]
+        },
+        "script_card_json": {"opening_hook": "someone is outside the door"},
+        "storyboard_json": {
+            "shots": shots
+            or [
+                {
+                    "shot_id": "SH01",
+                    "duration_sec": 3,
+                    "character": "Shen Zhixia",
+                    "location": "Old Apartment Bedroom",
+                    "core_action": "She wakes up in the dark",
+                    "emotion": "fear",
+                    "camera": "close-up",
+                    "dialogue": "Who's there?",
+                    "image_prompt": "woman awake in a dark apartment bedroom",
+                    "video_prompt": "she turns toward the door",
+                    "voice_prompt": "frightened whisper",
+                    "bgm_prompt": "low suspense drone",
+                    "status": "prompt_ready",
+                }
+            ],
+        },
+    }
+    if visual_asset_library_json is not None:
+        init_payload["visual_asset_library_json"] = visual_asset_library_json
+
+    init = client.post("/coze/project/init", json=init_payload).json()
+    project_id = init["data"]["project_id"]
+    character_id = init["data"]["character_ids"][0]
+    client.post(
+        f"/characters/{character_id}/confirm-reference",
+        json={"main_reference_url": "mock://character/reference.png"},
+    )
+    storyboard_response = client.post(
+        f"/coze/project/{project_id}/storyboard",
+        json={
+            "script_card_json": init_payload["script_card_json"],
+            "storyboard_json": init_payload["storyboard_json"],
+        },
+    )
+    assert storyboard_response.status_code == 201
+    return project_id
+
+
+def test_reference_coverage_report_returns_all_shots_and_ready_when_references_complete(client):
+    project_id = _create_reference_coverage_project(
+        client,
+        visual_asset_library_json={
+            "characters": [
+                {
+                    "asset_key": "shen_zhixia",
+                    "name": "Shen Zhixia",
+                    "main_reference_url": "file:///D:/refs/shen.png",
+                }
+            ],
+            "scenes": [
+                {
+                    "asset_key": "old_apartment_bedroom",
+                    "name": "Old Apartment Bedroom",
+                    "main_reference_url": "file:///D:/refs/bedroom.png",
+                }
+            ],
+            "props": [
+                {
+                    "asset_key": "smartphone",
+                    "name": "Smartphone",
+                    "main_reference_url": "file:///D:/refs/phone.png",
+                }
+            ],
+        },
+        shots=[
+            {
+                "shot_id": "SH01",
+                "duration_sec": 3,
+                "character": "Shen Zhixia",
+                "location": "Old Apartment Bedroom",
+                "character_asset_keys": ["shen_zhixia"],
+                "scene_asset_key": "old_apartment_bedroom",
+                "prop_asset_keys": ["smartphone"],
+                "core_action": "She wakes up in the dark",
+                "emotion": "fear",
+                "camera": "close-up",
+                "dialogue": "Who's there?",
+                "image_prompt": "woman awake in a dark apartment bedroom",
+                "video_prompt": "she turns toward the door",
+                "voice_prompt": "frightened whisper",
+                "bgm_prompt": "low suspense drone",
+                "status": "prompt_ready",
+            }
+        ],
+    )
+
+    response = client.get(f"/projects/{project_id}/reference-coverage-report")
+    assert response.status_code == 200
+    body = response.json()
+    assert body["shots_count"] == 1
+    assert body["ready_shots_count"] == 1
+    assert body["next_action"] == "ready_for_reference_guided_image_generation"
+    item = body["items"][0]
+    assert item["character_refs_found"] is True
+    assert item["scene_ref_found"] is True
+    assert item["prop_refs_found"] is True
+    assert item["ready_for_reference_guided_image"] is True
+
+
+def test_reference_coverage_report_warns_when_character_asset_keys_missing(client):
+    project_id = _create_reference_coverage_project(
+        client,
+        visual_asset_library_json={
+            "scenes": [
+                {
+                    "asset_key": "old_apartment_bedroom",
+                    "name": "Old Apartment Bedroom",
+                    "main_reference_url": "file:///D:/refs/bedroom.png",
+                }
+            ]
+        },
+    )
+
+    response = client.get(f"/projects/{project_id}/reference-coverage-report")
+    assert response.status_code == 200
+    item = response.json()["items"][0]
+    assert "missing_character_asset_keys" in item["warnings"]
+
+
+def test_reference_coverage_report_warns_when_scene_asset_key_missing(client):
+    project_id = _create_reference_coverage_project(
+        client,
+        visual_asset_library_json={
+            "characters": [
+                {
+                    "asset_key": "shen_zhixia",
+                    "name": "Shen Zhixia",
+                    "main_reference_url": "file:///D:/refs/shen.png",
+                }
+            ]
+        },
+        shots=[
+            {
+                "shot_id": "SH01",
+                "duration_sec": 3,
+                "character": "Shen Zhixia",
+                "location": "Old Apartment Bedroom",
+                "character_asset_keys": ["shen_zhixia"],
+                "core_action": "She wakes up in the dark",
+                "emotion": "fear",
+                "camera": "close-up",
+                "dialogue": "Who's there?",
+                "image_prompt": "woman awake in a dark apartment bedroom",
+                "video_prompt": "she turns toward the door",
+                "voice_prompt": "frightened whisper",
+                "bgm_prompt": "low suspense drone",
+                "status": "prompt_ready",
+            }
+        ],
+    )
+
+    response = client.get(f"/projects/{project_id}/reference-coverage-report")
+    assert response.status_code == 200
+    item = response.json()["items"][0]
+    assert "missing_scene_asset_key" in item["warnings"]
+
+
+def test_reference_coverage_report_lists_missing_bound_asset_keys(client):
+    project_id = _create_reference_coverage_project(
+        client,
+        visual_asset_library_json={"characters": [], "scenes": [], "props": []},
+        shots=[
+            {
+                "shot_id": "SH01",
+                "duration_sec": 3,
+                "character": "Shen Zhixia",
+                "location": "Old Apartment Bedroom",
+                "character_asset_keys": ["missing_character"],
+                "scene_asset_key": "missing_scene",
+                "prop_asset_keys": ["missing_prop"],
+                "core_action": "She wakes up in the dark",
+                "emotion": "fear",
+                "camera": "close-up",
+                "dialogue": "Who's there?",
+                "image_prompt": "woman awake in a dark apartment bedroom",
+                "video_prompt": "she turns toward the door",
+                "voice_prompt": "frightened whisper",
+                "bgm_prompt": "low suspense drone",
+                "status": "prompt_ready",
+            }
+        ],
+    )
+
+    response = client.get(f"/projects/{project_id}/reference-coverage-report")
+    assert response.status_code == 200
+    item = response.json()["items"][0]
+    assert item["missing_character_asset_keys"] == ["missing_character"]
+    assert item["missing_scene_asset_key"] == "missing_scene"
+    assert item["missing_prop_asset_keys"] == ["missing_prop"]
+
+
+def test_reference_coverage_report_lists_assets_missing_reference_urls(client):
+    project_id = _create_reference_coverage_project(
+        client,
+        visual_asset_library_json={
+            "characters": [{"asset_key": "shen_zhixia", "name": "Shen Zhixia"}],
+            "scenes": [{"asset_key": "old_apartment_bedroom", "name": "Old Apartment Bedroom"}],
+            "props": [{"asset_key": "smartphone", "name": "Smartphone"}],
+        },
+        shots=[
+            {
+                "shot_id": "SH01",
+                "duration_sec": 3,
+                "character": "Shen Zhixia",
+                "location": "Old Apartment Bedroom",
+                "character_asset_keys": ["shen_zhixia"],
+                "scene_asset_key": "old_apartment_bedroom",
+                "prop_asset_keys": ["smartphone"],
+                "core_action": "She wakes up in the dark",
+                "emotion": "fear",
+                "camera": "close-up",
+                "dialogue": "Who's there?",
+                "image_prompt": "woman awake in a dark apartment bedroom",
+                "video_prompt": "she turns toward the door",
+                "voice_prompt": "frightened whisper",
+                "bgm_prompt": "low suspense drone",
+                "status": "prompt_ready",
+            }
+        ],
+    )
+
+    response = client.get(f"/projects/{project_id}/reference-coverage-report")
+    assert response.status_code == 200
+    body = response.json()
+    item = body["items"][0]
+    assert body["missing_reference_url_count"] == 3
+    assert any(asset["asset_key"] == "shen_zhixia" for asset in item["assets_missing_reference_url"])
+    assert "reference_url_missing" in item["warnings"]
+
+
+def test_reference_coverage_report_empty_library_suggests_import(client):
+    project_id = _create_reference_coverage_project(client)
+    response = client.get(f"/projects/{project_id}/reference-coverage-report")
+    assert response.status_code == 200
+    body = response.json()
+    assert body["next_action"] == "extract_or_manual_import_assets"
+
+
+def test_reference_coverage_report_missing_project_returns_404(client):
+    response = client.get("/projects/999999/reference-coverage-report")
+    assert response.status_code == 404
+
+
 def test_project_image_prompts_missing_project_returns_404(client):
     response = client.get("/projects/9999/image-prompts")
     assert response.status_code == 404

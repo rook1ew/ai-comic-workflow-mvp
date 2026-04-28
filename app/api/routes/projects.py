@@ -14,6 +14,7 @@ from app.schemas.project import (
     ProjectManualProductionSummary,
     ProjectManualVideoProgress,
     ProjectPublishReadiness,
+    ProjectReferenceCoverageReport,
     ProjectResponse,
     ProjectSummary,
     ProjectVisualAssetCandidates,
@@ -39,6 +40,7 @@ from app.services.project_service import (
     get_project_manual_production_summary,
     get_project_manual_video_progress,
     get_project_publish_readiness,
+    get_project_reference_coverage_report,
     get_project_summary,
     get_project_visual_asset_library,
     get_project_video_readiness,
@@ -78,6 +80,11 @@ def get_project_provider_readiness_route(project_id: int, db: Session = Depends(
 @router.get("/projects/{project_id}/visual-asset-library", response_model=ProjectVisualAssetLibrary)
 def get_project_visual_asset_library_route(project_id: int, db: Session = Depends(get_db)) -> ProjectVisualAssetLibrary:
     return get_project_visual_asset_library(db, project_id)
+
+
+@router.get("/projects/{project_id}/reference-coverage-report", response_model=ProjectReferenceCoverageReport)
+def get_project_reference_coverage_report_route(project_id: int, db: Session = Depends(get_db)) -> ProjectReferenceCoverageReport:
+    return get_project_reference_coverage_report(db, project_id)
 
 
 @router.post("/projects/{project_id}/visual-asset-library/manual-import", response_model=ProjectVisualAssetLibrary)

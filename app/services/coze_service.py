@@ -185,6 +185,14 @@ def _extract_visual_asset_library(payload) -> dict:
     return {}
 
 
+def _core_action_looks_multi_action(value: object) -> bool:
+    if not isinstance(value, str):
+        return False
+    normalized = " ".join(value.split())
+    separators = [",", "，", ";", "；", " and ", "然后", "同时", "接着", "随后"]
+    return any(separator in normalized for separator in separators)
+
+
 def coze_validate_payload(payload: CozePayloadValidationRequest) -> CozeResponse:
     errors: list[str] = []
     warnings: list[str] = []
@@ -287,11 +295,20 @@ def coze_validate_payload(payload: CozePayloadValidationRequest) -> CozeResponse
             continue
         if not str((shot or {}).get("shot_id") or "").strip():
             errors.append(f"storyboard_json.shots[{index - 1}].shot_id is required.")
+        if "core_action" in (shot or {}) and not isinstance((shot or {}).get("core_action"), str):
+            errors.append(f"storyboard_json.shots[{index - 1}].core_action must be a string.")
         if not str((shot or {}).get("image_prompt") or "").strip():
             errors.append(f"storyboard_json.shots[{index - 1}].image_prompt is required.")
         shot_id = str((shot or {}).get("shot_id") or "").strip()
         if shot_id:
             shot_ids.add(shot_id)
+        if not str((shot or {}).get("core_action") or "").strip():
+            warnings.append(f"storyboard_json.shots[{index - 1}].core_action is recommended.")
+        elif _core_action_looks_multi_action((shot or {}).get("core_action")):
+            warnings.append(f"storyboard_json.shots[{index - 1}].core_action_may_contain_multiple_actions")
+            suggestions.append(
+                f"storyboard_json.shots[{index - 1}]: keep core_action focused on one primary action and move secondary details to editing_notes, visual_focus, or pacing_note."
+            )
         if (shot or {}).get("duration_sec") in (None, ""):
             warnings.append(f"storyboard_json.shots[{index - 1}].duration_sec is recommended.")
         if not str((shot or {}).get("video_prompt") or "").strip():

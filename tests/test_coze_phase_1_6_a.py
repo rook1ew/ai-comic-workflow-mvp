@@ -543,6 +543,38 @@ def test_validate_payload_warns_when_duration_sec_is_missing(client):
     assert any("duration_sec is recommended" in warning for warning in body["data"]["warnings"])
 
 
+def test_validate_payload_warns_for_compound_core_action_without_blocking(client):
+    response = client.post(
+        "/coze/project/validate-payload",
+        json={
+            "project_card_json": {"project_title": "Midnight Peephole", "visual_style": "anime-comic realism"},
+            "characters_json": {"characters": [{"name": "Shen Zhixia", "role": "lead", "appearance": "tired eyes"}]},
+            "script_card_json": {"core_hook": "something identical is outside the door"},
+            "storyboard_json": {
+                "shots": [
+                    {
+                        "shot_id": "SH01",
+                        "duration_sec": 3,
+                        "core_action": "She wakes up from urgent knocking, grabs the phone, and checks the time",
+                        "image_prompt": "woman awake in a dark apartment bedroom",
+                        "video_prompt": "she jolts awake and freezes",
+                        "voice_prompt": "frightened whisper",
+                        "bgm_prompt": "low suspense drone",
+                    }
+                ]
+            },
+            "video_shot_ids": [],
+            "publish_record_json": {"platform": "manual_demo", "title": "Midnight Peephole"},
+        },
+    )
+    assert response.status_code == 200
+    body = response.json()
+    assert body["data"]["valid"] is True
+    assert body["data"]["errors"] == []
+    assert any("core_action_may_contain_multiple_actions" in warning for warning in body["data"]["warnings"])
+    assert any("keep core_action focused on one primary action" in suggestion for suggestion in body["data"]["suggestions"])
+
+
 def test_validate_payload_returns_error_for_unknown_video_shot_id(client):
     response = client.post(
         "/coze/project/validate-payload",

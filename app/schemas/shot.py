@@ -19,11 +19,7 @@ class ShotCreate(BaseModel):
     @field_validator("core_action")
     @classmethod
     def validate_core_action(cls, value: str) -> str:
-        normalized = " ".join(value.split())
-        separators = [",", "，", ";", "；", " and ", "然后", "同时"]
-        if any(separator in normalized for separator in separators):
-            raise ValueError("A shot allows only one core action description.")
-        return normalized
+        return " ".join(value.split())
 
 
 class ShotResponse(TimestampedResponse):

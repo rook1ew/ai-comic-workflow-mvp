@@ -62,6 +62,61 @@ Create a project and characters from Coze-generated structured content.
 
 Confirm a character main reference and optionally save `main_reference_url`.
 
+### POST `/projects/{project_id}/characters/{character_id}/appearances`
+
+Create or upsert a lightweight `CharacterAppearance`.
+
+This only saves metadata and an `image_url` string. It does not upload, crop, or generate files.
+
+Required fields:
+
+- `appearance_key`
+- `appearance_type`
+- `image_url`
+
+Common `appearance_type` values:
+
+- `design_sheet`
+- `main_reference`
+- `fullbody_front`
+- `face_detail`
+- `outfit_detail`
+- `expression`
+- `costume_version`
+- `special_state`
+- `mirror_double`
+
+### GET `/projects/{project_id}/characters/{character_id}/appearances`
+
+Return all appearances for one character, sorted by `order_index` and creation order.
+
+### POST `/projects/{project_id}/characters/{character_id}/appearances/{appearance_key}/select`
+
+Select one appearance as the current main appearance.
+
+Effects:
+
+- selected appearance becomes `is_selected=true`
+- other appearances under the same character become `is_selected=false`
+- `Character.main_reference_url` is updated to the selected `image_url`
+- matching Visual Asset Library character asset is updated when found
+
+### GET `/projects/{project_id}/character-appearance-summary`
+
+Return a project-level summary of character appearance readiness.
+
+Each item includes:
+
+- `selected_appearance_key`
+- `selected_appearance_url`
+- `appearances_count`
+- `has_design_sheet`
+- `has_main_reference`
+- `has_face_detail`
+- `has_fullbody`
+- `warnings`
+- `next_action`
+
 ### POST `/coze/project/{project_id}/generate-script`
 
 Save Coze-generated `script_card_json` into the default episode.

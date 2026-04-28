@@ -1,5 +1,14 @@
 # STORYBOARD_PRODUCTION_BOARD
 
+## v0.5-B Character Appearance compatibility
+
+When a shot references a Visual Asset Library character asset, each `character_asset_refs[]` item can also include:
+
+- `selected_appearance_key`
+- `selected_appearance_url`
+
+These fields come from the selected `CharacterAppearance` when available. They help creators verify which exact character appearance version is being used as the identity anchor before generating storyboard images.
+
 ## 什么是 Storyboard Production Board
 
 `GET /projects/{project_id}/storyboard-production-board` 是一个项目级的专业分镜制作表。

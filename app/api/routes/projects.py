@@ -8,6 +8,7 @@ from app.schemas.episode import (
     NarrativeStructureLiteRequest,
     NarrativeStructureLiteResponse,
 )
+from app.schemas.character import ProjectCharacterAppearanceSummary
 from app.schemas.project import (
     ProjectCreativePipelineStatus,
     ProjectCreate,
@@ -39,6 +40,7 @@ from app.services.episode_service import (
     save_episode_narrative_structure_lite,
     save_episode_story_source,
 )
+from app.services.character_service import get_project_character_appearance_summary
 from app.services.asset_task_service import get_project_provider_readiness
 from app.services.project_service import (
     create_project,
@@ -171,6 +173,14 @@ def get_project_creative_pipeline_status_route(
     db: Session = Depends(get_db),
 ) -> ProjectCreativePipelineStatus:
     return get_project_creative_pipeline_status(db, project_id)
+
+
+@router.get("/projects/{project_id}/character-appearance-summary", response_model=ProjectCharacterAppearanceSummary)
+def get_project_character_appearance_summary_route(
+    project_id: int,
+    db: Session = Depends(get_db),
+) -> ProjectCharacterAppearanceSummary:
+    return get_project_character_appearance_summary(db, project_id)
 
 
 @router.get("/projects/{project_id}/provider-readiness", response_model=ProviderReadinessResponse)

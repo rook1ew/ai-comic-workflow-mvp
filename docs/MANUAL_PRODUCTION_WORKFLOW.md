@@ -22,6 +22,15 @@ v0.5-A 在这条人工生产链路前面补了一个更轻的前段结构：
 
 然后再进入现有的 visual asset / image prompt / editing / publish 流程。
 
+v0.5-B adds an optional Character Appearance Layer before reference-guided image generation:
+
+1. Register design sheets, main references, face details, or fullbody images with `POST /projects/{project_id}/characters/{character_id}/appearances`.
+2. Select the active main appearance with `POST /projects/{project_id}/characters/{character_id}/appearances/{appearance_key}/select`.
+3. Review `GET /projects/{project_id}/character-appearance-summary`.
+4. Continue with `visual-asset-prompts`, `reference-coverage-report`, and `image-prompts`.
+
+This layer only saves external/local image URLs. It does not upload files, auto-crop design sheets, or call real Image2 / Seedance / LLM APIs.
+
 完整人工生产链路如下：
 
 1. `POST /coze/project/full-demo-flow`

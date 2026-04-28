@@ -19,3 +19,4 @@ class Character(TimestampMixin, Base):
     main_reference_confirmed: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
 
     project = relationship("Project", back_populates="characters")
+    appearances = relationship("CharacterAppearance", back_populates="character", cascade="all, delete-orphan")

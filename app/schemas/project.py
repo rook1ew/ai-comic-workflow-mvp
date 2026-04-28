@@ -50,6 +50,9 @@ class VisualAssetLibraryEntry(BaseModel):
     asset_key: str | None = None
     name: str | None = None
     main_reference_url: str | None = None
+    selected_appearance_key: str | None = None
+    selected_appearance_url: str | None = None
+    appearances_count: int = 0
     must_keep: list[str] = Field(default_factory=list)
     avoid: list[str] = Field(default_factory=list)
 
@@ -554,6 +557,8 @@ class StoryboardProductionBoardAssetRef(BaseModel):
     asset_key: str | None = None
     name: str | None = None
     main_reference_url: str | None = None
+    selected_appearance_key: str | None = None
+    selected_appearance_url: str | None = None
 
 
 class StoryboardProductionBoardItem(BaseModel):

@@ -28,12 +28,29 @@ Each item can include:
 - `asset_key`
 - `name`
 - `main_reference_url`
+- `selected_appearance_key`
+- `selected_appearance_url`
+- `appearances_count`
 - `must_keep`
 - `avoid`
 
 Characters may also carry extra role or profile notes when available. Scenes
 and props may carry more specific structure fields, but the minimum stable
 contract is still the same: key, name, reference URL, keep rules, avoid rules.
+
+## Character Appearance compatibility
+
+v0.5-B adds a lightweight `CharacterAppearance` layer. Visual Asset Library character assets remain the prompt-facing visual anchors, but they can now be linked to the currently selected character appearance.
+
+When an appearance is selected through `POST /projects/{project_id}/characters/{character_id}/appearances/{appearance_key}/select`, the system updates:
+
+- `Character.main_reference_url`
+- matching `visual_asset_library_json.characters[].main_reference_url`
+- `selected_appearance_key`
+- `selected_appearance_url`
+- `appearances_count`
+
+This keeps old projects compatible while allowing richer character reference management.
 
 ## How shots reference the library
 

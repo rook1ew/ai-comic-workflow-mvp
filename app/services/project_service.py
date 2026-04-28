@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 from app.models.asset import Asset
 from app.models.asset_task import AssetTask
 from app.models.character import Character
+from app.models.character_appearance import CharacterAppearance
 from app.models.enums import AssetTaskStatus
 from app.models.enums import AssetModality
 from app.models.episode import Episode
@@ -235,12 +236,14 @@ def _build_narrative_lookup(narrative_structure: dict | None) -> tuple[dict[str,
 def get_project_visual_asset_library(db: Session, project_id: int) -> ProjectVisualAssetLibrary:
     project = get_project_or_404(db, project_id)
     library = _get_visual_asset_library(project)
+    characters = _enrich_visual_asset_library_characters(db, project_id, library["characters"])
+    enriched_library = {**library, "characters": characters}
     assets_without_reference_url: list[dict] = []
     for bucket_name in ("characters", "scenes", "props"):
-        for item in library[bucket_name]:
+        for item in enriched_library[bucket_name]:
             if not isinstance(item, dict):
                 continue
-            if str(item.get("main_reference_url") or "").strip():
+            if str(item.get("main_reference_url") or item.get("selected_appearance_url") or "").strip():
                 continue
             assets_without_reference_url.append(
                 {
@@ -250,7 +253,7 @@ def get_project_visual_asset_library(db: Session, project_id: int) -> ProjectVis
                 }
             )
 
-    if not any(library.values()):
+    if not any(enriched_library.values()):
         next_action = "extract_or_manual_import_assets"
     elif assets_without_reference_url:
         next_action = "complete_reference_urls"
@@ -259,14 +262,14 @@ def get_project_visual_asset_library(db: Session, project_id: int) -> ProjectVis
 
     return ProjectVisualAssetLibrary(
         project_id=project_id,
-        characters_count=len(library["characters"]),
-        scenes_count=len(library["scenes"]),
-        props_count=len(library["props"]),
+        characters_count=len(enriched_library["characters"]),
+        scenes_count=len(enriched_library["scenes"]),
+        props_count=len(enriched_library["props"]),
         missing_reference_url_count=len(assets_without_reference_url),
         assets_without_reference_url=assets_without_reference_url,
-        characters=library["characters"],
-        scenes=library["scenes"],
-        props=library["props"],
+        characters=enriched_library["characters"],
+        scenes=enriched_library["scenes"],
+        props=enriched_library["props"],
         next_action=next_action,
     )
 
@@ -274,6 +277,7 @@ def get_project_visual_asset_library(db: Session, project_id: int) -> ProjectVis
 def export_project_visual_asset_prompts(db: Session, project_id: int) -> ProjectVisualAssetPromptExport:
     project = get_project_or_404(db, project_id)
     library = _get_visual_asset_library(project)
+    library = {**library, "characters": _enrich_visual_asset_library_characters(db, project_id, library["characters"])}
     project_style = _extract_project_style(project)
     project_genre = _extract_project_genre(project)
     character_record_lookup = _build_character_record_lookup(db, project_id)
@@ -727,6 +731,55 @@ def _get_visual_asset_library(project: Project) -> dict:
         "scenes": library.get("scenes") if isinstance(library.get("scenes"), list) else [],
         "props": library.get("props") if isinstance(library.get("props"), list) else [],
     }
+
+
+def _enrich_visual_asset_library_characters(db: Session, project_id: int, characters: list) -> list[dict]:
+    character_records = (
+        db.query(Character)
+        .filter(Character.project_id == project_id)
+        .order_by(Character.id.asc())
+        .all()
+    )
+    appearances_by_character_id: dict[int, list[CharacterAppearance]] = {}
+    appearances = (
+        db.query(CharacterAppearance)
+        .filter(CharacterAppearance.project_id == project_id)
+        .order_by(CharacterAppearance.order_index.asc(), CharacterAppearance.id.asc())
+        .all()
+    )
+    for appearance in appearances:
+        appearances_by_character_id.setdefault(appearance.character_id, []).append(appearance)
+
+    enriched: list[dict] = []
+    for item in characters:
+        if not isinstance(item, dict):
+            enriched.append(item)
+            continue
+        updated = dict(item)
+        character = _match_visual_asset_character_record(updated, character_records)
+        if character is not None:
+            character_appearances = appearances_by_character_id.get(character.id, [])
+            selected = next((appearance for appearance in character_appearances if appearance.is_selected), None)
+            updated["appearances_count"] = len(character_appearances)
+            updated["selected_appearance_key"] = selected.appearance_key if selected else None
+            updated["selected_appearance_url"] = selected.image_url if selected else None
+        else:
+            updated["appearances_count"] = int(updated.get("appearances_count") or 0)
+            updated.setdefault("selected_appearance_key", None)
+            updated.setdefault("selected_appearance_url", None)
+        enriched.append(updated)
+    return enriched
+
+
+def _match_visual_asset_character_record(item: dict, records: list[Character]) -> Character | None:
+    item_name = str(item.get("name") or "").strip()
+    item_key = str(item.get("asset_key") or "").strip().lower()
+    for record in records:
+        if item_name and item_name == record.name:
+            return record
+        if item_key and item_key == _slugify_asset_key(record.name):
+            return record
+    return None
 
 
 def _normalize_asset_type(asset_type: str) -> tuple[str, str]:
@@ -1240,6 +1293,9 @@ def _to_visual_asset_entry(item: dict | None) -> VisualAssetLibraryEntry | None:
         asset_key=item.get("asset_key"),
         name=item.get("name"),
         main_reference_url=item.get("main_reference_url"),
+        selected_appearance_key=item.get("selected_appearance_key"),
+        selected_appearance_url=item.get("selected_appearance_url"),
+        appearances_count=int(item.get("appearances_count") or 0),
         must_keep=item.get("must_keep") if isinstance(item.get("must_keep"), list) else [],
         avoid=item.get("avoid") if isinstance(item.get("avoid"), list) else [],
     )
@@ -1400,6 +1456,8 @@ def _build_character_reference_prompt(
     visual_data = _parse_key_value_lines(record.visual_notes if record is not None else None)
     must_keep = asset.get("must_keep") if isinstance(asset.get("must_keep"), list) else []
     avoid = asset.get("avoid") if isinstance(asset.get("avoid"), list) else []
+    selected_appearance_key = str(asset.get("selected_appearance_key") or "").strip()
+    selected_appearance_url = str(asset.get("selected_appearance_url") or "").strip()
     role_lower = role.lower()
 
     if role_lower in {"lead", "main", "main_character", "protagonist"}:
@@ -1440,6 +1498,13 @@ def _build_character_reference_prompt(
         "This is a canonical character reference portrait, not a storyboard shot and not a scene frame.",
         "This is not a poster, not a multi-panel comic page, and not a dramatic action frame.",
         f"Subject identity: {name}" + (f" ({role})" if role else ""),
+        f"Selected appearance reference: {selected_appearance_url}" if selected_appearance_url else None,
+        (
+            "Use this selected appearance as the primary identity anchor for future storyboard images."
+            + (f" Selected appearance key: {selected_appearance_key}." if selected_appearance_key else "")
+        )
+        if selected_appearance_url
+        else None,
         f"Appearance anchors: {appearance_anchors}" if appearance_anchors else None,
         f"Appearance summary: {visual_data.get('appearance_summary') or visual_data.get('appearance')}" if (visual_data.get('appearance_summary') or visual_data.get('appearance')) else None,
         f"Social identity: {profile_data.get('social_identity')}" if profile_data.get("social_identity") else None,
@@ -2747,6 +2812,8 @@ def _convert_asset_ref(entry: VisualAssetLibraryEntry) -> StoryboardProductionBo
         asset_key=entry.asset_key,
         name=entry.name,
         main_reference_url=entry.main_reference_url,
+        selected_appearance_key=entry.selected_appearance_key,
+        selected_appearance_url=entry.selected_appearance_url,
     )
 
 

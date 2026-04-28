@@ -1,6 +1,7 @@
 from app.models.asset import Asset
 from app.models.asset_task import AssetTask
 from app.models.character import Character
+from app.models.character_appearance import CharacterAppearance
 from app.models.episode import Episode
 from app.models.project import Project
 from app.models.publish_record import PublishRecord
@@ -12,6 +13,7 @@ __all__ = [
     "Asset",
     "AssetTask",
     "Character",
+    "CharacterAppearance",
     "Episode",
     "Project",
     "PublishRecord",

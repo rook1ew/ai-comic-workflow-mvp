@@ -1,5 +1,16 @@
 # VISUAL_ASSET_PROMPT_BUILDER
 
+## v0.5-B Character Appearance note
+
+For character assets, `visual-asset-prompts` now checks whether the matching `Character` has a selected `CharacterAppearance`.
+
+If a selected appearance exists, the character reference prompt includes:
+
+- `Selected appearance reference: ...`
+- `Use this selected appearance as the primary identity anchor.`
+
+The endpoint still does not generate images, upload files, crop images, or call any real provider. It only builds copy-ready prompts for external/manual use.
+
 ## 什么是 Visual Asset Prompt Builder
 
 `GET /projects/{project_id}/visual-asset-prompts` 用来生成三类“参考资产图 prompt”：

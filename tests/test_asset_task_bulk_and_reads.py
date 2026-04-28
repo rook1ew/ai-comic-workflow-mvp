@@ -3754,15 +3754,21 @@ def test_storyboard_production_board_returns_human_readable_items_and_plain_text
     assert item["duration"] == 4
     assert item["time_range"] == "0.0s-4.0s"
     assert item["human_shot_description"]
+    assert "At " not in item["human_shot_description"]
+    assert "Lin Xia Lin Xia" not in item["human_shot_description"]
     assert item["character_asset_refs"][0]["asset_key"] == "lin_xia"
     assert item["scene_asset_ref"]["asset_key"] == "meeting_room_a"
     assert item["prop_asset_refs"][0]["asset_key"] == "employee_badge"
     assert item["copy_ready_image_prompt"]
     assert item["copy_ready_motion_prompt"]
-    assert "slow push in" in item["copy_ready_motion_prompt"]
+    assert "push-in" in item["copy_ready_motion_prompt"]
     assert "Keep movement subtle" in item["copy_ready_motion_prompt"]
     assert "Do not change the character's face" in item["copy_ready_motion_prompt"]
     assert "scene layout" in item["copy_ready_motion_prompt"]
+    assert item["has_any_image_asset"] is True
+    assert item["has_manual_image_asset"] is True
+    assert item["selected_asset_source"] == "manual"
+    assert item["selected_image_asset_url"].startswith("file:///D:/AI")
     assert item["ready_for_image_generation"] is True
     assert item["ready_for_editing"] is True
     assert "SH01" in body["plain_text"]
@@ -3811,6 +3817,60 @@ def test_storyboard_production_board_missing_image_asset_marks_not_ready_for_edi
     assert "missing_image_asset" in item["warnings"]
 
 
+def test_storyboard_production_board_mock_asset_does_not_count_as_ready_for_editing(client):
+    project, shot1, _ = _create_project_graph(client)
+    image_task = client.post("/asset-tasks", json={"shot_id": shot1["id"], "modality": "image", "provider_name": "mock"}).json()
+    client.post(f"/asset-tasks/{image_task['id']}/run")
+
+    response = client.get(f"/projects/{project['id']}/storyboard-production-board")
+    assert response.status_code == 200
+    body = response.json()
+    item = next(exported for exported in body["items"] if exported["internal_shot_id"] == shot1["id"])
+    assert item["has_any_image_asset"] is True
+    assert item["has_manual_image_asset"] is False
+    assert item["selected_asset_source"] == "mock"
+    assert item["ready_for_editing"] is False
+    assert "using_mock_image_asset" in item["warnings"]
+    assert body["next_action"] == "generate_storyboard_images"
+
+
+def test_storyboard_production_board_static_camera_motion_is_polished(client):
+    project_id = _create_editing_cue_sheet_project(
+        client,
+        shots=[
+            {
+                "shot_id": "SH01",
+                "duration_sec": 3,
+                "character": "Lin Xia",
+                "location": "Meeting Room",
+                "core_action": "Lin Xia freezes at the doorway",
+                "emotion": "tense",
+                "camera": "close-up",
+                "dialogue": "……",
+                "shot_type": "suspense",
+                "camera_motion": "static",
+                "subject_motion": "blink",
+                "transition": "cut",
+                "subtitle_text": "……",
+                "sfx": "room_tone",
+                "editing_notes": "Hold the silence.",
+                "image_prompt": "woman frozen at the doorway",
+                "video_prompt": "tense doorway pause",
+                "voice_prompt": "voice prompt 1",
+                "bgm_prompt": "bgm prompt 1",
+                "status": "prompt_ready",
+            }
+        ],
+        upload_manual_images=True,
+    )
+
+    response = client.get(f"/projects/{project_id}/storyboard-production-board")
+    assert response.status_code == 200
+    motion_prompt = response.json()["items"][0]["copy_ready_motion_prompt"]
+    assert "keep the frame almost static" in motion_prompt.lower()
+    assert "very slow static" not in motion_prompt.lower()
+
+
 def test_storyboard_production_board_old_payload_still_works(client):
     project, shot1, _ = _create_project_graph(client)
     client.post("/asset-tasks", json={"shot_id": shot1["id"], "modality": "image", "provider_name": "mock"})
@@ -3825,3 +3885,103 @@ def test_storyboard_production_board_old_payload_still_works(client):
 def test_storyboard_production_board_missing_project_returns_404(client):
     response = client.get("/projects/999999/storyboard-production-board")
     assert response.status_code == 404
+
+
+def test_project_image_prompts_mirror_double_and_phone_screen_rules(client):
+    init = client.post("/coze/project/init", json={
+        "project_card_json": {
+            "project_title": "Mirror Double Phone Prompt Demo",
+            "genre": "urban thriller",
+            "platform": "coze",
+            "target_duration": 60,
+            "target_audience": "young-adult",
+            "visual_style": "anime-comic realism",
+            "status": "draft",
+        },
+        "characters_json": {
+            "characters": [
+                {
+                    "name": "沈知夏",
+                    "role": "lead",
+                    "main_reference_confirmed": False,
+                }
+            ]
+        },
+        "visual_asset_library_json": {
+            "characters": [
+                {
+                    "asset_key": "shen_zhixia",
+                    "name": "沈知夏",
+                    "role": "lead",
+                    "main_reference_url": "file:///D:/AIRefs/ShenZhixia_main.png",
+                },
+                {
+                    "asset_key": "door_double",
+                    "name": "门外的她",
+                    "role": "mirror-double",
+                    "main_reference_url": "file:///D:/AIRefs/DoorDouble_main.png",
+                }
+            ],
+            "scenes": [
+                {
+                    "asset_key": "narrow_corridor",
+                    "name": "狭窄走廊",
+                    "main_reference_url": "file:///D:/AIRefs/narrow_corridor_main.png",
+                }
+            ],
+            "props": [
+                {
+                    "asset_key": "smartphone",
+                    "name": "手机",
+                    "main_reference_url": "file:///D:/AIRefs/smartphone_main.png",
+                }
+            ]
+        },
+    }).json()
+    project_id = init["data"]["project_id"]
+    character_id = init["data"]["character_ids"][0]
+    client.post(
+        f"/characters/{character_id}/confirm-reference",
+        json={"main_reference_url": "file:///D:/AIRefs/ShenZhixia_main.png"},
+    )
+    client.post(
+        f"/coze/project/{project_id}/storyboard",
+        json={
+            "script_card_json": {"opening_hook": "hook"},
+            "storyboard_json": {
+                "shots": [
+                    {
+                        "shot_id": "SH02",
+                        "duration_sec": 4,
+                        "character": "沈知夏",
+                        "location": "狭窄走廊",
+                        "character_asset_keys": ["door_double"],
+                        "scene_asset_key": "narrow_corridor",
+                        "prop_asset_keys": ["smartphone"],
+                        "core_action": "沈知夏从猫眼向外看去",
+                        "emotion": "fear",
+                        "camera": "close-up",
+                        "dialogue": "门外是谁？",
+                        "image_prompt": "through the peephole she sees a woman identical to her, while a phone message warns her not to open the door",
+                        "video_prompt": "suspense shot",
+                        "voice_prompt": "voice prompt",
+                        "bgm_prompt": "bgm prompt",
+                        "shot_type": "reveal",
+                        "visual_focus": "phone time and the mirrored face in the corridor",
+                        "subtitle_text": "不要开门",
+                        "sfx": "urgent_knock",
+                        "editing_notes": "hold on the disturbing recognition beat",
+                        "status": "prompt_ready",
+                    }
+                ]
+            },
+        },
+    )
+    client.post(f"/coze/project/{project_id}/create-asset-tasks", json={})
+
+    response = client.get(f"/projects/{project_id}/image-prompts")
+    assert response.status_code == 200
+    prompt = response.json()["items"][0]["copy_ready_prompt"]
+    assert "abnormal double" in prompt or "mirror counterpart" in prompt
+    assert "Character in frame: 门外的她，一个长得像沈知夏的异常镜像" in prompt
+    assert "Do not render readable text on the phone screen" in prompt

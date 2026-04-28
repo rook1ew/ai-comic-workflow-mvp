@@ -568,6 +568,7 @@ class StoryboardProductionBoardItem(BaseModel):
     emotion_shift: str | None = None
     visual_focus: str | None = None
     character: str | None = None
+    character_display: str | None = None
     character_description: str | None = None
     character_asset_keys: list[str] = Field(default_factory=list)
     character_asset_refs: list[StoryboardProductionBoardAssetRef] = Field(default_factory=list)
@@ -592,6 +593,10 @@ class StoryboardProductionBoardItem(BaseModel):
     ambient_sound: str | None = None
     bgm_mood: str | None = None
     audio_timing_note: str | None = None
+    has_any_image_asset: bool = False
+    has_manual_image_asset: bool = False
+    selected_image_asset_url: str | None = None
+    selected_asset_source: str = "none"
     copy_ready_image_prompt: str
     copy_ready_motion_prompt: str
     editing_notes: str | None = None

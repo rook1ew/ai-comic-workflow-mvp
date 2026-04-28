@@ -579,6 +579,48 @@ def _get_preferred_shot_asset(
     return _select_preferred_asset(assets)
 
 
+def _get_shot_assets(
+    db: Session,
+    *,
+    shot_id: int,
+    modality: AssetModality,
+) -> list[Asset]:
+    return (
+        db.query(Asset)
+        .filter(Asset.shot_id == shot_id, Asset.modality == modality)
+        .order_by(Asset.id.asc())
+        .all()
+    )
+
+
+def _is_manual_asset(asset: Asset | None) -> bool:
+    return bool((asset.metadata_json or {}).get("manual_upload")) if asset is not None else False
+
+
+def _build_shot_asset_selection_state(
+    db: Session,
+    *,
+    shot_id: int,
+    modality: AssetModality,
+) -> dict:
+    assets = _get_shot_assets(db, shot_id=shot_id, modality=modality)
+    selected_asset = _select_preferred_asset(assets)
+    has_any_asset = any(bool(asset.file_url) for asset in assets)
+    manual_assets = [asset for asset in assets if bool(asset.file_url) and _is_manual_asset(asset)]
+    has_manual_asset = bool(manual_assets)
+    selected_source = "none"
+    if selected_asset is not None:
+        selected_source = "manual" if _is_manual_asset(selected_asset) else "mock"
+    return {
+        "assets": assets,
+        "selected_asset": selected_asset,
+        "has_any_asset": has_any_asset,
+        "has_manual_asset": has_manual_asset,
+        "selected_asset_url": selected_asset.file_url if selected_asset is not None else None,
+        "selected_asset_source": selected_source,
+    }
+
+
 def _build_copy_ready_prompt(enhanced_prompt: str, negative_prompt: str) -> str:
     return "\n".join([enhanced_prompt.strip(), f"Negative prompt: {negative_prompt}"]).strip()
 
@@ -1435,6 +1477,7 @@ def _build_production_grade_image_prompt(
     shot_metadata: dict,
     visual_asset_refs: VisualAssetRefs,
 ) -> str:
+    character_display = _build_shot_character_display(shot_metadata, visual_asset_refs)
     lines: list[str] = [
         "Task type: storyboard keyframe.",
         "Output goal: generate one single-shot storyboard frame for this scene, not a character sheet and not an environment plate.",
@@ -1451,6 +1494,7 @@ def _build_production_grade_image_prompt(
 
     field_pairs = [
         ("Shot ID", shot_metadata.get("source_shot_id")),
+        ("Character in frame", character_display),
         ("Shot purpose", shot_metadata.get("shot_purpose")),
         ("Conflict beat", shot_metadata.get("conflict_beat")),
         ("Emotion shift", shot_metadata.get("emotion_shift")),
@@ -1473,6 +1517,8 @@ def _build_production_grade_image_prompt(
 
     if str(shot_metadata.get("subtitle_text") or "").strip():
         lines.append("Leave clean subtitle-safe space near the lower frame when possible.")
+    if _shot_has_phone_screen_text_risk(shot_metadata, enhanced_prompt):
+        lines.append("Do not render readable text on the phone screen; the message/time will be added later as subtitle or overlay.")
 
     negative_constraints = _stringify_list(shot_metadata.get("negative_constraints"))
     if negative_constraints:
@@ -1504,6 +1550,11 @@ def _build_production_grade_image_prompt(
         lines.append("Keep environment layout consistent with the scene reference.")
     if prop_refs:
         lines.append("Keep prop appearance consistent with the prop reference.")
+    mirror_entry = next((entry for entry in visual_asset_refs.characters if _entry_is_mirror_double(entry)), None)
+    if mirror_entry is not None:
+        lines.append(
+            "Mirror-double note: treat this figure as an abnormal double or uncanny mirror counterpart, while keeping the fear psychological and non-gory."
+        )
 
     must_keep_parts: list[str] = []
     avoid_parts: list[str] = []
@@ -2507,21 +2558,35 @@ def _build_storyboard_human_shot_description(shot: Shot, shot_metadata: dict) ->
     core_action = str(shot.core_action or "").strip()
     emotion = str(shot_metadata.get("emotion") or "").strip()
     visual_focus = str(shot_metadata.get("visual_focus") or "").strip()
+    action_text = core_action
+    if character and action_text.startswith(character):
+        action_text = action_text[len(character):].strip(" ，,。")
 
-    sentence = []
-    if location:
-        sentence.append(f"At {location},")
-    if character and core_action:
-        sentence.append(f"{character} {core_action}.")
+    location_text = location
+    if location_text and not any(location_text.endswith(suffix) for suffix in ("内", "里", "中", "外", "旁")):
+        location_text = f"{location_text}内"
+
+    parts: list[str] = []
+    if location_text and character and action_text:
+        parts.append(f"{location_text}，{character}{action_text}")
+    elif location_text and core_action:
+        parts.append(f"{location_text}，{core_action}")
+    elif character and action_text:
+        parts.append(f"{character}{action_text}")
     elif core_action:
-        sentence.append(f"{core_action}.")
+        parts.append(core_action)
     elif character:
-        sentence.append(f"{character} is the focus of the shot.")
+        parts.append(f"{character}处在画面中心")
+
     if emotion:
-        sentence.append(f"Emotion: {emotion}.")
+        parts.append(f"情绪从画面中传达出{emotion}")
     if visual_focus:
-        sentence.append(f"Visual focus: {visual_focus}.")
-    return " ".join(sentence).strip() or f"Shot {shot_metadata.get('source_shot_id') or shot.id}"
+        parts.append(f"画面重点落在{visual_focus}")
+
+    description = "，".join(part.strip(" ，,。") for part in parts if part).strip(" ，,。")
+    if description:
+        return f"{description}。"
+    return f"镜头 {shot_metadata.get('source_shot_id') or shot.id}"
 
 
 def _build_storyboard_character_lookup(db: Session, project_id: int) -> dict[str, Character]:
@@ -2574,6 +2639,72 @@ def _convert_asset_ref(entry: VisualAssetLibraryEntry) -> StoryboardProductionBo
     )
 
 
+def _entry_is_mirror_double(entry: VisualAssetLibraryEntry) -> bool:
+    return _is_mirror_double_asset(
+        {
+            "asset_key": entry.asset_key,
+            "name": entry.name,
+            "role": getattr(entry, "role", None),
+        }
+    )
+
+
+def _build_shot_character_display(shot_metadata: dict, visual_asset_refs: VisualAssetRefs) -> str | None:
+    base_character = str(shot_metadata.get("character") or "").strip()
+    mirror_entry = next((entry for entry in visual_asset_refs.characters if _entry_is_mirror_double(entry)), None)
+    if mirror_entry is not None:
+        mirror_name = str(mirror_entry.name or base_character or mirror_entry.asset_key or "").strip()
+        if base_character and mirror_name and mirror_name != base_character:
+            return f"{mirror_name}，一个长得像{base_character}的异常镜像"
+        if base_character:
+            return f"{base_character}的异常镜像替身"
+        return mirror_name or None
+    return base_character or (visual_asset_refs.characters[0].name if visual_asset_refs.characters else None)
+
+
+def _describe_storyboard_camera_motion(camera_motion: str | None) -> str | None:
+    motion = str(camera_motion or "").strip().lower()
+    if not motion:
+        return None
+    mapping = {
+        "slow_push_in": "very slow push-in",
+        "static": "keep the frame almost static",
+        "zoom_in": "subtle zoom-in",
+        "slow_pull_out": "very slow pull-out",
+        "pull_out": "slow pull-out",
+        "pan_left": "subtle pan to the left",
+        "pan_right": "subtle pan to the right",
+    }
+    return mapping.get(motion, motion.replace("_", " "))
+
+
+def _shot_has_phone_screen_text_risk(shot_metadata: dict, enhanced_prompt: str) -> bool:
+    text_parts = [
+        str(enhanced_prompt or ""),
+        str(shot_metadata.get("dialogue") or ""),
+        str(shot_metadata.get("visual_focus") or ""),
+        str(shot_metadata.get("image_prompt") or ""),
+        str(shot_metadata.get("image_prompt_intent") or ""),
+    ]
+    combined = " ".join(text_parts).lower()
+    keywords = [
+        "phone time",
+        "phone message",
+        "screen text",
+        "screen message",
+        "smartphone",
+        "phone screen",
+        "message on the phone",
+        "手机",
+        "短信",
+        "消息",
+        "屏幕",
+        "时间",
+        "猫眼",
+    ]
+    return any(keyword in combined for keyword in keywords)
+
+
 def _build_storyboard_motion_prompt(
     *,
     image_asset_url: str | None,
@@ -2588,8 +2719,12 @@ def _build_storyboard_motion_prompt(
     lines = [
         "Use the generated storyboard image as a still frame." if image_asset_url else "Use the future storyboard image as a still frame once it is available.",
     ]
-    if camera_motion:
-        lines.append(f"Add a very slow {camera_motion.replace('_', ' ')}.")
+    camera_motion_text = _describe_storyboard_camera_motion(camera_motion)
+    if camera_motion_text:
+        if camera_motion_text == "keep the frame almost static":
+            lines.append("Keep the frame almost static.")
+        else:
+            lines.append(f"Add a {camera_motion_text}.")
     else:
         lines.append("Keep the camera mostly static with only minimal framing drift if needed.")
     if subject_motion:
@@ -2661,7 +2796,7 @@ def get_project_storyboard_production_board(db: Session, project_id: int) -> Pro
     plain_text_blocks: list[str] = []
 
     has_missing_asset_refs = False
-    has_missing_images = False
+    has_missing_manual_images = False
 
     for order, shot in enumerate(shots, start=1):
         shot_metadata = shot.metadata_json or {}
@@ -2670,16 +2805,23 @@ def get_project_storyboard_production_board(db: Session, project_id: int) -> Pro
         reference_item = reference_by_shot_id.get(shot.id)
         image_prompt_item = image_prompt_by_shot_id.get(shot.id)
         visual_asset_refs = board_item.visual_asset_refs if board_item is not None else _resolve_visual_asset_refs(project, shot_metadata)
+        image_asset_state = _build_shot_asset_selection_state(db, shot_id=shot.id, modality=AssetModality.IMAGE)
 
         duration = timeline_item.duration if timeline_item is not None else (shot_metadata.get("duration_sec") or 3)
         warnings = list(timeline_item.warnings if timeline_item is not None else [])
         suggestions = list(reference_item.suggestions if reference_item is not None else [])
         if reference_item is not None:
             warnings.extend(reference_item.warnings)
-        has_image_asset = bool(board_item.image_asset_url) if board_item is not None else False
-        if not has_image_asset:
+        has_any_image_asset = bool(image_asset_state["has_any_asset"])
+        has_manual_image_asset = bool(image_asset_state["has_manual_asset"])
+        selected_image_asset_url = image_asset_state["selected_asset_url"]
+        selected_asset_source = image_asset_state["selected_asset_source"]
+        if not has_any_image_asset:
             warnings.append("missing_image_asset")
-            has_missing_images = True
+            has_missing_manual_images = True
+        elif not has_manual_image_asset:
+            warnings.append("using_mock_image_asset")
+            has_missing_manual_images = True
         if reference_item is not None:
             if reference_item.missing_character_asset_keys or reference_item.missing_scene_asset_key or reference_item.missing_prop_asset_keys:
                 has_missing_asset_refs = True
@@ -2712,7 +2854,7 @@ def get_project_storyboard_production_board(db: Session, project_id: int) -> Pro
             )
 
         copy_ready_motion_prompt = _build_storyboard_motion_prompt(
-            image_asset_url=board_item.image_asset_url if board_item is not None else None,
+            image_asset_url=selected_image_asset_url,
             camera_motion=shot_metadata.get("camera_motion"),
             subject_motion=shot_metadata.get("subject_motion"),
             shot_type=shot_metadata.get("shot_type"),
@@ -2723,13 +2865,14 @@ def get_project_storyboard_production_board(db: Session, project_id: int) -> Pro
         )
 
         ready_for_image_generation = bool(copy_ready_image_prompt)
-        ready_for_editing = has_image_asset
+        ready_for_editing = has_manual_image_asset
 
         character_asset_refs = [_convert_asset_ref(entry) for entry in visual_asset_refs.characters]
         scene_asset_ref = _convert_asset_ref(visual_asset_refs.scene) if visual_asset_refs.scene is not None else None
         prop_asset_refs = [_convert_asset_ref(entry) for entry in visual_asset_refs.props]
 
         human_shot_description = _build_storyboard_human_shot_description(shot, shot_metadata)
+        character_display = _build_shot_character_display(shot_metadata, visual_asset_refs)
         character_description = _build_storyboard_character_description(
             shot_metadata=shot_metadata,
             visual_asset_refs=visual_asset_refs,
@@ -2754,6 +2897,7 @@ def get_project_storyboard_production_board(db: Session, project_id: int) -> Pro
             emotion_shift=shot_metadata.get("emotion_shift"),
             visual_focus=shot_metadata.get("visual_focus"),
             character=shot_metadata.get("character"),
+            character_display=character_display,
             character_description=character_description,
             character_asset_keys=shot_metadata.get("character_asset_keys") if isinstance(shot_metadata.get("character_asset_keys"), list) else [],
             character_asset_refs=character_asset_refs,
@@ -2778,6 +2922,10 @@ def get_project_storyboard_production_board(db: Session, project_id: int) -> Pro
             ambient_sound=shot_metadata.get("ambient_sound"),
             bgm_mood=shot_metadata.get("bgm_mood"),
             audio_timing_note=shot_metadata.get("audio_timing_note"),
+            has_any_image_asset=has_any_image_asset,
+            has_manual_image_asset=has_manual_image_asset,
+            selected_image_asset_url=selected_image_asset_url,
+            selected_asset_source=selected_asset_source,
             copy_ready_image_prompt=copy_ready_image_prompt,
             copy_ready_motion_prompt=copy_ready_motion_prompt,
             editing_notes=shot_metadata.get("editing_notes"),
@@ -2806,7 +2954,7 @@ def get_project_storyboard_production_board(db: Session, project_id: int) -> Pro
 
     if has_missing_asset_refs:
         next_action = "review_reference_assets"
-    elif has_missing_images:
+    elif has_missing_manual_images:
         next_action = "generate_storyboard_images"
     elif final_checklist.has_publish_record or final_checklist.next_action == "completed":
         next_action = "ready_for_delivery_or_final_composition"

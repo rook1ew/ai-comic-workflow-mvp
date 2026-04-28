@@ -35,6 +35,7 @@ from app.schemas.project import ProjectManualVideoProgressItem
 from app.schemas.project import ProjectPublishReadiness
 from app.schemas.project import ProjectReferenceCoverageReport
 from app.schemas.project import ProjectSummary
+from app.schemas.project import ProjectVisualAssetPromptExport
 from app.schemas.project import ProjectVisualAssetCandidates
 from app.schemas.project import ProjectVisualAssetLibrary
 from app.schemas.project import ManualFinalChecklistChecks
@@ -48,6 +49,7 @@ from app.schemas.project import VisualAssetCandidate
 from app.schemas.project import VisualAssetLibraryImportCandidatesRequest
 from app.schemas.project import VisualAssetLibraryImportCandidatesResponse
 from app.schemas.project import VisualAssetLibraryManualImportRequest
+from app.schemas.project import VisualAssetPromptItem
 from app.schemas.project import ReferenceCoverageItem
 from app.schemas.project import ReferenceCoverageMissingAsset
 from app.services.prompt_enhancer import build_image_enhanced_prompt
@@ -209,6 +211,86 @@ def get_project_visual_asset_library(db: Session, project_id: int) -> ProjectVis
         scenes=library["scenes"],
         props=library["props"],
         next_action=next_action,
+    )
+
+
+def export_project_visual_asset_prompts(db: Session, project_id: int) -> ProjectVisualAssetPromptExport:
+    project = get_project_or_404(db, project_id)
+    library = _get_visual_asset_library(project)
+    project_style = _extract_project_style(project)
+    project_genre = _extract_project_genre(project)
+    character_record_lookup = _build_character_record_lookup(db, project_id)
+    lead_asset = _find_lead_character_asset(library)
+
+    if not any(library.values()):
+        return ProjectVisualAssetPromptExport(
+            project_id=project_id,
+            characters_count=0,
+            scenes_count=0,
+            props_count=0,
+            items_count=0,
+            characters=[],
+            scenes=[],
+            props=[],
+            next_action="extract_or_manual_import_assets",
+        )
+
+    def build_item(asset: dict, asset_type: str) -> VisualAssetPromptItem:
+        asset_key = str(asset.get("asset_key") or "").strip() or "asset"
+        name = str(asset.get("name") or asset_key).strip() or asset_key
+        target_reference_url = str(asset.get("main_reference_url") or "").strip() or None
+        suggested_reference_filename = _suggest_reference_filename(asset_type, asset_key)
+
+        if asset_type == "character":
+            record = character_record_lookup.get(asset_key)
+            copy_ready_prompt = _build_character_reference_prompt(
+                asset=asset,
+                record=record,
+                project_style=project_style,
+                project_genre=project_genre,
+                lead_asset=lead_asset,
+            )
+            prompt_type = "character_main_reference"
+        elif asset_type == "scene":
+            copy_ready_prompt = _build_scene_reference_prompt(
+                asset=asset,
+                project_style=project_style,
+                project_genre=project_genre,
+            )
+            prompt_type = "scene_main_reference"
+        else:
+            copy_ready_prompt = _build_prop_reference_prompt(
+                asset=asset,
+                project_style=project_style,
+            )
+            prompt_type = "prop_main_reference"
+
+        return VisualAssetPromptItem(
+            asset_key=asset_key,
+            name=name,
+            asset_type=asset_type,
+            prompt_type=prompt_type,
+            target_reference_url=target_reference_url,
+            suggested_reference_filename=suggested_reference_filename,
+            copy_ready_prompt=copy_ready_prompt,
+            must_keep=asset.get("must_keep") if isinstance(asset.get("must_keep"), list) else [],
+            avoid=asset.get("avoid") if isinstance(asset.get("avoid"), list) else [],
+        )
+
+    character_items = [build_item(item, "character") for item in library["characters"] if isinstance(item, dict)]
+    scene_items = [build_item(item, "scene") for item in library["scenes"] if isinstance(item, dict)]
+    prop_items = [build_item(item, "prop") for item in library["props"] if isinstance(item, dict)]
+
+    return ProjectVisualAssetPromptExport(
+        project_id=project_id,
+        characters_count=len(character_items),
+        scenes_count=len(scene_items),
+        props_count=len(prop_items),
+        items_count=len(character_items) + len(scene_items) + len(prop_items),
+        characters=character_items,
+        scenes=scene_items,
+        props=prop_items,
+        next_action="generate_reference_images",
     )
 
 
@@ -594,6 +676,167 @@ def _build_visual_asset_lookup(project: Project) -> dict[str, dict[str, dict]]:
             if isinstance(item, dict) and str(item.get("asset_key") or "").strip()
         },
     }
+
+
+def _parse_key_value_lines(text: str | None) -> dict[str, str]:
+    data: dict[str, str] = {}
+    if not text:
+        return data
+    for raw_line in text.splitlines():
+        line = raw_line.strip()
+        if not line or "=" not in line:
+            continue
+        key, value = line.split("=", 1)
+        key = key.strip()
+        value = value.strip()
+        if key and value:
+            data[key] = value
+    return data
+
+
+def _suggest_reference_filename(asset_type: str, asset_key: str) -> str:
+    normalized_key = asset_key or "asset"
+    if asset_type == "character":
+        return f"file:///D:/AI漫剧角色库/{normalized_key}_main.png"
+    if asset_type == "scene":
+        return f"file:///D:/AI漫剧场景库/{normalized_key}_main.png"
+    return f"file:///D:/AI漫剧道具库/{normalized_key}_main.png"
+
+
+def _extract_project_genre(project: Project) -> str | None:
+    if project.description:
+        for line in project.description.splitlines():
+            if line.startswith("genre="):
+                value = line.split("=", 1)[1].strip()
+                if value:
+                    return value
+    for tag in project.tags:
+        if str(tag).strip():
+            return str(tag).strip()
+    return None
+
+
+def _build_character_record_lookup(db: Session, project_id: int) -> dict[str, Character]:
+    records = (
+        db.query(Character)
+        .filter(Character.project_id == project_id)
+        .order_by(Character.id.asc())
+        .all()
+    )
+    return {_slugify_asset_key(record.name): record for record in records}
+
+
+def _find_lead_character_asset(library: dict) -> dict | None:
+    for item in library.get("characters", []):
+        if isinstance(item, dict) and str(item.get("role") or "").strip().lower() == "lead":
+            return item
+    for item in library.get("characters", []):
+        if isinstance(item, dict):
+            return item
+    return None
+
+
+def _is_mirror_double_asset(asset: dict) -> bool:
+    asset_key = str(asset.get("asset_key") or "").lower()
+    role = str(asset.get("role") or "").lower()
+    name = str(asset.get("name") or "").lower()
+    combined = " ".join([asset_key, role, name])
+    keywords = ["mirror-double", "mirror_double", "double", "door_double", "替身", "镜像"]
+    return any(keyword in combined for keyword in keywords)
+
+
+def _build_character_reference_prompt(
+    *,
+    asset: dict,
+    record: Character | None,
+    project_style: str | None,
+    project_genre: str | None,
+    lead_asset: dict | None,
+) -> str:
+    name = str(asset.get("name") or asset.get("asset_key") or "Unknown Character")
+    role = str(asset.get("role") or (record.role_type if record is not None else "") or "").strip()
+    profile_data = _parse_key_value_lines(record.profile if record is not None else None)
+    visual_data = _parse_key_value_lines(record.visual_notes if record is not None else None)
+    must_keep = asset.get("must_keep") if isinstance(asset.get("must_keep"), list) else []
+    avoid = asset.get("avoid") if isinstance(asset.get("avoid"), list) else []
+
+    lines = [
+        "Task type: character main reference image for an AI comic drama.",
+        "Output goal: create a stable reusable character reference image, not a storyboard shot.",
+        "This is not a scene shot. not a poster. not a multi-panel comic page. not a dramatic action frame.",
+        "Image requirements: front-facing or three-quarter half-body reference, clear face, clear hairstyle, clear outfit, clean readable silhouette, simple background, vertical 9:16, anime-comic realism.",
+        f"Character name: {name}",
+        f"Role: {role}" if role else None,
+        f"Project visual style: {project_style}" if project_style else None,
+        f"Project genre: {project_genre}" if project_genre else None,
+        f"Appearance summary: {visual_data.get('appearance_summary') or visual_data.get('appearance')}" if (visual_data.get('appearance_summary') or visual_data.get('appearance')) else None,
+        f"Social identity: {profile_data.get('social_identity')}" if profile_data.get("social_identity") else None,
+        f"First impression: {profile_data.get('first_impression')}" if profile_data.get("first_impression") else None,
+        f"Public mask: {profile_data.get('public_mask')}" if profile_data.get("public_mask") else None,
+        f"Inner truth: {profile_data.get('inner_truth')}" if profile_data.get("inner_truth") else None,
+        f"Core keywords: {profile_data.get('core_keywords')}" if profile_data.get("core_keywords") else None,
+        f"Must keep: {', '.join(must_keep[:6])}" if must_keep else None,
+        f"Avoid: {', '.join(avoid[:6])}" if avoid else None,
+        "Safety: original character only. Do not imitate celebrities, real people, known anime characters, film characters, or copyrighted IP.",
+    ]
+
+    if _is_mirror_double_asset(asset):
+        lines.append("Character note: this character is an abnormal double or uncanny mirror counterpart of the protagonist.")
+        if lead_asset and str(lead_asset.get("asset_key") or "") != str(asset.get("asset_key") or ""):
+            lines.append(
+                f"Identity anchor: keep core face identity aligned with lead character {lead_asset.get('name') or lead_asset.get('asset_key')} while making the expression hollow and disturbing."
+            )
+        lines.append("Avoid monster face, gore, and exaggerated creature design.")
+
+    return "\n".join(line for line in lines if line).strip()
+
+
+def _build_scene_reference_prompt(
+    *,
+    asset: dict,
+    project_style: str | None,
+    project_genre: str | None,
+) -> str:
+    name = str(asset.get("name") or asset.get("asset_key") or "Unknown Scene")
+    must_keep = asset.get("must_keep") if isinstance(asset.get("must_keep"), list) else []
+    avoid = asset.get("avoid") if isinstance(asset.get("avoid"), list) else []
+    genre_text = (project_genre or "").lower()
+    suspensey = any(keyword in genre_text for keyword in ["thriller", "suspense", "horror", "怪谈", "惊悚", "悬疑"])
+    lines = [
+        "Task type: scene main reference image for an AI comic drama.",
+        "Output goal: create a stable reusable scene reference image, not a storyboard shot.",
+        "No characters. No foreground acting. No poster layout. No text overlay.",
+        "Image requirements: clearly show spatial layout, show key fixed elements, consistent lighting, clean reusable background, vertical 9:16, anime-comic realism.",
+        f"Scene name: {name}",
+        f"Project visual style: {project_style}" if project_style else None,
+        f"Project genre: {project_genre}" if project_genre else None,
+        f"Must keep: {', '.join(must_keep[:6])}" if must_keep else None,
+        f"Avoid: {', '.join(avoid[:6])}" if avoid else None,
+    ]
+    if suspensey:
+        lines.append("Atmosphere: low light, narrow space, silence, unease, realistic old apartment texture, cinematic suspense, no gore.")
+    return "\n".join(line for line in lines if line).strip()
+
+
+def _build_prop_reference_prompt(
+    *,
+    asset: dict,
+    project_style: str | None,
+) -> str:
+    name = str(asset.get("name") or asset.get("asset_key") or "Unknown Prop")
+    must_keep = asset.get("must_keep") if isinstance(asset.get("must_keep"), list) else []
+    avoid = asset.get("avoid") if isinstance(asset.get("avoid"), list) else []
+    lines = [
+        "Task type: prop main reference image for an AI comic drama.",
+        "Output goal: create a stable reusable prop reference image, not a storyboard shot.",
+        "Single object only. Clear view. Simple background. No brand logo. No readable copyrighted text. No watermark.",
+        "Image requirements: clear shape, clear material, clear color, front or close-up view, anime-comic realism, reusable for later shots.",
+        f"Prop name: {name}",
+        f"Project visual style: {project_style}" if project_style else None,
+        f"Must keep: {', '.join(must_keep[:6])}" if must_keep else None,
+        f"Avoid: {', '.join(avoid[:6])}" if avoid else None,
+    ]
+    return "\n".join(line for line in lines if line).strip()
 
 
 def manual_import_project_visual_asset(

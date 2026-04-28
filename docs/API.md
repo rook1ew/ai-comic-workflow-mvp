@@ -291,6 +291,32 @@ Enhanced response fields include:
 - `complete_reference_urls`
 - `ready_for_reference_guided_image_generation`
 
+### GET `/projects/{project_id}/visual-asset-prompts`
+
+Build copy-ready prompts for:
+
+- character main reference images
+- scene main reference images
+- prop main reference images
+
+This endpoint is for reusable reference assets, not storyboard shots.
+
+It returns:
+
+- `characters`
+- `scenes`
+- `props`
+- `items_count`
+- `next_action`
+
+If the visual asset library is empty:
+
+- arrays stay empty
+- `next_action = extract_or_manual_import_assets`
+
+If `main_reference_url` is missing, the prompt is still generated and the item
+returns a `suggested_reference_filename`.
+
 ### GET `/projects/{project_id}/reference-coverage-report`
 
 Soft-check each shot's reference coverage before image generation.

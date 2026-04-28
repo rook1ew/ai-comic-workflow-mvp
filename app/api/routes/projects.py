@@ -17,6 +17,7 @@ from app.schemas.project import (
     ProjectReferenceCoverageReport,
     ProjectResponse,
     ProjectSummary,
+    ProjectVisualAssetPromptExport,
     ProjectVisualAssetCandidates,
     ProjectVisualAssetLibrary,
     ProjectVideoReadiness,
@@ -29,6 +30,7 @@ from app.services.asset_task_service import get_project_provider_readiness
 from app.services.project_service import (
     create_project,
     export_project_image_prompts,
+    export_project_visual_asset_prompts,
     export_project_video_prompts,
     extract_project_visual_asset_candidates,
     get_project_or_404,
@@ -85,6 +87,11 @@ def get_project_visual_asset_library_route(project_id: int, db: Session = Depend
 @router.get("/projects/{project_id}/reference-coverage-report", response_model=ProjectReferenceCoverageReport)
 def get_project_reference_coverage_report_route(project_id: int, db: Session = Depends(get_db)) -> ProjectReferenceCoverageReport:
     return get_project_reference_coverage_report(db, project_id)
+
+
+@router.get("/projects/{project_id}/visual-asset-prompts", response_model=ProjectVisualAssetPromptExport)
+def get_project_visual_asset_prompts_route(project_id: int, db: Session = Depends(get_db)) -> ProjectVisualAssetPromptExport:
+    return export_project_visual_asset_prompts(db, project_id)
 
 
 @router.post("/projects/{project_id}/visual-asset-library/manual-import", response_model=ProjectVisualAssetLibrary)

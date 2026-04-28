@@ -1283,6 +1283,111 @@ def test_reference_coverage_report_missing_project_returns_404(client):
     assert response.status_code == 404
 
 
+def test_visual_asset_prompts_returns_characters_scenes_and_props(client):
+    init = client.post("/coze/project/init", json={
+        "project_card_json": {
+            "project_title": "Visual Asset Prompt Demo",
+            "genre": "urban thriller",
+            "platform": "coze",
+            "visual_style": "anime-comic realism",
+            "status": "draft",
+        },
+        "visual_asset_library_json": {
+            "characters": [
+                {
+                    "asset_key": "shen_zhixia",
+                    "name": "Shen Zhixia",
+                    "role": "lead",
+                    "main_reference_url": "file:///D:/AIRefs/ShenZhixia_main.png",
+                    "must_keep": ["same face shape", "same hairstyle"],
+                    "avoid": ["celebrity likeness", "known anime character"],
+                },
+                {
+                    "asset_key": "door_double",
+                    "name": "Door Double",
+                    "role": "mirror-double",
+                    "must_keep": ["same face as Shen Zhixia"],
+                    "avoid": ["monster face", "gore"],
+                },
+            ],
+            "scenes": [
+                {
+                    "asset_key": "old_apartment_bedroom",
+                    "name": "Old Apartment Bedroom",
+                    "must_keep": ["narrow room", "aged wall texture"],
+                    "avoid": ["luxury hotel room"],
+                }
+            ],
+            "props": [
+                {
+                    "asset_key": "smartphone",
+                    "name": "Smartphone",
+                    "must_keep": ["dark phone body"],
+                    "avoid": ["brand logo"],
+                }
+            ],
+        },
+        "characters_json": {
+            "characters": [
+                {
+                    "name": "Shen Zhixia",
+                    "role": "lead",
+                    "appearance": "pale oval face, black hair",
+                    "social_identity": "illustrator",
+                    "public_mask": "calm",
+                    "inner_truth": "sleepless and afraid of the night",
+                    "main_reference_confirmed": False,
+                }
+            ]
+        },
+    }).json()
+    project_id = init["data"]["project_id"]
+
+    response = client.get(f"/projects/{project_id}/visual-asset-prompts")
+    assert response.status_code == 200
+    body = response.json()
+    assert body["characters_count"] == 2
+    assert body["scenes_count"] == 1
+    assert body["props_count"] == 1
+    assert body["items_count"] == 4
+    assert body["next_action"] == "generate_reference_images"
+
+    character_item = next(item for item in body["characters"] if item["asset_key"] == "shen_zhixia")
+    assert "character main reference image" in character_item["copy_ready_prompt"]
+    assert "not a storyboard shot" in character_item["copy_ready_prompt"]
+    assert "not a poster" in character_item["copy_ready_prompt"]
+    assert "Must keep:" in character_item["copy_ready_prompt"]
+    assert "Avoid:" in character_item["copy_ready_prompt"]
+
+    mirror_item = next(item for item in body["characters"] if item["asset_key"] == "door_double")
+    assert "abnormal double" in mirror_item["copy_ready_prompt"] or "mirror counterpart" in mirror_item["copy_ready_prompt"]
+    assert "Identity anchor" in mirror_item["copy_ready_prompt"]
+
+    scene_item = body["scenes"][0]
+    assert "scene main reference image" in scene_item["copy_ready_prompt"]
+    assert "No characters." in scene_item["copy_ready_prompt"]
+    assert "spatial layout" in scene_item["copy_ready_prompt"]
+
+    prop_item = body["props"][0]
+    assert "prop main reference image" in prop_item["copy_ready_prompt"]
+    assert "Single object only." in prop_item["copy_ready_prompt"]
+    assert "No brand logo." in prop_item["copy_ready_prompt"]
+
+
+def test_visual_asset_prompts_empty_library_returns_extract_action(client):
+    project = client.post("/projects", json={"name": "Empty Asset Prompt Project"}).json()
+    response = client.get(f"/projects/{project['id']}/visual-asset-prompts")
+    assert response.status_code == 200
+    body = response.json()
+    assert body["items_count"] == 0
+    assert body["next_action"] == "extract_or_manual_import_assets"
+
+
+def test_visual_asset_prompts_missing_project_returns_404(client):
+    response = client.get("/projects/999999/visual-asset-prompts")
+    assert response.status_code == 404
+
+
 def test_project_image_prompts_missing_project_returns_404(client):
     response = client.get("/projects/9999/image-prompts")
     assert response.status_code == 404

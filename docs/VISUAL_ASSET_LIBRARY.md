@@ -178,6 +178,17 @@ Visual Asset Library 是项目级的轻量参考素材库，用来管理三类�
 
 ## image-prompts 如何使用这些 reference assets
 
+在正式生成 storyboard shot 之前，也可以先调用：
+
+- `GET /projects/{project_id}/visual-asset-prompts`
+
+它会为 `characters / scenes / props` 自动生成参考图 prompt。
+
+注意区分：
+
+- `visual-asset-prompts` 生成“参考图 prompt”
+- `image-prompts` 生成“分镜图 prompt”
+
 `GET /projects/{project_id}/image-prompts` 现在会返回：
 
 - `character_asset_keys`
@@ -239,6 +250,7 @@ Visual Asset Library 是项目级的轻量参考素材库，用来管理三类�
 ## 相关接口
 
 - `GET /projects/{project_id}/visual-asset-library`
+- `GET /projects/{project_id}/visual-asset-prompts`
 - `GET /projects/{project_id}/image-prompts`
 - `GET /projects/{project_id}/editing-shot-board`
 - `GET /projects/{project_id}/editing-cue-sheet`

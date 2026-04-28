@@ -73,6 +73,30 @@ class ProjectVisualAssetLibrary(BaseModel):
     next_action: str
 
 
+class VisualAssetPromptItem(BaseModel):
+    asset_key: str
+    name: str
+    asset_type: str
+    prompt_type: str
+    target_reference_url: str | None = None
+    suggested_reference_filename: str | None = None
+    copy_ready_prompt: str
+    must_keep: list[str] = Field(default_factory=list)
+    avoid: list[str] = Field(default_factory=list)
+
+
+class ProjectVisualAssetPromptExport(BaseModel):
+    project_id: int
+    characters_count: int
+    scenes_count: int
+    props_count: int
+    items_count: int
+    characters: list[VisualAssetPromptItem] = Field(default_factory=list)
+    scenes: list[VisualAssetPromptItem] = Field(default_factory=list)
+    props: list[VisualAssetPromptItem] = Field(default_factory=list)
+    next_action: str
+
+
 class ReferenceCoverageMissingAsset(BaseModel):
     asset_type: str
     asset_key: str | None = None

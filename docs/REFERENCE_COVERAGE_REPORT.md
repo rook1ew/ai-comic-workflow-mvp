@@ -81,10 +81,12 @@ Reference Coverage Report 的作用，就是在生图前先做一轮“参考素
 
 1. `extract candidates`
 2. `import candidates`
-3. `manual-import` 补 `main_reference_url`
-4. `reference-coverage-report`
-5. `image-prompts`
-6. manual image generation
+3. `visual-asset-prompts`
+4. 先生成 reference images
+5. `manual-import` 补 `main_reference_url`
+6. `reference-coverage-report`
+7. `image-prompts`
+8. manual image generation
 
 ## 示例返回关注点
 

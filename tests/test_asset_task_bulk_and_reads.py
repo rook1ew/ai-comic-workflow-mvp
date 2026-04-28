@@ -3659,3 +3659,169 @@ def test_editing_cue_sheet_all_ready_returns_ready_for_manual_editing(client):
 def test_editing_cue_sheet_missing_project_returns_404(client):
     response = client.get("/projects/999999/editing-cue-sheet")
     assert response.status_code == 404
+
+
+def test_storyboard_production_board_returns_human_readable_items_and_plain_text(client):
+    project_id = _create_editing_cue_sheet_project(
+        client,
+        shots=[
+            {
+                "shot_id": "SH01",
+                "duration_sec": 4,
+                "character": "Lin Xia",
+                "location": "Meeting Room",
+                "character_asset_keys": ["lin_xia"],
+                "scene_asset_key": "meeting_room_a",
+                "prop_asset_keys": ["employee_badge"],
+                "core_action": "Lin Xia opens the door",
+                "emotion": "nervous",
+                "camera": "medium close-up",
+                "dialogue": "不好意思，我走错了。",
+                "shot_type": "dialogue",
+                "camera_motion": "slow_push_in",
+                "subject_motion": "blink, slight_body_shift",
+                "transition": "cut",
+                "subtitle_text": "不好意思，我走错了。",
+                "subtitle_position": "lower center",
+                "sfx": "door_open",
+                "editing_notes": "Hold on the awkward pause before the next reaction.",
+                "shot_purpose": "awkward entrance beat",
+                "conflict_beat": "enter vs retreat",
+                "emotion_shift": "nervous to embarrassed",
+                "visual_focus": "doorway and expression",
+                "image_prompt_intent": "make the mistake feel immediately readable",
+                "pacing_note": "pause for one beat before she speaks",
+                "composition": "tight 9:16 frame with doorway negative space",
+                "lighting": "cold office light",
+                "image_prompt": "young woman opening a meeting room door",
+                "video_prompt": "office door opens, awkward pause",
+                "voice_prompt": "voice prompt 1",
+                "bgm_prompt": "bgm prompt 1",
+                "status": "prompt_ready",
+            }
+        ],
+        upload_manual_images=True,
+    )
+    client.post(
+        f"/projects/{project_id}/visual-asset-library/manual-import",
+        json={
+            "asset_type": "character",
+            "asset": {
+                "asset_key": "lin_xia",
+                "name": "Lin Xia",
+                "main_reference_url": "file:///D:/AIRefs/LinXia_main.png",
+                "must_keep": ["same short hair", "same office outfit"],
+            },
+            "merge_mode": "upsert",
+        },
+    )
+    client.post(
+        f"/projects/{project_id}/visual-asset-library/manual-import",
+        json={
+            "asset_type": "scene",
+            "asset": {
+                "asset_key": "meeting_room_a",
+                "name": "Meeting Room A",
+                "main_reference_url": "file:///D:/AIRefs/meeting_room_a_main.png",
+            },
+            "merge_mode": "upsert",
+        },
+    )
+    client.post(
+        f"/projects/{project_id}/visual-asset-library/manual-import",
+        json={
+            "asset_type": "prop",
+            "asset": {
+                "asset_key": "employee_badge",
+                "name": "Employee Badge",
+                "main_reference_url": "file:///D:/AIRefs/employee_badge_main.png",
+            },
+            "merge_mode": "upsert",
+        },
+    )
+
+    response = client.get(f"/projects/{project_id}/storyboard-production-board")
+    assert response.status_code == 200
+    body = response.json()
+    assert body["items_count"] == 1
+    assert body["total_duration"] == 4
+    assert body["next_action"] == "ready_for_manual_editing"
+    assert body["plain_text"]
+
+    item = body["items"][0]
+    assert item["order"] == 1
+    assert item["source_shot_id"] == "SH01"
+    assert item["duration"] == 4
+    assert item["time_range"] == "0.0s-4.0s"
+    assert item["human_shot_description"]
+    assert item["character_asset_refs"][0]["asset_key"] == "lin_xia"
+    assert item["scene_asset_ref"]["asset_key"] == "meeting_room_a"
+    assert item["prop_asset_refs"][0]["asset_key"] == "employee_badge"
+    assert item["copy_ready_image_prompt"]
+    assert item["copy_ready_motion_prompt"]
+    assert "slow push in" in item["copy_ready_motion_prompt"]
+    assert "Keep movement subtle" in item["copy_ready_motion_prompt"]
+    assert "Do not change the character's face" in item["copy_ready_motion_prompt"]
+    assert "scene layout" in item["copy_ready_motion_prompt"]
+    assert item["ready_for_image_generation"] is True
+    assert item["ready_for_editing"] is True
+    assert "SH01" in body["plain_text"]
+    assert "0.0s-4.0s" in body["plain_text"]
+    assert "画面描述" in body["plain_text"]
+    assert "字幕" in body["plain_text"]
+    assert "音效" in body["plain_text"]
+
+
+def test_storyboard_production_board_missing_image_asset_marks_not_ready_for_editing(client):
+    project_id = _create_editing_cue_sheet_project(
+        client,
+        shots=[
+            {
+                "shot_id": "SH01",
+                "duration_sec": 3,
+                "character": "Lin Xia",
+                "location": "Meeting Room",
+                "core_action": "Lin Xia opens the door",
+                "emotion": "nervous",
+                "camera": "medium close-up",
+                "dialogue": "不好意思，我走错了。",
+                "shot_type": "dialogue",
+                "camera_motion": "slow_push_in",
+                "subject_motion": "blink",
+                "transition": "cut",
+                "subtitle_text": "不好意思，我走错了。",
+                "sfx": "door_open",
+                "editing_notes": "Use slight zoom-in and nervous pause.",
+                "image_prompt": "young woman opening a meeting room door",
+                "video_prompt": "office door opens, awkward pause",
+                "voice_prompt": "voice prompt 1",
+                "bgm_prompt": "bgm prompt 1",
+                "status": "prompt_ready",
+            }
+        ],
+        upload_manual_images=False,
+    )
+
+    response = client.get(f"/projects/{project_id}/storyboard-production-board")
+    assert response.status_code == 200
+    body = response.json()
+    assert body["next_action"] == "generate_storyboard_images"
+    item = body["items"][0]
+    assert item["ready_for_editing"] is False
+    assert "missing_image_asset" in item["warnings"]
+
+
+def test_storyboard_production_board_old_payload_still_works(client):
+    project, shot1, _ = _create_project_graph(client)
+    client.post("/asset-tasks", json={"shot_id": shot1["id"], "modality": "image", "provider_name": "mock"})
+
+    response = client.get(f"/projects/{project['id']}/storyboard-production-board")
+    assert response.status_code == 200
+    body = response.json()
+    assert body["items_count"] == 2
+    assert body["items"][0]["copy_ready_image_prompt"]
+
+
+def test_storyboard_production_board_missing_project_returns_404(client):
+    response = client.get("/projects/999999/storyboard-production-board")
+    assert response.status_code == 404

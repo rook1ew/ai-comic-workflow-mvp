@@ -1,22 +1,78 @@
-# Visual Asset Prompt Builder
+# VISUAL_ASSET_PROMPT_BUILDER
 
 ## 什么是 Visual Asset Prompt Builder
 
-`GET /projects/{project_id}/visual-asset-prompts` 用来生成三类“参考图 prompt”：
+`GET /projects/{project_id}/visual-asset-prompts` 用来生成三类“参考资产图 prompt”：
 
 1. 角色参考图 prompt
 2. 场景参考图 prompt
 3. 道具参考图 prompt
 
-它和 `image-prompts` 不同：
+它的重点不是剧情镜头，而是素材库参考图。
 
-- `visual-asset-prompts`
-  - 生成可复用参考图
-  - 不带剧情动作
-  - 不带 shot 叙事目的
-- `image-prompts`
-  - 生成 storyboard shot 分镜图
-  - 带剧情动作、情绪、镜头、剪辑目的
+## 它和 image-prompts 的区别
+
+`visual-asset-prompts`：
+
+- 用于 reusable library assets
+- 用于 canonical character references
+- 用于 scene reference plates
+- 用于 prop single-object references
+- 不承载剧情动作
+
+`image-prompts`：
+
+- 用于 storyboard shot
+- 承载剧情动作、情绪、视觉焦点、镜头目的
+
+一句话区分：
+
+- 先做 reference assets
+- 再做 storyboard shots
+
+## 三类 prompt 的定位
+
+### 1. Character
+
+角色参考图 prompt 更强调：
+
+- canonical character reference
+- not a storyboard shot
+- not a scene frame
+- clean background
+- stable face / hair / outfit / vibe
+
+适合生成：
+
+- main reference
+- 定妆图
+- 后续 front / side / expression / mouth shape 的基础参考
+
+### 2. Scene
+
+场景参考图 prompt 更强调：
+
+- scene reference plate
+- environment reference image
+- no characters
+- clear spatial layout
+- reusable background consistency
+
+适合生成：
+
+- 固定场景主参考
+- 统一空间布局和光线氛围
+
+### 3. Prop
+
+道具参考图 prompt 更强调：
+
+- prop reference image
+- single object only
+- centered presentation
+- no characters
+- no hands
+- reusable object consistency
 
 ## 为什么需要它
 
@@ -26,57 +82,13 @@
 - `old_apartment_bedroom_main.png`
 - `smartphone_main.png`
 
-这时系统虽然知道“缺参考图”，但还需要一层自动 prompt builder，帮用户快速生成这些参考图提示词。
+这时系统虽然知道“缺参考图”，但如果没有 prompt builder，用户仍然要手写参考图提示词。
 
-## 角色参考图 prompt 规则
+这个接口的作用就是：
 
-character prompt 会强调：
-
-- `character main reference image for an AI comic drama`
-- `create a stable reusable character reference image, not a storyboard shot`
-- `not a poster`
-- `not a multi-panel comic page`
-- `not a dramatic action frame`
-
-并自动整合：
-
-- `name`
-- `role`
-- `must_keep`
-- `avoid`
-- richer character fields（如存在）
-- `visual_style`
-- `genre`
-
-## 场景参考图 prompt 规则
-
-scene prompt 会强调：
-
-- `scene main reference image for an AI comic drama`
-- `create a stable reusable scene reference image, not a storyboard shot`
-- `no characters`
-- `show spatial layout`
-- `clean reusable background`
-
-惊悚悬疑题材会额外强调：
-
-- low light
-- narrow space
-- silence
-- unease
-- realistic old apartment texture
-- no gore
-
-## 道具参考图 prompt 规则
-
-prop prompt 会强调：
-
-- `prop main reference image for an AI comic drama`
-- `single object only`
-- `simple background`
-- `no brand logo`
-- `no readable copyrighted text`
-- `no watermark`
+- 先自动生成参考图 prompt
+- 再让人工去外部工具生成参考图
+- 再把生成后的 URL 回填进 Visual Asset Library
 
 ## 推荐流程
 
@@ -88,12 +100,57 @@ prop prompt 会强调：
 6. `reference-coverage-report`
 7. `image-prompts`
 8. 生成 shot images
+9. `storyboard-production-board`
+
+## 和 Storyboard Production Board 的关系
+
+`storyboard-production-board` 会消费这些资产引用结果，但它本身不负责生成参考资产图 prompt。
+
+推荐职责分工：
+
+- `visual-asset-prompts`
+  - 先做角色 / 场景 / 道具参考图
+- `reference-coverage-report`
+  - 再检查哪些 shot 已经吃到参考资产
+- `image-prompts`
+  - 再做分镜图 prompt
+- `storyboard-production-board`
+  - 最后把参考资产、分镜图 prompt、运动提示和剪辑信息汇总成制作表
 
 ## 示例
 
-角色参考图 prompt 应该像这样：
+### Character prompt
 
-- 这是角色定妆参考图，不是剧情镜头
-- 画面干净，可复用
-- 面部、发型、服装轮廓清晰
-- 背景简单，方便后续作为 identity anchor
+```text
+Task type: character reference image.
+Output goal: create one canonical character reference portrait for later storyboard generation, not a storyboard shot.
+Character: 沈知夏
+Role: lead
+Framing: clean half-body or three-quarter portrait.
+Background: simple, neutral, non-narrative background.
+Style: anime-comic realism.
+Continuity requirement: keep face shape, hairstyle, outfit silhouette, and character vibe stable for future shots.
+```
+
+### Scene prompt
+
+```text
+Task type: scene reference plate.
+Output goal: create one environment reference image for later storyboard consistency, not a storyboard shot.
+Scene: 旧公寓卧室
+Characters: no characters.
+Layout anchors: clearly show spatial layout and fixed elements.
+Style: anime-comic realism.
+```
+
+### Prop prompt
+
+```text
+Task type: prop reference image.
+Output goal: create one reusable prop reference image, not a storyboard shot.
+Prop: 猫眼
+Presentation: single object only, centered, clearly visible.
+Characters: none.
+Hands: none.
+Style: anime-comic realism.
+```

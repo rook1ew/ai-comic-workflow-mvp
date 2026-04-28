@@ -30,9 +30,10 @@
 12. `GET /projects/{project_id}/editing-shot-board`
 13. `GET /projects/{project_id}/editing-timeline`
 14. `GET /projects/{project_id}/editing-cue-sheet`
-15. `GET /projects/{project_id}/manual-production-summary`
-16. `GET /projects/{project_id}/publish-readiness`
-17. `GET /projects/{project_id}/manual-final-checklist`
+15. `GET /projects/{project_id}/storyboard-production-board`
+16. `GET /projects/{project_id}/manual-production-summary`
+17. `GET /projects/{project_id}/publish-readiness`
+18. `GET /projects/{project_id}/manual-final-checklist`
 
 ## 推荐操作顺序
 
@@ -172,6 +173,31 @@
 - 把 `editing-timeline` 转成更适合人工阅读和复制的单行清单
 - 直接复制到 Coze 视频创作、剪映备注、CapCut、Premiere、Notion 或 Excel
 - 给剪辑师一个逐镜头、逐时间段的施工单
+
+### 10. 查看专业分镜制作表
+
+调用：
+
+- `GET /projects/{project_id}/storyboard-production-board`
+
+用途：
+
+- 把一个 shot 的剧情功能、视觉焦点、角色参考、场景参考、道具参考、分镜图提示词和轻运动提示词汇总成一行生产信息
+- 给创作者、Coze、剪辑师或运营一个更接近“分镜制作表”的总览视图
+- 在人工生图前先确认每个镜头的参考素材、分镜描述和执行重点是否已经到位
+
+这份 board 和其它接口的分工是：
+
+- `image-prompts`
+  - 专注单镜头分镜图提示词
+- `editing-shot-board`
+  - 专注镜头字段和图片是否就位
+- `editing-timeline`
+  - 专注时间线顺序
+- `editing-cue-sheet`
+  - 专注人类可读的剪辑清单
+- `storyboard-production-board`
+  - 专注把上面这些信息整合成一份人类可读的专业制作表
 
 ## 三层总览接口
 

@@ -15,6 +15,7 @@ from app.schemas.project import (
     ProjectManualVideoProgress,
     ProjectPublishReadiness,
     ProjectReferenceCoverageReport,
+    ProjectStoryboardProductionBoard,
     ProjectResponse,
     ProjectSummary,
     ProjectVisualAssetPromptExport,
@@ -39,6 +40,7 @@ from app.services.project_service import (
     get_project_editing_shot_board,
     get_project_editing_timeline,
     get_project_editing_cue_sheet,
+    get_project_storyboard_production_board,
     get_project_manual_production_summary,
     get_project_manual_video_progress,
     get_project_publish_readiness,
@@ -173,3 +175,8 @@ def get_project_editing_timeline_route(project_id: int, db: Session = Depends(ge
 @router.get("/projects/{project_id}/editing-cue-sheet", response_model=ProjectEditingCueSheet)
 def get_project_editing_cue_sheet_route(project_id: int, db: Session = Depends(get_db)) -> ProjectEditingCueSheet:
     return get_project_editing_cue_sheet(db, project_id)
+
+
+@router.get("/projects/{project_id}/storyboard-production-board", response_model=ProjectStoryboardProductionBoard)
+def get_project_storyboard_production_board_route(project_id: int, db: Session = Depends(get_db)) -> ProjectStoryboardProductionBoard:
+    return get_project_storyboard_production_board(db, project_id)

@@ -30,6 +30,9 @@ from app.schemas.project import ProjectEditingTimeline
 from app.schemas.project import EditingTimelineItem
 from app.schemas.project import ProjectEditingCueSheet
 from app.schemas.project import EditingCueSheetItem
+from app.schemas.project import ProjectStoryboardProductionBoard
+from app.schemas.project import StoryboardProductionBoardAssetRef
+from app.schemas.project import StoryboardProductionBoardItem
 from app.schemas.project import ProjectManualVideoProgress
 from app.schemas.project import ProjectManualVideoProgressItem
 from app.schemas.project import ProjectPublishReadiness
@@ -2490,5 +2493,331 @@ def get_project_editing_cue_sheet(db: Session, project_id: int) -> ProjectEditin
         items=items,
         plain_text="\n".join(cue_lines),
         blocking_issues=sorted(blocking_issue_set),
+        next_action=next_action,
+    )
+
+
+def _build_storyboard_human_shot_description(shot: Shot, shot_metadata: dict) -> str:
+    explicit = str(shot_metadata.get("human_shot_description") or "").strip()
+    if explicit:
+        return explicit
+
+    location = str(shot_metadata.get("location") or "").strip()
+    character = str(shot_metadata.get("character") or "").strip()
+    core_action = str(shot.core_action or "").strip()
+    emotion = str(shot_metadata.get("emotion") or "").strip()
+    visual_focus = str(shot_metadata.get("visual_focus") or "").strip()
+
+    sentence = []
+    if location:
+        sentence.append(f"At {location},")
+    if character and core_action:
+        sentence.append(f"{character} {core_action}.")
+    elif core_action:
+        sentence.append(f"{core_action}.")
+    elif character:
+        sentence.append(f"{character} is the focus of the shot.")
+    if emotion:
+        sentence.append(f"Emotion: {emotion}.")
+    if visual_focus:
+        sentence.append(f"Visual focus: {visual_focus}.")
+    return " ".join(sentence).strip() or f"Shot {shot_metadata.get('source_shot_id') or shot.id}"
+
+
+def _build_storyboard_character_lookup(db: Session, project_id: int) -> dict[str, Character]:
+    lookup: dict[str, Character] = {}
+    records = db.query(Character).filter(Character.project_id == project_id).order_by(Character.id.asc()).all()
+    for record in records:
+        key = _slugify_asset_key(record.name)
+        if key and key not in lookup:
+            lookup[key] = record
+    return lookup
+
+
+def _build_storyboard_character_description(
+    shot_metadata: dict,
+    visual_asset_refs: VisualAssetRefs,
+    character_record_lookup: dict[str, Character],
+) -> str | None:
+    character_name = str(shot_metadata.get("character") or "").strip()
+    record = character_record_lookup.get(_slugify_asset_key(character_name)) if character_name else None
+    fragments: list[str] = []
+    if record is not None:
+        profile_data = _parse_key_value_lines(record.profile)
+        visual_data = _parse_key_value_lines(record.visual_notes)
+        for value in [
+            visual_data.get("appearance_summary") or visual_data.get("appearance"),
+            profile_data.get("appearance_summary"),
+            profile_data.get("social_identity"),
+            profile_data.get("first_impression"),
+        ]:
+            text = str(value or "").strip()
+            if text:
+                fragments.append(text)
+    if not fragments and visual_asset_refs.characters:
+        entry = visual_asset_refs.characters[0]
+        must_keep_text = _stringify_list(entry.must_keep)
+        if entry.name:
+            fragments.append(str(entry.name))
+        if must_keep_text:
+            fragments.append(must_keep_text)
+    if not fragments and character_name:
+        fragments.append(character_name)
+    return ". ".join(fragment for fragment in fragments if fragment).strip() or None
+
+
+def _convert_asset_ref(entry: VisualAssetLibraryEntry) -> StoryboardProductionBoardAssetRef:
+    return StoryboardProductionBoardAssetRef(
+        asset_key=entry.asset_key,
+        name=entry.name,
+        main_reference_url=entry.main_reference_url,
+    )
+
+
+def _build_storyboard_motion_prompt(
+    *,
+    image_asset_url: str | None,
+    camera_motion: str | None,
+    subject_motion: str | None,
+    shot_type: str | None,
+    emotion: str | None,
+    sfx: str | None,
+    editing_notes: str | None,
+    lighting: str | None,
+) -> str:
+    lines = [
+        "Use the generated storyboard image as a still frame." if image_asset_url else "Use the future storyboard image as a still frame once it is available.",
+    ]
+    if camera_motion:
+        lines.append(f"Add a very slow {camera_motion.replace('_', ' ')}.")
+    else:
+        lines.append("Keep the camera mostly static with only minimal framing drift if needed.")
+    if subject_motion:
+        lines.append(f"Keep movement subtle: {subject_motion.replace('_', ' ')} only.")
+    else:
+        lines.append("Keep movement subtle: gentle breathing, blinking, and minimal body shift only.")
+    if shot_type:
+        lines.append(f"Shot type mood: {shot_type}.")
+    if emotion:
+        lines.append(f"Preserve the emotional tone: {emotion}.")
+    if lighting:
+        lines.append(f"Maintain the lighting mood: {lighting}.")
+    if sfx:
+        lines.append(f"Let the motion pacing support the sound cue: {sfx}.")
+    if editing_notes:
+        lines.append(f"Editing note: {editing_notes}")
+    lines.append(
+        "Do not change the character's face, hairstyle, outfit, body proportion, scene layout, lighting, or prop appearance."
+    )
+    lines.append(
+        "Keep movement subtle. Maintain anime-comic realism. No face morphing, no extra limbs, no scene change, and no dramatic walking motion."
+    )
+    return " ".join(line.strip() for line in lines if str(line).strip()).strip()
+
+
+def _summarize_prompt_text(prompt: str, *, limit: int = 180) -> str:
+    text = " ".join(str(prompt or "").split())
+    if len(text) <= limit:
+        return text
+    return text[: limit - 3].rstrip() + "..."
+
+
+def get_project_storyboard_production_board(db: Session, project_id: int) -> ProjectStoryboardProductionBoard:
+    project = get_project_or_404(db, project_id)
+    timeline = get_project_editing_timeline(db, project_id)
+    shot_board = get_project_editing_shot_board(db, project_id)
+    reference_report = get_project_reference_coverage_report(db, project_id)
+    image_prompts = export_project_image_prompts(db, project_id)
+    final_checklist = get_project_manual_final_checklist(db, project_id)
+    character_record_lookup = _build_storyboard_character_lookup(db, project_id)
+
+    timeline_by_shot_id = {item.internal_shot_id: item for item in timeline.items}
+    board_by_shot_id = {item.internal_shot_id: item for item in shot_board.items}
+    reference_by_shot_id = {item.internal_shot_id: item for item in reference_report.items}
+    image_prompt_by_shot_id = {item.internal_shot_id: item for item in image_prompts.items}
+
+    shots = (
+        db.query(Shot)
+        .join(Scene, Shot.scene_id == Scene.id)
+        .join(Episode, Scene.episode_id == Episode.id)
+        .filter(Episode.project_id == project_id)
+        .order_by(Shot.id.asc())
+        .all()
+    )
+
+    if not shots:
+        return ProjectStoryboardProductionBoard(
+            project_id=project_id,
+            items_count=0,
+            total_duration=0,
+            items=[],
+            plain_text="",
+            next_action="create_storyboard_first",
+        )
+
+    style = _extract_project_style(project)
+    character_reference_url = _clean_reference_url(_get_first_confirmed_character_reference(db, project_id))
+    items: list[StoryboardProductionBoardItem] = []
+    plain_text_blocks: list[str] = []
+
+    has_missing_asset_refs = False
+    has_missing_images = False
+
+    for order, shot in enumerate(shots, start=1):
+        shot_metadata = shot.metadata_json or {}
+        board_item = board_by_shot_id.get(shot.id)
+        timeline_item = timeline_by_shot_id.get(shot.id)
+        reference_item = reference_by_shot_id.get(shot.id)
+        image_prompt_item = image_prompt_by_shot_id.get(shot.id)
+        visual_asset_refs = board_item.visual_asset_refs if board_item is not None else _resolve_visual_asset_refs(project, shot_metadata)
+
+        duration = timeline_item.duration if timeline_item is not None else (shot_metadata.get("duration_sec") or 3)
+        warnings = list(timeline_item.warnings if timeline_item is not None else [])
+        suggestions = list(reference_item.suggestions if reference_item is not None else [])
+        if reference_item is not None:
+            warnings.extend(reference_item.warnings)
+        has_image_asset = bool(board_item.image_asset_url) if board_item is not None else False
+        if not has_image_asset:
+            warnings.append("missing_image_asset")
+            has_missing_images = True
+        if reference_item is not None:
+            if reference_item.missing_character_asset_keys or reference_item.missing_scene_asset_key or reference_item.missing_prop_asset_keys:
+                has_missing_asset_refs = True
+
+        if image_prompt_item is not None:
+            copy_ready_image_prompt = image_prompt_item.copy_ready_prompt
+        else:
+            storyboard_context = {
+                "source_shot_id": shot_metadata.get("source_shot_id"),
+                "duration_sec": shot_metadata.get("duration_sec"),
+                "character": shot_metadata.get("character"),
+                "location": shot_metadata.get("location"),
+                "emotion": shot_metadata.get("emotion"),
+                "camera": shot_metadata.get("camera"),
+                "dialogue": shot_metadata.get("dialogue"),
+            }
+            enhanced_prompt = _strip_mock_reference_urls(
+                build_image_enhanced_prompt(
+                    base_prompt=shot.image_prompt,
+                    visual_style=style,
+                    character_reference_url=character_reference_url,
+                    storyboard_context=storyboard_context,
+                )
+            )
+            copy_ready_image_prompt = _build_production_grade_image_prompt(
+                enhanced_prompt=enhanced_prompt,
+                negative_prompt=MANUAL_IMAGE_NEGATIVE_PROMPT,
+                shot_metadata=shot_metadata,
+                visual_asset_refs=visual_asset_refs,
+            )
+
+        copy_ready_motion_prompt = _build_storyboard_motion_prompt(
+            image_asset_url=board_item.image_asset_url if board_item is not None else None,
+            camera_motion=shot_metadata.get("camera_motion"),
+            subject_motion=shot_metadata.get("subject_motion"),
+            shot_type=shot_metadata.get("shot_type"),
+            emotion=shot_metadata.get("emotion"),
+            sfx=shot_metadata.get("sfx"),
+            editing_notes=shot_metadata.get("editing_notes"),
+            lighting=shot_metadata.get("lighting"),
+        )
+
+        ready_for_image_generation = bool(copy_ready_image_prompt)
+        ready_for_editing = has_image_asset
+
+        character_asset_refs = [_convert_asset_ref(entry) for entry in visual_asset_refs.characters]
+        scene_asset_ref = _convert_asset_ref(visual_asset_refs.scene) if visual_asset_refs.scene is not None else None
+        prop_asset_refs = [_convert_asset_ref(entry) for entry in visual_asset_refs.props]
+
+        human_shot_description = _build_storyboard_human_shot_description(shot, shot_metadata)
+        character_description = _build_storyboard_character_description(
+            shot_metadata=shot_metadata,
+            visual_asset_refs=visual_asset_refs,
+            character_record_lookup=character_record_lookup,
+        )
+
+        time_range = (
+            f"{float(timeline_item.start_time):.1f}s-{float(timeline_item.end_time):.1f}s"
+            if timeline_item is not None
+            else f"0.0s-{float(duration):.1f}s"
+        )
+
+        item = StoryboardProductionBoardItem(
+            order=order,
+            source_shot_id=shot_metadata.get("source_shot_id"),
+            internal_shot_id=shot.id,
+            time_range=time_range,
+            duration=duration,
+            human_shot_description=human_shot_description,
+            story_function=shot_metadata.get("shot_purpose"),
+            conflict_beat=shot_metadata.get("conflict_beat"),
+            emotion_shift=shot_metadata.get("emotion_shift"),
+            visual_focus=shot_metadata.get("visual_focus"),
+            character=shot_metadata.get("character"),
+            character_description=character_description,
+            character_asset_keys=shot_metadata.get("character_asset_keys") if isinstance(shot_metadata.get("character_asset_keys"), list) else [],
+            character_asset_refs=character_asset_refs,
+            scene=shot_metadata.get("location"),
+            scene_asset_key=shot_metadata.get("scene_asset_key"),
+            scene_asset_ref=scene_asset_ref,
+            prop_asset_keys=shot_metadata.get("prop_asset_keys") if isinstance(shot_metadata.get("prop_asset_keys"), list) else [],
+            prop_asset_refs=prop_asset_refs,
+            shot_type=shot_metadata.get("shot_type"),
+            camera=shot_metadata.get("camera"),
+            composition=shot_metadata.get("composition"),
+            lighting=shot_metadata.get("lighting"),
+            core_action=shot.core_action,
+            subject_motion=shot_metadata.get("subject_motion"),
+            camera_motion=shot_metadata.get("camera_motion"),
+            transition=shot_metadata.get("transition"),
+            emotion=shot_metadata.get("emotion"),
+            dialogue=shot_metadata.get("dialogue"),
+            subtitle_text=shot_metadata.get("subtitle_text"),
+            subtitle_position=shot_metadata.get("subtitle_position"),
+            sfx=shot_metadata.get("sfx"),
+            ambient_sound=shot_metadata.get("ambient_sound"),
+            bgm_mood=shot_metadata.get("bgm_mood"),
+            audio_timing_note=shot_metadata.get("audio_timing_note"),
+            copy_ready_image_prompt=copy_ready_image_prompt,
+            copy_ready_motion_prompt=copy_ready_motion_prompt,
+            editing_notes=shot_metadata.get("editing_notes"),
+            ready_for_image_generation=ready_for_image_generation,
+            ready_for_editing=ready_for_editing,
+            warnings=list(dict.fromkeys(warnings)),
+            suggestions=list(dict.fromkeys(suggestions)),
+        )
+        items.append(item)
+
+        plain_text_blocks.append(
+            "\n".join(
+                [
+                    f"{item.source_shot_id or f'SHOT-{item.internal_shot_id}'} | {item.time_range}",
+                    f"画面描述: {item.human_shot_description}",
+                    f"角色: {item.character or '[none]'}",
+                    f"场景: {item.scene or '[none]'}",
+                    f"情绪: {item.emotion or '[none]'}",
+                    f"字幕: {item.subtitle_text or '[none]'}",
+                    f"音效: {item.sfx or '[none]'}",
+                    f"分镜提示词摘要: {_summarize_prompt_text(item.copy_ready_image_prompt, limit=160)}",
+                    f"运动提示词摘要: {_summarize_prompt_text(item.copy_ready_motion_prompt, limit=160)}",
+                ]
+            )
+        )
+
+    if has_missing_asset_refs:
+        next_action = "review_reference_assets"
+    elif has_missing_images:
+        next_action = "generate_storyboard_images"
+    elif final_checklist.has_publish_record or final_checklist.next_action == "completed":
+        next_action = "ready_for_delivery_or_final_composition"
+    else:
+        next_action = "ready_for_manual_editing"
+
+    return ProjectStoryboardProductionBoard(
+        project_id=project_id,
+        items_count=len(items),
+        total_duration=timeline.total_duration,
+        items=items,
+        plain_text="\n\n".join(plain_text_blocks),
         next_action=next_action,
     )

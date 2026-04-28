@@ -1265,6 +1265,57 @@ Rules:
 - if any blocking issue exists:
   - `next_action = fix_editing_inputs`
 
+### GET `/projects/{project_id}/storyboard-production-board`
+
+Project-level storyboard production board for creators, editors, Coze, or human
+operators.
+
+Use cases:
+
+- review each shot as a production row before image generation
+- see story function, conflict beat, emotion shift, and visual focus in one place
+- read character / scene / prop reference assets together with the image prompt
+- copy a lightweight motion prompt for subtle pseudo-animation or video tools
+- export a human-readable board before manual editing or final composition
+
+This endpoint reuses existing project logic instead of inventing a separate
+production model:
+
+- shot data from `Shot.metadata_json`
+- reference lookup from the Visual Asset Library
+- image prompt builder output from `image-prompts`
+- timing logic from `editing-timeline`
+- image asset selection from `editing-shot-board`
+
+Response highlights:
+
+- `order`
+- `source_shot_id`
+- `time_range`
+- `duration`
+- `human_shot_description`
+- `story_function`
+- `character_asset_refs`
+- `scene_asset_ref`
+- `prop_asset_refs`
+- `copy_ready_image_prompt`
+- `copy_ready_motion_prompt`
+- `ready_for_image_generation`
+- `ready_for_editing`
+- `plain_text`
+
+`copy_ready_motion_prompt` is not a real provider request. It is a lightweight
+copy-ready motion note for manual tools such as Coze video creation, CapCut,
+Premiere, or subtle still-frame animation workflows.
+
+High-level `next_action` rules:
+
+- no shots: `create_storyboard_first`
+- missing reference bindings or unresolved asset refs: `review_reference_assets`
+- references are acceptable but images are still missing: `generate_storyboard_images`
+- storyboard images are ready for use: `ready_for_manual_editing`
+- already effectively in final delivery state: `ready_for_delivery_or_final_composition`
+
 ### Editing storyboard metadata fields
 
 The following optional fields are supported in storyboard shot payloads and are

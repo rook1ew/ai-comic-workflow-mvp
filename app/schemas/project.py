@@ -548,3 +548,63 @@ class ProjectEditingCueSheet(BaseModel):
     plain_text: str
     blocking_issues: list[str] = Field(default_factory=list)
     next_action: str
+
+
+class StoryboardProductionBoardAssetRef(BaseModel):
+    asset_key: str | None = None
+    name: str | None = None
+    main_reference_url: str | None = None
+
+
+class StoryboardProductionBoardItem(BaseModel):
+    order: int
+    source_shot_id: str | None = None
+    internal_shot_id: int
+    time_range: str
+    duration: int | float
+    human_shot_description: str
+    story_function: str | None = None
+    conflict_beat: str | None = None
+    emotion_shift: str | None = None
+    visual_focus: str | None = None
+    character: str | None = None
+    character_description: str | None = None
+    character_asset_keys: list[str] = Field(default_factory=list)
+    character_asset_refs: list[StoryboardProductionBoardAssetRef] = Field(default_factory=list)
+    scene: str | None = None
+    scene_asset_key: str | None = None
+    scene_asset_ref: StoryboardProductionBoardAssetRef | None = None
+    prop_asset_keys: list[str] = Field(default_factory=list)
+    prop_asset_refs: list[StoryboardProductionBoardAssetRef] = Field(default_factory=list)
+    shot_type: str | None = None
+    camera: str | None = None
+    composition: str | None = None
+    lighting: str | None = None
+    core_action: str
+    subject_motion: str | None = None
+    camera_motion: str | None = None
+    transition: str | None = None
+    emotion: str | None = None
+    dialogue: str | None = None
+    subtitle_text: str | None = None
+    subtitle_position: str | None = None
+    sfx: str | None = None
+    ambient_sound: str | None = None
+    bgm_mood: str | None = None
+    audio_timing_note: str | None = None
+    copy_ready_image_prompt: str
+    copy_ready_motion_prompt: str
+    editing_notes: str | None = None
+    ready_for_image_generation: bool
+    ready_for_editing: bool
+    warnings: list[str] = Field(default_factory=list)
+    suggestions: list[str] = Field(default_factory=list)
+
+
+class ProjectStoryboardProductionBoard(BaseModel):
+    project_id: int
+    items_count: int
+    total_duration: int | float
+    items: list[StoryboardProductionBoardItem] = Field(default_factory=list)
+    plain_text: str
+    next_action: str

@@ -1,4 +1,4 @@
-from sqlalchemy import ForeignKey, String, Text
+from sqlalchemy import JSON, ForeignKey, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
@@ -13,6 +13,7 @@ class Episode(TimestampMixin, Base):
     title: Mapped[str] = mapped_column(String(255), nullable=False)
     episode_number: Mapped[int] = mapped_column(nullable=False)
     script_card: Mapped[str | None] = mapped_column(Text, nullable=True)
+    metadata_json: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
 
     project = relationship("Project", back_populates="episodes")
     scenes = relationship("Scene", back_populates="episode", cascade="all, delete-orphan")

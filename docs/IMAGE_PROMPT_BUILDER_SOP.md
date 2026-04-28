@@ -162,3 +162,22 @@ Subtitle-safe space: leave clean subtitle-safe space near the lower frame when p
 Style: anime-comic realism.
 Negative prompt: no poster layout, no character sheet, no environment plate, no gore.
 ```
+
+## 11. v0.5-A 在 prompt builder 前补的轻量结构
+
+当前推荐顺序是：
+
+1. `story-source`
+2. `narrative-structure-lite`
+3. `storyboard-package`
+4. `visual-asset-library / reference-coverage-report`
+5. `image-prompts`
+
+也就是说，`image-prompts` 仍然负责单镜头分镜图 prompt，但前面可以先有：
+
+- 段落 `segment`
+- 节拍 `beat`
+- 分镜组 `storyboard_group`
+
+这些结构随后会在 `storyboard-production-board` 里回显，帮助创作者知道
+这个 shot 在整段短剧里的叙事位置。

@@ -563,6 +563,14 @@ class StoryboardProductionBoardItem(BaseModel):
     time_range: str
     duration: int | float
     human_shot_description: str
+    segment_key: str | None = None
+    segment_title: str | None = None
+    segment_type: str | None = None
+    beat_key: str | None = None
+    beat_title: str | None = None
+    beat_type: str | None = None
+    storyboard_group_key: str | None = None
+    storyboard_group_title: str | None = None
     story_function: str | None = None
     conflict_beat: str | None = None
     emotion_shift: str | None = None
@@ -612,4 +620,20 @@ class ProjectStoryboardProductionBoard(BaseModel):
     total_duration: int | float
     items: list[StoryboardProductionBoardItem] = Field(default_factory=list)
     plain_text: str
+    next_action: str
+
+
+class ProjectCreativePipelineStatus(BaseModel):
+    project_id: int
+    story_source_exists: bool
+    narrative_structure_exists: bool
+    storyboard_package_exists: bool
+    segments_count: int
+    beats_count: int
+    storyboard_groups_count: int
+    shots_count: int
+    visual_asset_library_exists: bool
+    reference_coverage_ready: bool
+    storyboard_images_ready: bool
+    editing_ready: bool
     next_action: str

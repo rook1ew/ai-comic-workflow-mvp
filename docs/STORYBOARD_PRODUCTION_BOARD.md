@@ -120,3 +120,32 @@
   "next_action": "generate_storyboard_images"
 }
 ```
+
+## v0.5-A Lite narrative linkage
+
+Storyboard Production Board now echoes lightweight narrative structure fields
+per shot:
+
+- `segment_key`
+- `segment_title`
+- `segment_type`
+- `beat_key`
+- `beat_title`
+- `beat_type`
+- `storyboard_group_key`
+- `storyboard_group_title`
+
+Resolution order:
+
+1. read linkage keys from `Shot.metadata_json`
+2. resolve titles and types from `Episode.metadata_json.narrative_structure`
+
+If a linkage key cannot be resolved:
+
+- the board still returns successfully
+- unresolved title / type fields stay `null`
+
+`plain_text` may also include lightweight narrative lines such as:
+
+- `段落: 开场钩子`
+- `节拍: 急促敲门`

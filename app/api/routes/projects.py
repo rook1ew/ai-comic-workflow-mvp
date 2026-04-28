@@ -2,7 +2,14 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from app.api.dependencies import get_db
+from app.schemas.episode import (
+    EpisodeStorySourceRequest,
+    EpisodeStorySourceResponse,
+    NarrativeStructureLiteRequest,
+    NarrativeStructureLiteResponse,
+)
 from app.schemas.project import (
+    ProjectCreativePipelineStatus,
     ProjectCreate,
     ProjectImagePromptExport,
     ProjectVideoPromptExport,
@@ -27,6 +34,11 @@ from app.schemas.project import (
     VisualAssetLibraryImportCandidatesResponse,
     VisualAssetLibraryManualImportRequest,
 )
+from app.services.episode_service import (
+    get_project_episode_or_404,
+    save_episode_narrative_structure_lite,
+    save_episode_story_source,
+)
 from app.services.asset_task_service import get_project_provider_readiness
 from app.services.project_service import (
     create_project,
@@ -45,6 +57,7 @@ from app.services.project_service import (
     get_project_manual_video_progress,
     get_project_publish_readiness,
     get_project_reference_coverage_report,
+    get_project_creative_pipeline_status,
     get_project_summary,
     get_project_visual_asset_library,
     get_project_video_readiness,
@@ -54,6 +67,40 @@ from app.services.project_service import (
 )
 
 router = APIRouter()
+
+
+def _build_story_source_response(project_id: int, episode) -> EpisodeStorySourceResponse:
+    metadata = episode.metadata_json or {}
+    story_source = metadata.get("story_source")
+    return EpisodeStorySourceResponse(
+        project_id=project_id,
+        episode_id=episode.id,
+        story_source_exists=isinstance(story_source, dict),
+        story_source=story_source if isinstance(story_source, dict) else None,
+        source_text_hash=metadata.get("source_text_hash"),
+        analysis_status=metadata.get("analysis_status"),
+        next_action="generate_narrative_structure" if isinstance(story_source, dict) else "add_story_source",
+    )
+
+
+def _build_narrative_structure_response(project_id: int, episode) -> NarrativeStructureLiteResponse:
+    metadata = episode.metadata_json or {}
+    narrative_structure = metadata.get("narrative_structure")
+    if not isinstance(narrative_structure, dict):
+        narrative_structure = None
+    segments = narrative_structure.get("segments") if isinstance(narrative_structure, dict) else []
+    beats = narrative_structure.get("beats") if isinstance(narrative_structure, dict) else []
+    storyboard_groups = narrative_structure.get("storyboard_groups") if isinstance(narrative_structure, dict) else []
+    return NarrativeStructureLiteResponse(
+        project_id=project_id,
+        episode_id=episode.id,
+        narrative_structure_exists=isinstance(narrative_structure, dict),
+        narrative_structure=narrative_structure,
+        segments_count=len(segments) if isinstance(segments, list) else 0,
+        beats_count=len(beats) if isinstance(beats, list) else 0,
+        storyboard_groups_count=len(storyboard_groups) if isinstance(storyboard_groups, list) else 0,
+        next_action="generate_storyboard_package" if isinstance(narrative_structure, dict) else "generate_narrative_structure",
+    )
 
 
 @router.post("/projects", response_model=ProjectResponse, status_code=201)
@@ -74,6 +121,56 @@ def get_project_route(project_id: int, db: Session = Depends(get_db)) -> Project
 @router.get("/projects/{project_id}/summary", response_model=ProjectSummary)
 def get_project_summary_route(project_id: int, db: Session = Depends(get_db)) -> ProjectSummary:
     return get_project_summary(db, project_id)
+
+
+@router.post("/projects/{project_id}/episodes/{episode_id}/story-source", response_model=EpisodeStorySourceResponse)
+def save_episode_story_source_route(
+    project_id: int,
+    episode_id: int,
+    payload: EpisodeStorySourceRequest,
+    db: Session = Depends(get_db),
+) -> EpisodeStorySourceResponse:
+    episode = save_episode_story_source(db, project_id, episode_id, payload)
+    return _build_story_source_response(project_id, episode)
+
+
+@router.get("/projects/{project_id}/episodes/{episode_id}/story-source", response_model=EpisodeStorySourceResponse)
+def get_episode_story_source_route(
+    project_id: int,
+    episode_id: int,
+    db: Session = Depends(get_db),
+) -> EpisodeStorySourceResponse:
+    episode = get_project_episode_or_404(db, project_id, episode_id)
+    return _build_story_source_response(project_id, episode)
+
+
+@router.post("/projects/{project_id}/episodes/{episode_id}/narrative-structure-lite", response_model=NarrativeStructureLiteResponse)
+def save_episode_narrative_structure_lite_route(
+    project_id: int,
+    episode_id: int,
+    payload: NarrativeStructureLiteRequest,
+    db: Session = Depends(get_db),
+) -> NarrativeStructureLiteResponse:
+    episode = save_episode_narrative_structure_lite(db, project_id, episode_id, payload)
+    return _build_narrative_structure_response(project_id, episode)
+
+
+@router.get("/projects/{project_id}/episodes/{episode_id}/narrative-structure-lite", response_model=NarrativeStructureLiteResponse)
+def get_episode_narrative_structure_lite_route(
+    project_id: int,
+    episode_id: int,
+    db: Session = Depends(get_db),
+) -> NarrativeStructureLiteResponse:
+    episode = get_project_episode_or_404(db, project_id, episode_id)
+    return _build_narrative_structure_response(project_id, episode)
+
+
+@router.get("/projects/{project_id}/creative-pipeline-status", response_model=ProjectCreativePipelineStatus)
+def get_project_creative_pipeline_status_route(
+    project_id: int,
+    db: Session = Depends(get_db),
+) -> ProjectCreativePipelineStatus:
+    return get_project_creative_pipeline_status(db, project_id)
 
 
 @router.get("/projects/{project_id}/provider-readiness", response_model=ProviderReadinessResponse)

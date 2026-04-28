@@ -143,6 +143,22 @@ Layout anchors: clearly show spatial layout and fixed elements.
 Style: anime-comic realism.
 ```
 
+## v0.5-A 衔接说明
+
+在新的 Lite 创作前段里，推荐先走：
+
+1. `story-source`
+2. `narrative-structure-lite`
+3. `storyboard-package`
+4. `visual-asset-candidates / manual-import`
+5. `visual-asset-prompts`
+
+这样做的好处是：
+
+- 先明确故事结构
+- 再准备角色 / 场景 / 道具参考资产
+- 最后再进入 `image-prompts` 的单镜头分镜图生成
+
 ### Prop prompt
 
 ```text

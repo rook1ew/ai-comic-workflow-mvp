@@ -200,4 +200,26 @@ shot 里再通过：
 如果 `core_action` 看起来包含多个动作，`validate-payload` 只会给：
 
 - warning: `core_action_may_contain_multiple_actions`
+- suggestion: 鎶婃瑕佺粏鑺傜Щ鍒?`editing_notes / visual_focus / pacing_note`
+
+## 12. v0.5-A Story Source and Narrative Structure Lite
+
+当前创作前段已经补了一个 Lite 结构层，适合 3–10 镜头、30–60 秒的
+AI 短漫剧：
+
+- `story-source`
+  - 保存原始故事输入
+- `narrative-structure-lite`
+  - 保存 `segments / beats / storyboard_groups`
+- `storyboard-package`
+  - 把这些 key 绑定到具体 shot
+
+这样可以先把创作结构补厚，再进入：
+
+- `visual-asset-library`
+- `reference-coverage-report`
+- `image-prompts`
+- `storyboard-production-board`
+
+FastAPI 在这一层只负责保存和回显结构，不直接调用 AI 生成 narrative。
 - suggestion: 把次要细节移到 `editing_notes / visual_focus / pacing_note`

@@ -30,6 +30,7 @@ from app.schemas.project import ProjectEditingTimeline
 from app.schemas.project import EditingTimelineItem
 from app.schemas.project import ProjectEditingCueSheet
 from app.schemas.project import EditingCueSheetItem
+from app.schemas.project import ProjectCreativePipelineStatus
 from app.schemas.project import ProjectStoryboardProductionBoard
 from app.schemas.project import StoryboardProductionBoardAssetRef
 from app.schemas.project import StoryboardProductionBoardItem
@@ -176,6 +177,59 @@ def get_project_summary(db: Session, project_id: int) -> ProjectSummary:
         publish_records_count=publish_records_count,
         next_action=next_action,
     )
+
+
+def _get_primary_episode_for_project(db: Session, project_id: int) -> Episode | None:
+    return (
+        db.query(Episode)
+        .filter(Episode.project_id == project_id)
+        .order_by(Episode.episode_number.asc(), Episode.id.asc())
+        .first()
+    )
+
+
+def _get_episode_story_source(episode: Episode | None) -> dict | None:
+    if episode is None:
+        return None
+    metadata = episode.metadata_json or {}
+    story_source = metadata.get("story_source")
+    return story_source if isinstance(story_source, dict) else None
+
+
+def _get_episode_narrative_structure(episode: Episode | None) -> dict | None:
+    if episode is None:
+        return None
+    metadata = episode.metadata_json or {}
+    narrative_structure = metadata.get("narrative_structure")
+    return narrative_structure if isinstance(narrative_structure, dict) else None
+
+
+def _get_narrative_bucket(narrative_structure: dict | None, bucket_name: str) -> list[dict]:
+    if not isinstance(narrative_structure, dict):
+        return []
+    bucket = narrative_structure.get(bucket_name)
+    if not isinstance(bucket, list):
+        return []
+    return [item for item in bucket if isinstance(item, dict)]
+
+
+def _build_narrative_lookup(narrative_structure: dict | None) -> tuple[dict[str, dict], dict[str, dict], dict[str, dict]]:
+    segments = {
+        str(item.get("segment_key") or "").strip(): item
+        for item in _get_narrative_bucket(narrative_structure, "segments")
+        if str(item.get("segment_key") or "").strip()
+    }
+    beats = {
+        str(item.get("beat_key") or "").strip(): item
+        for item in _get_narrative_bucket(narrative_structure, "beats")
+        if str(item.get("beat_key") or "").strip()
+    }
+    storyboard_groups = {
+        str(item.get("group_key") or "").strip(): item
+        for item in _get_narrative_bucket(narrative_structure, "storyboard_groups")
+        if str(item.get("group_key") or "").strip()
+    }
+    return segments, beats, storyboard_groups
 
 
 def get_project_visual_asset_library(db: Session, project_id: int) -> ProjectVisualAssetLibrary:
@@ -2826,8 +2880,77 @@ def _summarize_prompt_text(prompt: str, *, limit: int = 180) -> str:
     return text[: limit - 3].rstrip() + "..."
 
 
+def get_project_creative_pipeline_status(db: Session, project_id: int) -> ProjectCreativePipelineStatus:
+    project = get_project_or_404(db, project_id)
+    summary = get_project_summary(db, project_id)
+    episode = _get_primary_episode_for_project(db, project_id)
+    story_source = _get_episode_story_source(episode)
+    narrative_structure = _get_episode_narrative_structure(episode)
+    visual_asset_library = _get_visual_asset_library(project)
+
+    segments_count = len(_get_narrative_bucket(narrative_structure, "segments"))
+    beats_count = len(_get_narrative_bucket(narrative_structure, "beats"))
+    storyboard_groups_count = len(_get_narrative_bucket(narrative_structure, "storyboard_groups"))
+    visual_asset_library_exists = any(visual_asset_library.values())
+    storyboard_package_exists = summary.shots_count > 0
+
+    reference_coverage_ready = False
+    if storyboard_package_exists and visual_asset_library_exists:
+        reference_report = get_project_reference_coverage_report(db, project_id)
+        reference_coverage_ready = (
+            reference_report.shots_count > 0
+            and reference_report.ready_shots_count == reference_report.shots_count
+            and reference_report.next_action == "ready_for_reference_guided_image_generation"
+        )
+
+    storyboard_images_ready = False
+    editing_ready = False
+    if storyboard_package_exists:
+        image_progress = get_project_manual_image_progress(db, project_id)
+        storyboard_images_ready = (
+            image_progress.image_tasks_count > 0
+            and image_progress.completed_image_tasks_count == image_progress.image_tasks_count
+            and image_progress.manual_uploaded_count == image_progress.image_tasks_count
+        )
+        editing_ready = storyboard_images_ready
+
+    if not story_source:
+        next_action = "add_story_source"
+    elif not narrative_structure:
+        next_action = "generate_narrative_structure"
+    elif not storyboard_package_exists:
+        next_action = "generate_storyboard_package"
+    elif not visual_asset_library_exists:
+        next_action = "extract_visual_asset_candidates"
+    elif not reference_coverage_ready:
+        next_action = "generate_reference_images"
+    elif not storyboard_images_ready:
+        next_action = "generate_storyboard_images"
+    else:
+        next_action = "ready_for_editing"
+
+    return ProjectCreativePipelineStatus(
+        project_id=project_id,
+        story_source_exists=bool(story_source),
+        narrative_structure_exists=bool(narrative_structure),
+        storyboard_package_exists=storyboard_package_exists,
+        segments_count=segments_count,
+        beats_count=beats_count,
+        storyboard_groups_count=storyboard_groups_count,
+        shots_count=summary.shots_count,
+        visual_asset_library_exists=visual_asset_library_exists,
+        reference_coverage_ready=reference_coverage_ready,
+        storyboard_images_ready=storyboard_images_ready,
+        editing_ready=editing_ready,
+        next_action=next_action,
+    )
+
+
 def get_project_storyboard_production_board(db: Session, project_id: int) -> ProjectStoryboardProductionBoard:
     project = get_project_or_404(db, project_id)
+    episode = _get_primary_episode_for_project(db, project_id)
+    narrative_structure = _get_episode_narrative_structure(episode)
+    segment_lookup, beat_lookup, storyboard_group_lookup = _build_narrative_lookup(narrative_structure)
     timeline = get_project_editing_timeline(db, project_id)
     shot_board = get_project_editing_shot_board(db, project_id)
     reference_report = get_project_reference_coverage_report(db, project_id)
@@ -2949,6 +3072,12 @@ def get_project_storyboard_production_board(db: Session, project_id: int) -> Pro
             visual_asset_refs=visual_asset_refs,
             character_record_lookup=character_record_lookup,
         )
+        segment_key = str(shot_metadata.get("segment_key") or "").strip() or None
+        beat_key = str(shot_metadata.get("beat_key") or "").strip() or None
+        storyboard_group_key = str(shot_metadata.get("storyboard_group_key") or "").strip() or None
+        segment_item = segment_lookup.get(segment_key or "")
+        beat_item = beat_lookup.get(beat_key or "")
+        storyboard_group_item = storyboard_group_lookup.get(storyboard_group_key or "")
 
         time_range = (
             f"{float(timeline_item.start_time):.1f}s-{float(timeline_item.end_time):.1f}s"
@@ -2963,6 +3092,14 @@ def get_project_storyboard_production_board(db: Session, project_id: int) -> Pro
             time_range=time_range,
             duration=duration,
             human_shot_description=human_shot_description,
+            segment_key=segment_key,
+            segment_title=segment_item.get("title") if segment_item else None,
+            segment_type=segment_item.get("segment_type") if segment_item else None,
+            beat_key=beat_key,
+            beat_title=beat_item.get("title") if beat_item else None,
+            beat_type=beat_item.get("beat_type") if beat_item else None,
+            storyboard_group_key=storyboard_group_key,
+            storyboard_group_title=storyboard_group_item.get("title") if storyboard_group_item else None,
             story_function=shot_metadata.get("shot_purpose"),
             conflict_beat=shot_metadata.get("conflict_beat"),
             emotion_shift=shot_metadata.get("emotion_shift"),
@@ -3011,6 +3148,8 @@ def get_project_storyboard_production_board(db: Session, project_id: int) -> Pro
             "\n".join(
                 [
                     f"{item.source_shot_id or f'SHOT-{item.internal_shot_id}'} | {item.time_range}",
+                    f"段落: {item.segment_title or '[none]'}",
+                    f"节拍: {item.beat_title or '[none]'}",
                     f"画面描述: {item.human_shot_description}",
                     f"角色: {item.character_display or item.character or '[none]'}",
                     f"场景: {item.scene or '[none]'}",

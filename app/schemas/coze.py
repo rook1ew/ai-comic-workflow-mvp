@@ -124,6 +124,9 @@ class CozeScriptCard(BaseModel):
 class CozeStoryboardShot(BaseModel):
     shot_id: str
     duration_sec: int | None = None
+    segment_key: str | None = None
+    beat_key: str | None = None
+    storyboard_group_key: str | None = None
     character: str | None = None
     location: str | None = None
     core_action: str

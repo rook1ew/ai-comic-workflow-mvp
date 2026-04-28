@@ -1641,3 +1641,145 @@ The exported prompt automatically includes:
 - suspense / horror atmosphere guidance without gore
 
 The exported prompt should not include `mock://character/reference.png`.
+
+## v0.5-A Story Intake + Narrative Structure Lite
+
+### POST `/projects/{project_id}/episodes/{episode_id}/story-source`
+
+Save lightweight story intake data into `Episode.metadata_json.story_source`.
+
+Stored fields include:
+
+- `title`
+- `raw_story`
+- `genre`
+- `target_duration_sec`
+- `audience`
+- `tone`
+- `manual_notes`
+
+The endpoint also stores:
+
+- `Episode.metadata_json.source_text_hash`
+- `Episode.metadata_json.analysis_status = story_source_added`
+
+Typical next action:
+
+- `generate_narrative_structure`
+
+### GET `/projects/{project_id}/episodes/{episode_id}/story-source`
+
+Read the stored story intake payload plus:
+
+- `story_source_exists`
+- `source_text_hash`
+- `analysis_status`
+- `next_action`
+
+### POST `/projects/{project_id}/episodes/{episode_id}/narrative-structure-lite`
+
+Save lightweight narrative structure JSON into
+`Episode.metadata_json.narrative_structure`.
+
+This Lite structure accepts:
+
+- `segments`
+- `beats`
+- `storyboard_groups`
+- `manual_notes`
+- `source`
+
+FastAPI only stores and returns the structure. It does not generate it, does
+not create shots automatically, and does not create any formal
+`Segment / ScriptScene / ScriptBeat / StoryboardGroup` tables.
+
+Typical next action:
+
+- `generate_storyboard_package`
+
+### GET `/projects/{project_id}/episodes/{episode_id}/narrative-structure-lite`
+
+Read back the stored Lite structure plus:
+
+- `narrative_structure_exists`
+- `segments_count`
+- `beats_count`
+- `storyboard_groups_count`
+- `next_action`
+
+### POST `/coze/project/{project_id}/storyboard-package`
+
+Alias of the storyboard import flow for Lite narrative packaging.
+
+It accepts the same payload shape as:
+
+- `POST /coze/project/{project_id}/storyboard`
+
+And now supports optional shot-level linkage fields:
+
+- `segment_key`
+- `beat_key`
+- `storyboard_group_key`
+
+These fields are stored in `Shot.metadata_json`.
+
+If the corresponding key is not found in
+`Episode.metadata_json.narrative_structure`, the import still succeeds and
+returns soft warnings inside `data.warnings`, for example:
+
+- `missing_segment_key:<key>`
+- `missing_beat_key:<key>`
+- `missing_storyboard_group_key:<key>`
+
+### GET `/projects/{project_id}/creative-pipeline-status`
+
+Project-level preproduction status for the Lite creative pipeline.
+
+Response highlights:
+
+- `story_source_exists`
+- `narrative_structure_exists`
+- `storyboard_package_exists`
+- `segments_count`
+- `beats_count`
+- `storyboard_groups_count`
+- `shots_count`
+- `visual_asset_library_exists`
+- `reference_coverage_ready`
+- `storyboard_images_ready`
+- `editing_ready`
+- `next_action`
+
+High-level `next_action` rules:
+
+- no story source: `add_story_source`
+- story source exists but no narrative structure: `generate_narrative_structure`
+- narrative structure exists but no shots: `generate_storyboard_package`
+- shots exist but no visual asset library: `extract_visual_asset_candidates`
+- visual assets exist but references are not ready: `generate_reference_images`
+- references are ready but no manual storyboard images yet: `generate_storyboard_images`
+- manual storyboard images are ready: `ready_for_editing`
+
+### Storyboard Production Board narrative fields
+
+`GET /projects/{project_id}/storyboard-production-board` now also echoes Lite
+narrative linkage per shot:
+
+- `segment_key`
+- `segment_title`
+- `segment_type`
+- `beat_key`
+- `beat_title`
+- `beat_type`
+- `storyboard_group_key`
+- `storyboard_group_title`
+
+These values come from:
+
+1. `Shot.metadata_json.segment_key / beat_key / storyboard_group_key`
+2. `Episode.metadata_json.narrative_structure`
+
+`plain_text` may also include lightweight lines such as:
+
+- `段落: 开场钩子`
+- `节拍: 急促敲门`

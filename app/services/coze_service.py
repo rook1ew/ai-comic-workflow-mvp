@@ -32,7 +32,11 @@ from app.services.asset_task_service import (
     list_project_asset_tasks,
 )
 from app.services.character_service import confirm_character_reference, create_character
-from app.services.episode_service import create_episode, get_or_create_default_episode, update_episode_script_card
+from app.services.episode_service import (
+    create_episode,
+    get_or_create_default_episode,
+    update_episode_script_card,
+)
 from app.services.publish_service import create_publish_record
 from app.services.project_service import create_project, get_project_or_404, get_project_summary
 from app.services.scene_service import create_scene
@@ -143,6 +147,9 @@ def _build_shot_metadata(shot_item) -> dict:
     return {
         "source_shot_id": shot_item.shot_id,
         "duration_sec": shot_item.duration_sec,
+        "segment_key": shot_item.segment_key,
+        "beat_key": shot_item.beat_key,
+        "storyboard_group_key": shot_item.storyboard_group_key,
         "character": shot_item.character,
         "location": shot_item.location,
         "emotion": shot_item.emotion,
@@ -172,6 +179,37 @@ def _build_shot_metadata(shot_item) -> dict:
         "scene_asset_key": shot_item.scene_asset_key,
         "prop_asset_keys": shot_item.prop_asset_keys,
     }
+
+
+def _build_narrative_structure_lookup(episode: Episode) -> tuple[dict[str, dict], dict[str, dict], dict[str, dict]]:
+    metadata = episode.metadata_json or {}
+    narrative_structure = metadata.get("narrative_structure")
+    if not isinstance(narrative_structure, dict):
+        return {}, {}, {}
+
+    def normalize_bucket(name: str) -> dict[str, dict]:
+        bucket = narrative_structure.get(name)
+        if not isinstance(bucket, list):
+            return {}
+        normalized: dict[str, dict] = {}
+        key_name = {
+            "segments": "segment_key",
+            "beats": "beat_key",
+            "storyboard_groups": "group_key",
+        }[name]
+        for item in bucket:
+            if not isinstance(item, dict):
+                continue
+            item_key = str(item.get(key_name) or "").strip()
+            if item_key:
+                normalized[item_key] = item
+        return normalized
+
+    return (
+        normalize_bucket("segments"),
+        normalize_bucket("beats"),
+        normalize_bucket("storyboard_groups"),
+    )
 
 
 def _extract_visual_asset_library(payload) -> dict:
@@ -449,9 +487,11 @@ def coze_storyboard(db: Session, project_id: int, payload: CozeStoryboardRequest
 
     episode = get_or_create_default_episode(db, project_id)
     episode = update_episode_script_card(db, episode.id, _build_script_card(payload.script_card_json))
+    segment_lookup, beat_lookup, storyboard_group_lookup = _build_narrative_structure_lookup(episode)
 
     scenes_by_location: dict[str, int] = {}
     shots_count = 0
+    warnings: list[str] = []
     for index, shot_item in enumerate(payload.storyboard_json.shots, start=1):
         location_key = (shot_item.location or "default_scene").strip() or "default_scene"
         scene_id = scenes_by_location.get(location_key)
@@ -495,11 +535,22 @@ def coze_storyboard(db: Session, project_id: int, payload: CozeStoryboardRequest
             created_shot.id,
             _build_shot_metadata(shot_item),
         )
+        if shot_item.segment_key and not segment_lookup.get(shot_item.segment_key):
+            warnings.append(f"missing_segment_key:{shot_item.segment_key}")
+        if shot_item.beat_key and not beat_lookup.get(shot_item.beat_key):
+            warnings.append(f"missing_beat_key:{shot_item.beat_key}")
+        if shot_item.storyboard_group_key and not storyboard_group_lookup.get(shot_item.storyboard_group_key):
+            warnings.append(f"missing_storyboard_group_key:{shot_item.storyboard_group_key}")
         shots_count += 1
 
     return CozeResponse(
         message="Storyboard imported",
-        data={"project_id": project_id, "episode_id": episode.id, "shots_count": shots_count},
+        data={
+            "project_id": project_id,
+            "episode_id": episode.id,
+            "shots_count": shots_count,
+            "warnings": list(dict.fromkeys(warnings)),
+        },
         next_action="create_asset_tasks",
     )
 

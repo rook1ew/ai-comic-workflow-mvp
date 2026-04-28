@@ -1,6 +1,7 @@
 from app.models.shot import Shot
 from app.schemas.coze import CozeProjectInitRequest, CozeStoryboardRequest
 from app.services.coze_service import coze_project_init, coze_storyboard
+from app.services.episode_service import get_or_create_default_episode
 
 
 def _coze_init_payload():
@@ -251,6 +252,56 @@ def test_storyboard_import_saves_creative_fields_to_shot_metadata(db_session):
     assert saved_shot.metadata_json["visual_focus"] == "phone time and frightened face"
     assert saved_shot.metadata_json["lighting"] == "low light from phone screen"
     assert saved_shot.metadata_json["negative_constraints"] == ["not a poster", "not a character sheet"]
+
+
+def test_storyboard_import_saves_narrative_structure_keys_to_shot_metadata(db_session):
+    init_response = coze_project_init(db_session, CozeProjectInitRequest(**_coze_init_payload()))
+    project_id = init_response.data["project_id"]
+    episode = get_or_create_default_episode(db_session, project_id)
+    episode.metadata_json = {
+        "narrative_structure": {
+            "segments": [{"segment_key": "opening_hook", "title": "Opening Hook", "segment_type": "opening_hook"}],
+            "beats": [{"beat_key": "urgent_knock", "title": "Urgent Knock", "beat_type": "fear_trigger"}],
+            "storyboard_groups": [{"group_key": "opening_group", "title": "Opening Group"}],
+        }
+    }
+    db_session.commit()
+    db_session.refresh(episode)
+
+    storyboard_payload = _coze_storyboard_payload()
+    storyboard_payload["storyboard_json"]["shots"][0]["segment_key"] = "opening_hook"
+    storyboard_payload["storyboard_json"]["shots"][0]["beat_key"] = "urgent_knock"
+    storyboard_payload["storyboard_json"]["shots"][0]["storyboard_group_key"] = "opening_group"
+
+    storyboard_response = coze_storyboard(db_session, project_id, CozeStoryboardRequest(**storyboard_payload))
+    shot = db_session.query(Shot).order_by(Shot.shot_number.asc()).first()
+
+    assert shot is not None
+    assert shot.metadata_json["segment_key"] == "opening_hook"
+    assert shot.metadata_json["beat_key"] == "urgent_knock"
+    assert shot.metadata_json["storyboard_group_key"] == "opening_group"
+    assert storyboard_response.data["warnings"] == []
+
+
+def test_storyboard_import_warns_when_narrative_structure_keys_are_missing(db_session):
+    init_response = coze_project_init(db_session, CozeProjectInitRequest(**_coze_init_payload()))
+    project_id = init_response.data["project_id"]
+    episode = get_or_create_default_episode(db_session, project_id)
+    episode.metadata_json = {"narrative_structure": {"segments": [], "beats": [], "storyboard_groups": []}}
+    db_session.commit()
+    db_session.refresh(episode)
+
+    storyboard_payload = _coze_storyboard_payload()
+    storyboard_payload["storyboard_json"]["shots"][0]["segment_key"] = "missing_segment"
+    storyboard_payload["storyboard_json"]["shots"][0]["beat_key"] = "missing_beat"
+    storyboard_payload["storyboard_json"]["shots"][0]["storyboard_group_key"] = "missing_group"
+
+    storyboard_response = coze_storyboard(db_session, project_id, CozeStoryboardRequest(**storyboard_payload))
+    warnings = storyboard_response.data["warnings"]
+
+    assert "missing_segment_key:missing_segment" in warnings
+    assert "missing_beat_key:missing_beat" in warnings
+    assert "missing_storyboard_group_key:missing_group" in warnings
 
 
 def test_coze_create_asset_tasks_requires_confirmed_character(client):

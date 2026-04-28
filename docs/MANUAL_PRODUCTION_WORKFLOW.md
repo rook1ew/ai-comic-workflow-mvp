@@ -14,6 +14,14 @@
 
 ## 当前流程总览
 
+v0.5-A 在这条人工生产链路前面补了一个更轻的前段结构：
+
+1. `POST /projects/{project_id}/episodes/{episode_id}/story-source`
+2. `POST /projects/{project_id}/episodes/{episode_id}/narrative-structure-lite`
+3. `POST /coze/project/{project_id}/storyboard-package`
+
+然后再进入现有的 visual asset / image prompt / editing / publish 流程。
+
 完整人工生产链路如下：
 
 1. `POST /coze/project/full-demo-flow`
@@ -34,6 +42,29 @@
 16. `GET /projects/{project_id}/manual-production-summary`
 17. `GET /projects/{project_id}/publish-readiness`
 18. `GET /projects/{project_id}/manual-final-checklist`
+
+## v0.5-A Lite 前段结构
+
+推荐把一集 30–60 秒、3–10 镜头的短漫剧先走 Lite 结构，而不是一开始就引入重表。
+
+Lite 结构的关系是：
+
+- `story-source`
+  - 保存原始故事输入和创作意图
+- `narrative-structure-lite`
+  - 保存 segments / beats / storyboard_groups 的轻量 JSON
+- `storyboard-package`
+  - 把这些结构 key 绑定到具体 shot
+
+这样后段 production 仍然继续复用：
+
+- `visual-asset-library`
+- `reference-coverage-report`
+- `image-prompts`
+- `storyboard-production-board`
+- `editing-*`
+
+而不需要先引入正式的 `Segment / ScriptScene / ScriptBeat / StoryboardGroup` 表。
 
 ## 推荐操作顺序
 

@@ -62,6 +62,11 @@ def coze_storyboard_route(project_id: int, payload: CozeStoryboardRequest, db: S
     return coze_storyboard(db, project_id, payload)
 
 
+@router.post("/coze/project/{project_id}/storyboard-package", response_model=CozeResponse, status_code=201)
+def coze_storyboard_package_route(project_id: int, payload: CozeStoryboardRequest, db: Session = Depends(get_db)) -> CozeResponse:
+    return coze_storyboard(db, project_id, payload)
+
+
 @router.post("/coze/project/{project_id}/create-asset-tasks", response_model=CozeResponse)
 def coze_create_asset_tasks_route(
     project_id: int,

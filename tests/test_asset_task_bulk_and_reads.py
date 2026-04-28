@@ -310,6 +310,9 @@ def test_project_image_prompts_returns_enhanced_and_copy_ready_prompt(client):
     assert item["copy_ready_prompt"]
     assert item["negative_prompt"] in item["copy_ready_prompt"]
     assert "Lin Xia" in item["copy_ready_prompt"]
+    assert "storyboard keyframe" in item["copy_ready_prompt"]
+    assert "not a character sheet" in item["copy_ready_prompt"]
+    assert "not an environment plate" in item["copy_ready_prompt"]
 
 
 def test_project_image_prompts_include_editing_fields(client):
@@ -765,6 +768,10 @@ def test_project_image_prompts_return_visual_asset_refs_and_reference_guidance(c
     assert "Recommended character reference:" in item["copy_ready_prompt"]
     assert "Recommended scene reference:" in item["copy_ready_prompt"]
     assert "Recommended prop reference:" in item["copy_ready_prompt"]
+    assert "Continuity anchors:" in item["copy_ready_prompt"]
+    assert "Keep character identity consistent with the character reference." in item["copy_ready_prompt"]
+    assert "Keep environment layout consistent with the scene reference." in item["copy_ready_prompt"]
+    assert "Keep prop appearance consistent with the prop reference." in item["copy_ready_prompt"]
 
 
 def test_project_image_prompts_return_creative_fields_and_production_grade_prompt(client):
@@ -824,6 +831,7 @@ def test_project_image_prompts_return_creative_fields_and_production_grade_promp
                         "emotion_shift": "sleepy to frightened",
                         "visual_focus": "phone time and dark doorway",
                         "image_prompt_intent": "single-shot suspense keyframe",
+                        "pacing_note": "hold the uneasy pause before the next knock",
                         "composition": "tight 9:16 frame with negative space near the door",
                         "lighting": "low light with cold phone glow",
                         "subtitle_position": "lower center",
@@ -850,15 +858,24 @@ def test_project_image_prompts_return_creative_fields_and_production_grade_promp
     assert item["shot_purpose"] == "opening horror hook"
     assert item["conflict_beat"] == "safety of room vs unknown outside threat"
     assert item["visual_focus"] == "phone time and dark doorway"
-    assert "storyboard shot image for a vertical AI comic drama" in item["copy_ready_prompt"]
-    assert "generate one single-shot storyboard keyframe for later editing" in item["copy_ready_prompt"]
+    assert "storyboard keyframe" in item["copy_ready_prompt"]
+    assert "generate one single-shot storyboard frame for this scene" in item["copy_ready_prompt"]
+    assert "single-shot storyboard frame" in item["copy_ready_prompt"]
     assert "not a poster" in item["copy_ready_prompt"]
     assert "not a character sheet" in item["copy_ready_prompt"]
+    assert "not an environment plate" in item["copy_ready_prompt"]
     assert "not a multi-panel comic page" in item["copy_ready_prompt"]
     assert "Recommended character reference:" in item["copy_ready_prompt"]
     assert "Shot purpose: opening horror hook" in item["copy_ready_prompt"]
     assert "Conflict beat: safety of room vs unknown outside threat" in item["copy_ready_prompt"]
     assert "Visual focus: phone time and dark doorway" in item["copy_ready_prompt"]
+    assert "Image prompt intent: single-shot suspense keyframe" in item["copy_ready_prompt"]
+    assert "Pacing note: hold the uneasy pause before the next knock" in item["copy_ready_prompt"]
+    assert "Camera motion reference for later editing" in item["copy_ready_prompt"]
+    assert "Subject motion hint for implied performance" in item["copy_ready_prompt"]
+    assert "Transition note for surrounding shots" in item["copy_ready_prompt"]
+    assert "Leave clean subtitle-safe space near the lower frame when possible." in item["copy_ready_prompt"]
+    assert "Continuity anchors:" in item["copy_ready_prompt"]
     assert "disturbing clue" in item["copy_ready_prompt"]
     assert "changed understanding of the scene" in item["copy_ready_prompt"]
     assert "low light" in item["copy_ready_prompt"]
@@ -1353,25 +1370,29 @@ def test_visual_asset_prompts_returns_characters_scenes_and_props(client):
     assert body["next_action"] == "generate_reference_images"
 
     character_item = next(item for item in body["characters"] if item["asset_key"] == "shen_zhixia")
-    assert "character main reference image" in character_item["copy_ready_prompt"]
+    assert "character reference image" in character_item["copy_ready_prompt"]
+    assert "canonical character reference portrait" in character_item["copy_ready_prompt"]
     assert "not a storyboard shot" in character_item["copy_ready_prompt"]
     assert "not a poster" in character_item["copy_ready_prompt"]
     assert "Must keep:" in character_item["copy_ready_prompt"]
     assert "Avoid:" in character_item["copy_ready_prompt"]
+    assert character_item["base_prompt"]
+    assert character_item["negative_prompt"]
 
     mirror_item = next(item for item in body["characters"] if item["asset_key"] == "door_double")
     assert "abnormal double" in mirror_item["copy_ready_prompt"] or "mirror counterpart" in mirror_item["copy_ready_prompt"]
     assert "Identity anchor" in mirror_item["copy_ready_prompt"]
 
     scene_item = body["scenes"][0]
-    assert "scene main reference image" in scene_item["copy_ready_prompt"]
+    assert "scene reference plate" in scene_item["copy_ready_prompt"] or "environment reference image" in scene_item["copy_ready_prompt"]
     assert "No characters." in scene_item["copy_ready_prompt"]
     assert "spatial layout" in scene_item["copy_ready_prompt"]
 
     prop_item = body["props"][0]
-    assert "prop main reference image" in prop_item["copy_ready_prompt"]
-    assert "Single object only." in prop_item["copy_ready_prompt"]
+    assert "prop reference image" in prop_item["copy_ready_prompt"]
+    assert "single object only" in prop_item["copy_ready_prompt"].lower()
     assert "No brand logo." in prop_item["copy_ready_prompt"]
+    assert "Hands: none." in prop_item["copy_ready_prompt"]
 
 
 def test_visual_asset_prompts_empty_library_returns_extract_action(client):

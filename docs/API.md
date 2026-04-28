@@ -301,6 +301,30 @@ Build copy-ready prompts for:
 
 This endpoint is for reusable reference assets, not storyboard shots.
 
+Prompt goal distinction:
+
+- `visual-asset-prompts` is for reusable library assets:
+  - canonical character references
+  - scene reference plates
+  - prop single-object references
+- `image-prompts` is for one dramatic storyboard shot only
+
+Each visual asset prompt item keeps:
+
+- `asset_type`
+- `asset_key`
+- `name`
+- `target_reference_url`
+- `base_prompt`
+- `copy_ready_prompt`
+- `negative_prompt`
+
+And may also include lightweight helper fields:
+
+- `prompt_kind`
+- `output_goal`
+- `continuity_note`
+
 It returns:
 
 - `characters`
@@ -316,6 +340,25 @@ If the visual asset library is empty:
 
 If `main_reference_url` is missing, the prompt is still generated and the item
 returns a `suggested_reference_filename`.
+
+Prompt direction by asset type:
+
+- character:
+  - canonical character reference portrait
+  - not a storyboard shot
+  - not a scene frame
+  - simple background
+  - continuity anchor for future shots
+- scene:
+  - environment reference plate
+  - no characters
+  - clear spatial layout
+  - reusable background logic
+- prop:
+  - single-object reference
+  - centered presentation
+  - no characters
+  - no hands
 
 ### GET `/projects/{project_id}/reference-coverage-report`
 
@@ -384,6 +427,16 @@ Behavior:
   enhancer and current shot metadata
 - it does not call any real provider API
 - it does not require a real API key
+
+Prompt goal distinction:
+
+- `image-prompts` exports prompts for a single-shot storyboard frame
+- it is explicitly not:
+  - a character sheet
+  - an environment plate
+  - a poster
+- when visual asset refs exist, the prompt will explicitly use them as
+  continuity anchors for character identity, environment layout, and prop look
 
 Example response:
 

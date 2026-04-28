@@ -1,5 +1,21 @@
 # Visual Asset Library
 
+## v0.4-I.1 Prompt 用途区分
+
+当前需要明确区分两类 prompt：
+
+1. `visual-asset-prompts`
+- 用于角色 / 场景 / 道具素材库参考图
+- 角色参考图更像定妆图或 canonical character reference
+- 场景参考图更像空场景 environment reference plate
+- 道具参考图更像 single-object prop reference
+- 不应承载剧情动作
+
+2. `image-prompts`
+- 用于单镜头 storyboard keyframe
+- 要服务剧情动作、视觉焦点、镜头目的和后续剪辑
+- 明确不是角色设定图，也不是场景素材板
+
 ## 什么是 Visual Asset Library
 
 Visual Asset Library 是项目级的轻量参考素材库，用来管理三类长期复用的视觉参考：

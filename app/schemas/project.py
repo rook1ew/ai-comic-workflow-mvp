@@ -78,8 +78,13 @@ class VisualAssetPromptItem(BaseModel):
     name: str
     asset_type: str
     prompt_type: str
+    prompt_kind: str | None = None
+    output_goal: str | None = None
+    continuity_note: str | None = None
     target_reference_url: str | None = None
     suggested_reference_filename: str | None = None
+    base_prompt: str = ""
+    negative_prompt: str = ""
     copy_ready_prompt: str
     must_keep: list[str] = Field(default_factory=list)
     avoid: list[str] = Field(default_factory=list)

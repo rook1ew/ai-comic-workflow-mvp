@@ -241,6 +241,10 @@ def export_project_visual_asset_prompts(db: Session, project_id: int) -> Project
         target_reference_url = str(asset.get("main_reference_url") or "").strip() or None
         suggested_reference_filename = _suggest_reference_filename(asset_type, asset_key)
 
+        prompt_kind = f"{asset_type}_reference"
+        output_goal = "Create a reusable reference asset for later storyboard consistency."
+        continuity_note = "Use this asset as a continuity anchor for later storyboard images."
+        negative_prompt = ""
         if asset_type == "character":
             record = character_record_lookup.get(asset_key)
             copy_ready_prompt = _build_character_reference_prompt(
@@ -251,6 +255,9 @@ def export_project_visual_asset_prompts(db: Session, project_id: int) -> Project
                 lead_asset=lead_asset,
             )
             prompt_type = "character_main_reference"
+            output_goal = "Create one canonical character reference portrait for later storyboard generation."
+            continuity_note = "Use this as the main identity anchor for later character consistency."
+            negative_prompt = "not a storyboard shot; not a scene frame; not a poster; no extra characters; no dramatic action frame."
         elif asset_type == "scene":
             copy_ready_prompt = _build_scene_reference_prompt(
                 asset=asset,
@@ -258,20 +265,31 @@ def export_project_visual_asset_prompts(db: Session, project_id: int) -> Project
                 project_genre=project_genre,
             )
             prompt_type = "scene_main_reference"
+            output_goal = "Create one reusable environment reference plate for later storyboard consistency."
+            continuity_note = "Use this as the main environment layout anchor for future shots."
+            negative_prompt = "no characters; no acting; not a storyboard shot; not a poster; no text overlay."
         else:
             copy_ready_prompt = _build_prop_reference_prompt(
                 asset=asset,
                 project_style=project_style,
             )
             prompt_type = "prop_main_reference"
+            output_goal = "Create one reusable single-object prop reference image for later storyboard consistency."
+            continuity_note = "Use this as the prop appearance anchor for later shots."
+            negative_prompt = "single object only; no characters; no hands; no brand logo; not a storyboard shot."
 
         return VisualAssetPromptItem(
             asset_key=asset_key,
             name=name,
             asset_type=asset_type,
             prompt_type=prompt_type,
+            prompt_kind=prompt_kind,
+            output_goal=output_goal,
+            continuity_note=continuity_note,
             target_reference_url=target_reference_url,
             suggested_reference_filename=suggested_reference_filename,
+            base_prompt=f"{name} {asset_type} reference",
+            negative_prompt=negative_prompt,
             copy_ready_prompt=copy_ready_prompt,
             must_keep=asset.get("must_keep") if isinstance(asset.get("must_keep"), list) else [],
             avoid=asset.get("avoid") if isinstance(asset.get("avoid"), list) else [],
@@ -759,25 +777,59 @@ def _build_character_reference_prompt(
     visual_data = _parse_key_value_lines(record.visual_notes if record is not None else None)
     must_keep = asset.get("must_keep") if isinstance(asset.get("must_keep"), list) else []
     avoid = asset.get("avoid") if isinstance(asset.get("avoid"), list) else []
+    appearance_anchors = ", ".join(
+        value
+        for value in [
+            visual_data.get("appearance_summary") or visual_data.get("appearance"),
+            profile_data.get("appearance_summary"),
+            profile_data.get("core_keywords"),
+        ]
+        if str(value or "").strip()
+    )
+    vibe_text = ", ".join(
+        value
+        for value in [
+            profile_data.get("first_impression"),
+            profile_data.get("public_mask"),
+            profile_data.get("inner_truth"),
+        ]
+        if str(value or "").strip()
+    )
+    role_lower = role.lower()
+    if role_lower in {"lead", "main", "main_character", "protagonist"}:
+        output_goal = "create one canonical character reference portrait for later storyboard generation, not a storyboard shot."
+        continuity_note = "This is the canonical main reference for future storyboard shots. Keep face shape, hairstyle, outfit silhouette, and overall vibe stable."
+    elif _is_mirror_double_asset(asset):
+        output_goal = "create one reusable abnormal-double character reference portrait for later storyboard generation, not a storyboard shot."
+        continuity_note = "Keep the face identity anchored to the lead while making the emotional tone uncanny, eerie, and unsettling without gore."
+    elif role_lower in {"supporting", "authority", "boss", "manager", "security"}:
+        output_goal = "create one stable supporting-character reference portrait for later storyboard generation, not a storyboard shot."
+        continuity_note = "Keep the identity, silhouette, and social-role readability stable so the character remains instantly recognizable."
+    else:
+        output_goal = "create one reusable character reference portrait for later storyboard generation, not a storyboard shot."
+        continuity_note = "Keep face shape, hairstyle, outfit silhouette, and character vibe stable for future storyboard shots."
 
     lines = [
-        "Task type: character main reference image for an AI comic drama.",
-        "Output goal: create a stable reusable character reference image, not a storyboard shot.",
-        "This is not a scene shot. not a poster. not a multi-panel comic page. not a dramatic action frame.",
-        "Image requirements: front-facing or three-quarter half-body reference, clear face, clear hairstyle, clear outfit, clean readable silhouette, simple background, vertical 9:16, anime-comic realism.",
-        f"Character name: {name}",
-        f"Role: {role}" if role else None,
-        f"Project visual style: {project_style}" if project_style else None,
-        f"Project genre: {project_genre}" if project_genre else None,
+        "Task type: character reference image.",
+        f"Output goal: {output_goal}",
+        "This is a canonical character reference portrait, not a storyboard shot and not a scene frame.",
+        "This is not a poster, not a multi-panel comic page, and not a dramatic action frame. It is not a scene shot.",
+        f"Subject identity: {name}" + (f" ({role})" if role else ""),
+        f"Appearance anchors: {appearance_anchors}" if appearance_anchors else None,
         f"Appearance summary: {visual_data.get('appearance_summary') or visual_data.get('appearance')}" if (visual_data.get('appearance_summary') or visual_data.get('appearance')) else None,
         f"Social identity: {profile_data.get('social_identity')}" if profile_data.get("social_identity") else None,
         f"First impression: {profile_data.get('first_impression')}" if profile_data.get("first_impression") else None,
         f"Public mask: {profile_data.get('public_mask')}" if profile_data.get("public_mask") else None,
         f"Inner truth: {profile_data.get('inner_truth')}" if profile_data.get("inner_truth") else None,
         f"Core keywords: {profile_data.get('core_keywords')}" if profile_data.get("core_keywords") else None,
+        f"Outfit / hair / face / vibe: {vibe_text}" if vibe_text else None,
+        "Pose / framing: clean half-body, three-quarter portrait, or stable full-body design reference with a readable silhouette.",
+        "Background requirement: simple, neutral, non-narrative background with no complex scene storytelling.",
+        f"Style: {project_style or 'anime-comic realism'}." + (f" Genre atmosphere: {project_genre}." if project_genre else ""),
+        f"Continuity requirement: {continuity_note}",
         f"Must keep: {', '.join(must_keep[:6])}" if must_keep else None,
         f"Avoid: {', '.join(avoid[:6])}" if avoid else None,
-        "Safety: original character only. Do not imitate celebrities, real people, known anime characters, film characters, or copyrighted IP.",
+        "Negative prompt: original character only; do not imitate celebrities, real people, known anime characters, film characters, or copyrighted IP; no extra characters; no complex narrative background; no dramatic action choreography.",
     ]
 
     if _is_mirror_double_asset(asset):
@@ -786,7 +838,10 @@ def _build_character_reference_prompt(
             lines.append(
                 f"Identity anchor: keep core face identity aligned with lead character {lead_asset.get('name') or lead_asset.get('asset_key')} while making the expression hollow and disturbing."
             )
-        lines.append("Avoid monster face, gore, and exaggerated creature design.")
+        lines.append("Avoid monster face, gore, and exaggerated creature design. Keep the fear psychological and uncanny instead of monstrous.")
+
+    if role_lower in {"supporting", "authority", "boss", "manager", "security"}:
+        lines.append("Emphasize role identity, authority, and recognizability through posture, styling, and silhouette rather than action.")
 
     return "\n".join(line for line in lines if line).strip()
 
@@ -1226,6 +1281,244 @@ def _build_production_grade_image_prompt(
 
     lines.append(
         "Maintain character identity, face, hairstyle, outfit, body proportion, and spatial readability for later subtitle and edit timing."
+    )
+    lines.append(f"Negative prompt: {negative_prompt}")
+
+    return "\n".join(line for line in lines if str(line).strip()).strip()
+
+
+def _build_character_reference_prompt(
+    *,
+    asset: dict,
+    record: Character | None,
+    project_style: str | None,
+    project_genre: str | None,
+    lead_asset: dict | None,
+) -> str:
+    name = str(asset.get("name") or asset.get("asset_key") or "Unknown Character")
+    role = str(asset.get("role") or (record.role_type if record is not None else "") or "").strip()
+    profile_data = _parse_key_value_lines(record.profile if record is not None else None)
+    visual_data = _parse_key_value_lines(record.visual_notes if record is not None else None)
+    must_keep = asset.get("must_keep") if isinstance(asset.get("must_keep"), list) else []
+    avoid = asset.get("avoid") if isinstance(asset.get("avoid"), list) else []
+    role_lower = role.lower()
+
+    if role_lower in {"lead", "main", "main_character", "protagonist"}:
+        output_goal = "create one canonical character reference portrait for later storyboard generation, not a storyboard shot."
+        continuity_note = "This is the canonical main reference for future storyboard shots. Keep face shape, hairstyle, outfit silhouette, and overall vibe stable."
+    elif _is_mirror_double_asset(asset):
+        output_goal = "create one reusable abnormal-double character reference portrait for later storyboard generation, not a storyboard shot."
+        continuity_note = "Keep the face identity anchored to the lead while making the emotional tone uncanny, eerie, and unsettling without gore."
+    elif role_lower in {"supporting", "authority", "boss", "manager", "security"}:
+        output_goal = "create one stable supporting-character reference portrait for later storyboard generation, not a storyboard shot."
+        continuity_note = "Keep the identity, silhouette, and social-role readability stable so the character remains instantly recognizable."
+    else:
+        output_goal = "create one reusable character reference portrait for later storyboard generation, not a storyboard shot."
+        continuity_note = "Keep face shape, hairstyle, outfit silhouette, and character vibe stable for future storyboard shots."
+
+    appearance_anchors = ", ".join(
+        value
+        for value in [
+            visual_data.get("appearance_summary") or visual_data.get("appearance"),
+            profile_data.get("appearance_summary"),
+            profile_data.get("core_keywords"),
+        ]
+        if str(value or "").strip()
+    )
+    vibe_text = ", ".join(
+        value
+        for value in [
+            profile_data.get("first_impression"),
+            profile_data.get("public_mask"),
+            profile_data.get("inner_truth"),
+        ]
+        if str(value or "").strip()
+    )
+
+    lines = [
+        "Task type: character reference image.",
+        f"Output goal: {output_goal}",
+        "This is a canonical character reference portrait, not a storyboard shot and not a scene frame.",
+        "This is not a poster, not a multi-panel comic page, and not a dramatic action frame.",
+        f"Subject identity: {name}" + (f" ({role})" if role else ""),
+        f"Appearance anchors: {appearance_anchors}" if appearance_anchors else None,
+        f"Appearance summary: {visual_data.get('appearance_summary') or visual_data.get('appearance')}" if (visual_data.get('appearance_summary') or visual_data.get('appearance')) else None,
+        f"Social identity: {profile_data.get('social_identity')}" if profile_data.get("social_identity") else None,
+        f"First impression: {profile_data.get('first_impression')}" if profile_data.get("first_impression") else None,
+        f"Public mask: {profile_data.get('public_mask')}" if profile_data.get("public_mask") else None,
+        f"Inner truth: {profile_data.get('inner_truth')}" if profile_data.get("inner_truth") else None,
+        f"Core keywords: {profile_data.get('core_keywords')}" if profile_data.get("core_keywords") else None,
+        f"Outfit / hair / face / vibe: {vibe_text}" if vibe_text else None,
+        "Pose / framing: clean half-body, three-quarter portrait, or stable full-body design reference with a readable silhouette.",
+        "Background requirement: simple, neutral, non-narrative background with no complex scene storytelling.",
+        f"Style: {project_style or 'anime-comic realism'}." + (f" Genre atmosphere: {project_genre}." if project_genre else ""),
+        f"Continuity requirement: {continuity_note}",
+        f"Must keep: {', '.join(must_keep[:6])}" if must_keep else None,
+        f"Avoid: {', '.join(avoid[:6])}" if avoid else None,
+        "Negative prompt: original character only; do not imitate celebrities, real people, known anime characters, film characters, or copyrighted IP; no extra characters; no complex narrative background; no dramatic action choreography.",
+    ]
+
+    if _is_mirror_double_asset(asset):
+        lines.append("Character note: this character is an abnormal double or uncanny mirror counterpart of the protagonist.")
+        if lead_asset and str(lead_asset.get('asset_key') or '') != str(asset.get('asset_key') or ''):
+            lines.append(
+                f"Identity anchor: keep core face identity aligned with lead character {lead_asset.get('name') or lead_asset.get('asset_key')} while making the expression hollow and disturbing."
+            )
+        lines.append("Avoid monster face, gore, and exaggerated creature design. Keep the fear psychological and uncanny instead of monstrous.")
+
+    if role_lower in {"supporting", "authority", "boss", "manager", "security"}:
+        lines.append("Emphasize role identity, authority, and recognizability through posture, styling, and silhouette rather than action.")
+
+    return "\n".join(line for line in lines if line).strip()
+
+
+def _build_scene_reference_prompt(
+    *,
+    asset: dict,
+    project_style: str | None,
+    project_genre: str | None,
+) -> str:
+    name = str(asset.get("name") or asset.get("asset_key") or "Unknown Scene")
+    must_keep = asset.get("must_keep") if isinstance(asset.get("must_keep"), list) else []
+    avoid = asset.get("avoid") if isinstance(asset.get("avoid"), list) else []
+    genre_text = (project_genre or "").lower()
+    suspensey = any(keyword in genre_text for keyword in ["thriller", "suspense", "horror", "鎬皥", "鎯婃倸", "鎮枒"])
+    lines = [
+        "Task type: scene reference plate.",
+        "Output goal: create one environment reference image for later storyboard consistency, not a storyboard shot.",
+        "This is a reusable scene reference plate. No characters. No foreground acting. No poster layout. No text overlay.",
+        f"Scene: {name}",
+        "Layout anchors: clearly show spatial layout, fixed elements, material texture, lighting logic, and reusable background relationships.",
+        "Background requirement: empty environment only, with no narrative action and no character performance.",
+        f"Style: {project_style or 'anime-comic realism'}." + (f" Genre atmosphere: {project_genre}." if project_genre else ""),
+        "Continuity requirement: keep layout, lighting logic, and spatial relationships clear and reusable for future storyboard shots.",
+        f"Must keep: {', '.join(must_keep[:6])}" if must_keep else None,
+        f"Avoid: {', '.join(avoid[:6])}" if avoid else None,
+        "Negative prompt: no characters; no acting; no poster composition; no text overlay; no gore.",
+    ]
+    if suspensey:
+        lines.append("Lighting and mood: low light, narrow space, silence, unease, realistic old apartment texture, cinematic suspense, no gore.")
+    return "\n".join(line for line in lines if line).strip()
+
+
+def _build_prop_reference_prompt(
+    *,
+    asset: dict,
+    project_style: str | None,
+) -> str:
+    name = str(asset.get("name") or asset.get("asset_key") or "Unknown Prop")
+    must_keep = asset.get("must_keep") if isinstance(asset.get("must_keep"), list) else []
+    avoid = asset.get("avoid") if isinstance(asset.get("avoid"), list) else []
+    lines = [
+        "Task type: prop reference image.",
+        "Output goal: create one reusable prop reference image, not a storyboard shot.",
+        "This is a single-object reference image for later storyboard consistency.",
+        "Presentation: single object only, centered, clearly visible, with a simple background.",
+        "Characters: none. Hands: none. No brand logo. No readable copyrighted text. No watermark.",
+        "Image requirements: clear shape, clear material, clear color, front or close-up view, anime-comic realism, reusable for later shots.",
+        f"Prop name: {name}",
+        f"Style: {project_style or 'anime-comic realism'}",
+        f"Must keep: {', '.join(must_keep[:6])}" if must_keep else None,
+        f"Avoid: {', '.join(avoid[:6])}" if avoid else None,
+        "Negative prompt: no characters, no hands, no brand logo, no watermark, no busy background, no dramatic action frame.",
+    ]
+    return "\n".join(line for line in lines if line).strip()
+
+
+def _build_production_grade_image_prompt(
+    *,
+    enhanced_prompt: str,
+    negative_prompt: str,
+    shot_metadata: dict,
+    visual_asset_refs: VisualAssetRefs,
+) -> str:
+    lines: list[str] = [
+        "Task type: storyboard keyframe.",
+        "Output goal: generate one single-shot storyboard frame for this scene, not a character sheet and not an environment plate.",
+        "Generate one storyboard keyframe for this shot as a visual storytelling frame with one-shot dramatic composition.",
+        enhanced_prompt.strip(),
+        "This is a single-shot storyboard frame for later editing, not a character reference portrait, not a scene reference plate, not a poster, not a collage, and not a multi-panel comic page.",
+        "Shot clarity requirements: show one clear narrative moment only; focus on readable acting and expression; make the character action and spatial relationship clear; maintain clean composition for later subtitle placement; keep the frame suitable for storyboard-based short-drama editing.",
+        "Atmosphere guidance: low light, narrow space, silence, unease, off-screen threat, suspenseful pause, psychological fear, cinematic horror atmosphere without gore.",
+    ]
+
+    shot_type_hint = _build_shot_type_prompt_hint(shot_metadata.get("shot_type"))
+    if shot_type_hint:
+        lines.append(shot_type_hint)
+
+    field_pairs = [
+        ("Shot ID", shot_metadata.get("source_shot_id")),
+        ("Shot purpose", shot_metadata.get("shot_purpose")),
+        ("Conflict beat", shot_metadata.get("conflict_beat")),
+        ("Emotion shift", shot_metadata.get("emotion_shift")),
+        ("Visual focus", shot_metadata.get("visual_focus")),
+        ("Image prompt intent", shot_metadata.get("image_prompt_intent")),
+        ("Pacing note", shot_metadata.get("pacing_note")),
+        ("Composition", shot_metadata.get("composition")),
+        ("Lighting", shot_metadata.get("lighting")),
+        ("Shot type", shot_metadata.get("shot_type")),
+        ("Camera motion reference for later editing", shot_metadata.get("camera_motion")),
+        ("Subject motion hint for implied performance", shot_metadata.get("subject_motion")),
+        ("Transition note for surrounding shots", shot_metadata.get("transition")),
+        ("Subtitle cue", shot_metadata.get("subtitle_text")),
+        ("Sound effect cue", shot_metadata.get("sfx")),
+        ("Editing notes", shot_metadata.get("editing_notes")),
+    ]
+    for label, value in field_pairs:
+        if str(value or "").strip():
+            lines.append(f"{label}: {value}")
+
+    if str(shot_metadata.get("subtitle_text") or "").strip():
+        lines.append("Leave clean subtitle-safe space near the lower frame when possible.")
+
+    negative_constraints = _stringify_list(shot_metadata.get("negative_constraints"))
+    if negative_constraints:
+        lines.append(f"Shot-specific negative constraints: {negative_constraints}")
+
+    character_refs = [
+        f"{entry.name or entry.asset_key}: {_clean_reference_url(entry.main_reference_url) or '[local ref]'}"
+        for entry in visual_asset_refs.characters
+    ]
+    scene_ref_text = None
+    if visual_asset_refs.scene is not None:
+        scene_ref_url = _clean_reference_url(visual_asset_refs.scene.main_reference_url) or "[local ref]"
+        scene_ref_text = f"{visual_asset_refs.scene.name or visual_asset_refs.scene.asset_key}: {scene_ref_url}"
+    prop_refs = [
+        f"{entry.name or entry.asset_key}: {_clean_reference_url(entry.main_reference_url) or '[local ref]'}"
+        for entry in visual_asset_refs.props
+    ]
+    if character_refs:
+        lines.append(f"Recommended character reference: {'; '.join(character_refs)}")
+    if scene_ref_text:
+        lines.append(f"Recommended scene reference: {scene_ref_text}")
+    if prop_refs:
+        lines.append(f"Recommended prop reference: {'; '.join(prop_refs)}")
+    if character_refs or scene_ref_text or prop_refs:
+        lines.append("Continuity anchors: use the referenced character, scene, and prop assets as continuity anchors for later shots.")
+    if character_refs:
+        lines.append("Keep character identity consistent with the character reference.")
+    if scene_ref_text:
+        lines.append("Keep environment layout consistent with the scene reference.")
+    if prop_refs:
+        lines.append("Keep prop appearance consistent with the prop reference.")
+
+    must_keep_parts: list[str] = []
+    avoid_parts: list[str] = []
+    for entry in [*visual_asset_refs.characters, *visual_asset_refs.props]:
+        must_keep_parts.extend(entry.must_keep)
+        avoid_parts.extend(entry.avoid)
+    if visual_asset_refs.scene is not None:
+        must_keep_parts.extend(visual_asset_refs.scene.must_keep)
+        avoid_parts.extend(visual_asset_refs.scene.avoid)
+    must_keep_text = _stringify_list(must_keep_parts)
+    avoid_text = _stringify_list(avoid_parts)
+    if must_keep_text:
+        lines.append(f"Must keep: {must_keep_text}")
+    if avoid_text:
+        lines.append(f"Avoid: {avoid_text}")
+
+    lines.append(
+        "Maintain character identity, acting readability, environment continuity, and clean spatial composition for later subtitle placement and edit timing."
     )
     lines.append(f"Negative prompt: {negative_prompt}")
 

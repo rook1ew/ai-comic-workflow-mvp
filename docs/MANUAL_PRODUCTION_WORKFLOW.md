@@ -58,6 +58,16 @@
 - 检查是否还有缺失的 `asset_key`
 - 检查是否缺 `main_reference_url`
 
+这里要明确区分两类 prompt：
+
+- `visual-asset-prompts`
+  - 用于“素材库参考图”
+  - 角色参考图、场景参考板、道具单物参考图
+  - 不承载剧情动作
+- `image-prompts`
+  - 用于“单镜头分镜图”
+  - 要承载剧情动作、视觉焦点、镜头目的、字幕空间和连续性要求
+
 然后再调用：
 
 - `GET /projects/{project_id}/image-prompts`

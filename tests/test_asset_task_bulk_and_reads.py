@@ -3756,6 +3756,9 @@ def test_storyboard_production_board_returns_human_readable_items_and_plain_text
     assert item["human_shot_description"]
     assert "At " not in item["human_shot_description"]
     assert "Lin Xia Lin Xia" not in item["human_shot_description"]
+    assert "alarm" not in item["human_shot_description"]
+    assert "terror" not in item["human_shot_description"]
+    assert "frozen dread" not in item["human_shot_description"]
     assert item["character_asset_refs"][0]["asset_key"] == "lin_xia"
     assert item["scene_asset_ref"]["asset_key"] == "meeting_room_a"
     assert item["prop_asset_refs"][0]["asset_key"] == "employee_badge"
@@ -3984,4 +3987,12 @@ def test_project_image_prompts_mirror_double_and_phone_screen_rules(client):
     prompt = response.json()["items"][0]["copy_ready_prompt"]
     assert "abnormal double" in prompt or "mirror counterpart" in prompt
     assert "Character in frame: 门外的她，一个长得像沈知夏的异常镜像" in prompt
+    assert "Character in frame: 沈知夏" not in prompt
     assert "Do not render readable text on the phone screen" in prompt
+
+    board_response = client.get(f"/projects/{project_id}/storyboard-production-board")
+    assert board_response.status_code == 200
+    board_body = board_response.json()
+    board_item = board_body["items"][0]
+    assert board_item["character_display"] == "门外的她，一个长得像沈知夏的异常镜像"
+    assert "角色: 门外的她，一个长得像沈知夏的异常镜像" in board_body["plain_text"]

@@ -1678,6 +1678,7 @@ def export_project_image_prompts(db: Session, project_id: int) -> ProjectImagePr
         shot = task.shot
         shot_metadata = shot.metadata_json or {}
         visual_asset_refs = _resolve_visual_asset_refs(project, shot_metadata)
+        character_display = _build_shot_character_display(shot_metadata, visual_asset_refs)
         missing_visual_asset_refs = _get_missing_visual_asset_refs(project, shot_metadata)
         asset = _get_preferred_task_asset(db, asset_task_id=task.id, modality=AssetModality.IMAGE)
 
@@ -1695,7 +1696,7 @@ def export_project_image_prompts(db: Session, project_id: int) -> ProjectImagePr
             or {
                 "source_shot_id": shot_metadata.get("source_shot_id"),
                 "duration_sec": shot_metadata.get("duration_sec"),
-                "character": shot_metadata.get("character"),
+                "character": character_display or shot_metadata.get("character"),
                 "location": shot_metadata.get("location"),
                 "emotion": shot_metadata.get("emotion"),
                 "camera": shot_metadata.get("camera"),
@@ -1714,6 +1715,7 @@ def export_project_image_prompts(db: Session, project_id: int) -> ProjectImagePr
             )
         )
         enhanced_prompt = _strip_mock_reference_urls(enhanced_prompt)
+        enhanced_prompt = _replace_enhanced_prompt_character_line(enhanced_prompt, character_display)
         copy_ready_prompt = _build_production_grade_image_prompt(
             enhanced_prompt=enhanced_prompt,
             negative_prompt=MANUAL_IMAGE_NEGATIVE_PROMPT,
@@ -2631,6 +2633,61 @@ def _build_storyboard_character_description(
     return ". ".join(fragment for fragment in fragments if fragment).strip() or None
 
 
+def _build_storyboard_human_shot_description(shot: Shot, shot_metadata: dict) -> str:
+    explicit = str(shot_metadata.get("human_shot_description") or "").strip()
+    if explicit:
+        return explicit
+
+    location = str(shot_metadata.get("location") or "").strip()
+    character = str(shot_metadata.get("character") or "").strip()
+    core_action = str(shot.core_action or "").strip()
+    emotion = str(shot_metadata.get("emotion") or "").strip()
+    visual_focus = str(shot_metadata.get("visual_focus") or "").strip()
+
+    phrase_map = {
+        "alarm": "惊慌",
+        "terror": "恐惧",
+        "frozen dread": "僵住的恐惧",
+        "phone time and dark doorway": "手机冷光和黑暗门口",
+        "the identical face outside the door": "门外那张和自己一模一样的脸",
+        "phone message and dark door behind her": "手机提示和身后的黑暗门口",
+    }
+    emotion = phrase_map.get(emotion.lower(), emotion) if emotion else emotion
+    visual_focus = phrase_map.get(visual_focus.lower(), visual_focus) if visual_focus else visual_focus
+
+    action_text = core_action
+    if character and action_text.startswith(character):
+        action_text = action_text[len(character):].strip(" ，,。")
+    if character:
+        action_text = action_text.replace(f"{character}她", character)
+
+    location_text = location
+    if location_text and not any(location_text.endswith(suffix) for suffix in ("内", "里", "中", "外", "旁")):
+        location_text = f"{location_text}内"
+
+    parts: list[str] = []
+    if location_text and character and action_text:
+        parts.append(f"{location_text}，{character}{action_text}")
+    elif location_text and core_action:
+        parts.append(f"{location_text}，{core_action}")
+    elif character and action_text:
+        parts.append(f"{character}{action_text}")
+    elif core_action:
+        parts.append(core_action)
+    elif character:
+        parts.append(f"{character}处在画面中心")
+
+    if emotion:
+        parts.append(f"情绪上呈现出{emotion}")
+    if visual_focus:
+        parts.append(f"画面重点落在{visual_focus}")
+
+    description = "，".join(part.strip(" ，,。") for part in parts if part).strip(" ，,。")
+    if description:
+        return f"{description}。"
+    return f"镜头 {shot_metadata.get('source_shot_id') or shot.id}"
+
+
 def _convert_asset_ref(entry: VisualAssetLibraryEntry) -> StoryboardProductionBoardAssetRef:
     return StoryboardProductionBoardAssetRef(
         asset_key=entry.asset_key,
@@ -2703,6 +2760,18 @@ def _shot_has_phone_screen_text_risk(shot_metadata: dict, enhanced_prompt: str) 
         "猫眼",
     ]
     return any(keyword in combined for keyword in keywords)
+
+
+def _replace_enhanced_prompt_character_line(enhanced_prompt: str, character_display: str | None) -> str:
+    lines = [line for line in str(enhanced_prompt or "").splitlines() if not line.startswith("Character in frame: ")]
+    if character_display:
+        insert_index = 0
+        for index, line in enumerate(lines):
+            if line.startswith("Storyboard shot id: "):
+                insert_index = index + 1
+                break
+        lines.insert(insert_index, f"Character in frame: {character_display}")
+    return "\n".join(line for line in lines if str(line).strip()).strip()
 
 
 def _build_storyboard_motion_prompt(
@@ -2829,10 +2898,11 @@ def get_project_storyboard_production_board(db: Session, project_id: int) -> Pro
         if image_prompt_item is not None:
             copy_ready_image_prompt = image_prompt_item.copy_ready_prompt
         else:
+            character_display = _build_shot_character_display(shot_metadata, visual_asset_refs)
             storyboard_context = {
                 "source_shot_id": shot_metadata.get("source_shot_id"),
                 "duration_sec": shot_metadata.get("duration_sec"),
-                "character": shot_metadata.get("character"),
+                "character": character_display or shot_metadata.get("character"),
                 "location": shot_metadata.get("location"),
                 "emotion": shot_metadata.get("emotion"),
                 "camera": shot_metadata.get("camera"),
@@ -2846,6 +2916,7 @@ def get_project_storyboard_production_board(db: Session, project_id: int) -> Pro
                     storyboard_context=storyboard_context,
                 )
             )
+            enhanced_prompt = _replace_enhanced_prompt_character_line(enhanced_prompt, character_display)
             copy_ready_image_prompt = _build_production_grade_image_prompt(
                 enhanced_prompt=enhanced_prompt,
                 negative_prompt=MANUAL_IMAGE_NEGATIVE_PROMPT,
@@ -2941,7 +3012,7 @@ def get_project_storyboard_production_board(db: Session, project_id: int) -> Pro
                 [
                     f"{item.source_shot_id or f'SHOT-{item.internal_shot_id}'} | {item.time_range}",
                     f"画面描述: {item.human_shot_description}",
-                    f"角色: {item.character or '[none]'}",
+                    f"角色: {item.character_display or item.character or '[none]'}",
                     f"场景: {item.scene or '[none]'}",
                     f"情绪: {item.emotion or '[none]'}",
                     f"字幕: {item.subtitle_text or '[none]'}",

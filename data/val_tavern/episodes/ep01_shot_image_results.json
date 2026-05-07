@@ -5,10 +5,12 @@
     "episode_id": "VG-EP01",
     "shot_title": "开场视觉钩子",
     "generated_files": [
-      "asset_library/val_tavern/generated/episodes/ep01/shot_images/VG_EP01_SHOT_001_opening_v1.png"
+      "asset_library/val_tavern/generated/episodes/ep01/shot_images/VG_EP01_SHOT_001_opening_v1.png",
+      "asset_library/val_tavern/generated/episodes/ep01/shot_images/VG_EP01_SHOT_001_opening_v2.png"
     ],
-    "recommended_file": "asset_library/val_tavern/generated/episodes/ep01/shot_images/VG_EP01_SHOT_001_opening_v1.png",
+    "recommended_file": "asset_library/val_tavern/generated/episodes/ep01/shot_images/VG_EP01_SHOT_001_opening_v2.png",
     "used_assets": [
+      "asset_library/val_tavern/generated/anchors/washu/VG_CHAR_WASHU_fullbody_default_v2.png",
       "asset_library/val_tavern/generated/anchors/pidan/VG_CHAR_PIDAN_action_delivery_v2.png",
       "asset_library/val_tavern/generated/anchors/bar_fullview/VG_SCENE_bar_fullview_v2.png"
     ],
@@ -17,6 +19,7 @@
       "排位结算界面文字后期添加或保持抽象图形"
     ],
     "selection_reason": [
+      "吧台后方人物已修正为老瓦",
       "符合 EP01 开场视觉钩子目标",
       "保持瓦酒馆统一赛博酒馆风格",
       "适合短视频竖屏使用"

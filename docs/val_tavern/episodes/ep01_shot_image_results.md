@@ -13,11 +13,13 @@
 
 ### SHOT-001 开场视觉钩子
 
-- 生成文件：`asset_library/val_tavern/generated/episodes/ep01/shot_images/VG_EP01_SHOT_001_opening_v1.png`
-- 推荐文件：`asset_library/val_tavern/generated/episodes/ep01/shot_images/VG_EP01_SHOT_001_opening_v1.png`
+- 生成文件：
+  - `asset_library/val_tavern/generated/episodes/ep01/shot_images/VG_EP01_SHOT_001_opening_v1.png`
+  - `asset_library/val_tavern/generated/episodes/ep01/shot_images/VG_EP01_SHOT_001_opening_v2.png`
+- 推荐文件：`asset_library/val_tavern/generated/episodes/ep01/shot_images/VG_EP01_SHOT_001_opening_v2.png`
 - 画面目标：瓦酒馆招牌亮起，皮蛋端饮料跑过，桌面有抽象排位结算界面。
 - 后期需要添加的文字：台词字幕、屏幕文字如有需要后期添加。
-- 备注：用于快速建立“瓦酒馆 + 排位吐槽”氛围。
+- 备注：v2 修正吧台后方人物为老瓦，避免误用炼狱外观；用于快速建立“瓦酒馆 + 排位吐槽”氛围。
 
 ### SHOT-002 老瓦固定开场
 

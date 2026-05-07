@@ -1,0 +1,203 @@
+[
+  {
+    "result_id": "VG-EP01-IMG-001",
+    "shot_id": "SHOT-001",
+    "episode_id": "VG-EP01",
+    "shot_title": "开场视觉钩子",
+    "generated_files": [
+      "asset_library/val_tavern/generated/episodes/ep01/shot_images/VG_EP01_SHOT_001_opening_v1.png"
+    ],
+    "recommended_file": "asset_library/val_tavern/generated/episodes/ep01/shot_images/VG_EP01_SHOT_001_opening_v1.png",
+    "used_assets": [
+      "asset_library/val_tavern/generated/anchors/pidan/VG_CHAR_PIDAN_action_delivery_v2.png",
+      "asset_library/val_tavern/generated/anchors/bar_fullview/VG_SCENE_bar_fullview_v2.png"
+    ],
+    "text_overlay_needed": [
+      "所有台词字幕后期添加",
+      "排位结算界面文字后期添加或保持抽象图形"
+    ],
+    "selection_reason": [
+      "符合 EP01 开场视觉钩子目标",
+      "保持瓦酒馆统一赛博酒馆风格",
+      "适合短视频竖屏使用"
+    ],
+    "status": "completed"
+  },
+  {
+    "result_id": "VG-EP01-IMG-002",
+    "shot_id": "SHOT-002",
+    "episode_id": "VG-EP01",
+    "shot_title": "老瓦固定开场",
+    "generated_files": [
+      "asset_library/val_tavern/generated/episodes/ep01/shot_images/VG_EP01_SHOT_002_washu_opening_v1.png"
+    ],
+    "recommended_file": "asset_library/val_tavern/generated/episodes/ep01/shot_images/VG_EP01_SHOT_002_washu_opening_v1.png",
+    "used_assets": [
+      "asset_library/val_tavern/generated/anchors/washu/VG_CHAR_WASHU_fullbody_default_v2.png",
+      "asset_library/val_tavern/generated/batch3/scenes/bar_dialogue_midshot/VG_SCENE_bar_dialogue_midshot_v2.png"
+    ],
+    "text_overlay_needed": [
+      "后期添加老瓦台词：要来一杯吗？"
+    ],
+    "selection_reason": [
+      "符合老瓦固定主持人开场目标",
+      "保持瓦酒馆统一风格",
+      "适合短视频竖屏使用"
+    ],
+    "status": "completed"
+  },
+  {
+    "result_id": "VG-EP01-IMG-003",
+    "shot_id": "SHOT-003",
+    "episode_id": "VG-EP01",
+    "shot_title": "皮蛋今日特调举牌",
+    "generated_files": [
+      "asset_library/val_tavern/generated/episodes/ep01/shot_images/VG_EP01_SHOT_003_pidan_special_v1.png"
+    ],
+    "recommended_file": "asset_library/val_tavern/generated/episodes/ep01/shot_images/VG_EP01_SHOT_003_pidan_special_v1.png",
+    "used_assets": [
+      "asset_library/val_tavern/generated/anchors/pidan/VG_CHAR_PIDAN_action_delivery_v2.png",
+      "asset_library/val_tavern/generated/batch3/props/pidan_sign/VG_PROP_pidan_sign_blank_v2.png",
+      "asset_library/val_tavern/generated/batch3/scenes/bar_dialogue_midshot/VG_SCENE_bar_dialogue_midshot_v2.png"
+    ],
+    "text_overlay_needed": [
+      "牌面文字后期添加：今日特调：单摸战神",
+      "所有台词字幕后期添加"
+    ],
+    "selection_reason": [
+      "符合皮蛋举牌镜头目标",
+      "牌面文字可后期处理",
+      "适合短视频竖屏使用"
+    ],
+    "status": "completed"
+  },
+  {
+    "result_id": "VG-EP01-IMG-004",
+    "shot_id": "SHOT-004",
+    "episode_id": "VG-EP01",
+    "shot_title": "贤者吐槽",
+    "generated_files": [
+      "asset_library/val_tavern/generated/episodes/ep01/shot_images/VG_EP01_SHOT_004_sage_complain_v1.png"
+    ],
+    "recommended_file": "asset_library/val_tavern/generated/episodes/ep01/shot_images/VG_EP01_SHOT_004_sage_complain_v1.png",
+    "used_assets": [
+      "asset_library/val_tavern/generated/characters_batch2/sage/VG_CHAR_SAGE_halfbody_tiredsmile_v1.png",
+      "asset_library/val_tavern/generated/batch3/scenes/bar_dialogue_midshot/VG_SCENE_bar_dialogue_midshot_v2.png"
+    ],
+    "text_overlay_needed": [
+      "贤者吐槽台词后期添加",
+      "桌面结算界面文字后期添加或保持抽象"
+    ],
+    "selection_reason": [
+      "符合贤者吐槽镜头目标",
+      "保持瓦酒馆赛后复盘氛围",
+      "适合短视频竖屏使用"
+    ],
+    "status": "completed"
+  },
+  {
+    "result_id": "VG-EP01-IMG-005",
+    "shot_id": "SHOT-005",
+    "episode_id": "VG-EP01",
+    "shot_title": "芮娜与捷风冲突",
+    "generated_files": [
+      "asset_library/val_tavern/generated/episodes/ep01/shot_images/VG_EP01_SHOT_005_reyna_jett_conflict_v1.png"
+    ],
+    "recommended_file": "asset_library/val_tavern/generated/episodes/ep01/shot_images/VG_EP01_SHOT_005_reyna_jett_conflict_v1.png",
+    "used_assets": [
+      "asset_library/val_tavern/generated/characters_batch4/reyna/VG_CHAR_REYNA_fullbody_purpletoast_v1.png",
+      "asset_library/val_tavern/generated/anchors/jett/VG_CHAR_JETT_halfbody_datacomment_v1.png",
+      "asset_library/val_tavern/generated/batch3/scenes/bar_dialogue_midshot/VG_SCENE_bar_dialogue_midshot_v2.png"
+    ],
+    "text_overlay_needed": [
+      "芮娜与捷风台词后期添加",
+      "“20-10”战绩后期字幕添加",
+      "战绩屏幕文字后期添加或保持抽象"
+    ],
+    "selection_reason": [
+      "符合芮娜与捷风冲突镜头目标",
+      "芮娜已使用正式角色资产方向",
+      "适合短视频竖屏使用"
+    ],
+    "status": "completed"
+  },
+  {
+    "result_id": "VG-EP01-IMG-006",
+    "shot_id": "SHOT-006",
+    "episode_id": "VG-EP01",
+    "shot_title": "芮娜与幽影补刀",
+    "generated_files": [
+      "asset_library/val_tavern/generated/episodes/ep01/shot_images/VG_EP01_SHOT_006_reyna_omen_roast_v1.png"
+    ],
+    "recommended_file": "asset_library/val_tavern/generated/episodes/ep01/shot_images/VG_EP01_SHOT_006_reyna_omen_roast_v1.png",
+    "used_assets": [
+      "asset_library/val_tavern/generated/characters_batch4/reyna/VG_CHAR_REYNA_fullbody_purpletoast_v1.png",
+      "asset_library/val_tavern/generated/characters_batch2/omen/VG_CHAR_OMEN_halfbody_coldstare_v1.png",
+      "asset_library/val_tavern/generated/batch3/scenes/corner_seat/VG_SCENE_corner_omen_seat_v2.png"
+    ],
+    "text_overlay_needed": [
+      "芮娜解释台词后期添加",
+      "幽影补刀台词后期添加"
+    ],
+    "selection_reason": [
+      "符合芮娜嘴硬与幽影冷幽默补刀目标",
+      "保持角落阴影座位氛围",
+      "适合短视频竖屏使用"
+    ],
+    "status": "completed"
+  },
+  {
+    "result_id": "VG-EP01-IMG-007",
+    "shot_id": "SHOT-007",
+    "episode_id": "VG-EP01",
+    "shot_title": "众人争吵",
+    "generated_files": [
+      "asset_library/val_tavern/generated/episodes/ep01/shot_images/VG_EP01_SHOT_007_group_argument_v1.png"
+    ],
+    "recommended_file": "asset_library/val_tavern/generated/episodes/ep01/shot_images/VG_EP01_SHOT_007_group_argument_v1.png",
+    "used_assets": [
+      "asset_library/val_tavern/generated/characters_batch2/sage/VG_CHAR_SAGE_halfbody_tiredsmile_v1.png",
+      "asset_library/val_tavern/generated/characters_batch4/reyna/VG_CHAR_REYNA_fullbody_purpletoast_v1.png",
+      "asset_library/val_tavern/generated/anchors/jett/VG_CHAR_JETT_halfbody_datacomment_v1.png",
+      "asset_library/val_tavern/generated/characters_batch2/omen/VG_CHAR_OMEN_halfbody_coldstare_v1.png",
+      "asset_library/val_tavern/generated/batch3/scenes/bar_dialogue_midshot/VG_SCENE_bar_dialogue_midshot_v2.png"
+    ],
+    "text_overlay_needed": [
+      "四人争吵台词后期添加",
+      "不在图片内生成对话文字"
+    ],
+    "selection_reason": [
+      "符合众人争吵升级镜头目标",
+      "保持酒馆对线复盘氛围",
+      "适合短视频竖屏使用"
+    ],
+    "status": "completed"
+  },
+  {
+    "result_id": "VG-EP01-IMG-008",
+    "shot_id": "SHOT-008",
+    "episode_id": "VG-EP01",
+    "shot_title": "皮蛋结尾占位",
+    "generated_files": [
+      "asset_library/val_tavern/generated/episodes/ep01/shot_images/VG_EP01_SHOT_008_pidan_ending_v1.png"
+    ],
+    "recommended_file": "asset_library/val_tavern/generated/episodes/ep01/shot_images/VG_EP01_SHOT_008_pidan_ending_v1.png",
+    "used_assets": [
+      "asset_library/val_tavern/generated/anchors/washu/VG_CHAR_WASHU_fullbody_default_v2.png",
+      "asset_library/val_tavern/generated/anchors/pidan/VG_CHAR_PIDAN_action_delivery_v2.png",
+      "asset_library/val_tavern/generated/batch3/props/pidan_sign/VG_PROP_pidan_sign_blank_v2.png",
+      "asset_library/val_tavern/generated/batch3/scenes/bar_dialogue_midshot/VG_SCENE_bar_dialogue_midshot_v2.png"
+    ],
+    "text_overlay_needed": [
+      "老瓦台词后期添加",
+      "牌面文字后期添加：KSKBL",
+      "不添加评论引导字幕"
+    ],
+    "selection_reason": [
+      "符合老瓦叫停与皮蛋举牌收尾目标",
+      "牌面文字可后期处理",
+      "适合短视频竖屏使用"
+    ],
+    "status": "completed"
+  }
+]

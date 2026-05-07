@@ -1,7 +1,7 @@
 [
   {
     "clip_id": "VG-EP01-SD-CLIP-01",
-    "source_image": "asset_library/val_tavern/generated/episodes/ep01/shot_images/VG_EP01_SHOT_001_opening_v1.png",
+    "source_image": "asset_library/val_tavern/generated/episodes/ep01/shot_images/VG_EP01_SHOT_001_opening_v2.png",
     "output_image": "asset_library/val_tavern/generated/episodes/ep01/seeddance_inputs/VG_EP01_SD_CLIP_01_opening_text_v1.png",
     "duration_seconds": 4,
     "text_baked_in": [
@@ -18,8 +18,9 @@
     "duration_seconds": 4,
     "text_baked_in": [
       "贤者：",
-      "打 A 让你跟团，",
-      "你非要摸 B！",
+      "打 A 点喊半天让你跟团，",
+      "你非要一个人摸 B 通！",
+      "我们正面进点永远少一个，",
       "捷风 E 进去就没了，",
       "你人呢？"
     ],
@@ -63,6 +64,7 @@
     "output_image": "asset_library/val_tavern/generated/episodes/ep01/seeddance_inputs/VG_EP01_SD_CLIP_05_group_argument_text_v1.png",
     "duration_seconds": 4,
     "text_baked_in": [
+      "芮娜：那我不单摸，你们正面就一定打得进去吗？",
       "贤者：至少你人在，我们还能补枪！",
       "捷风：你来得比残局结算还晚。",
       "幽影：她不是单摸，她是单机。"

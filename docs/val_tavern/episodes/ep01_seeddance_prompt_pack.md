@@ -15,7 +15,7 @@
 ### VG-EP01-SD-CLIP-01｜开场与今日特调
 
 - 输入图：`asset_library/val_tavern/generated/episodes/ep01/seeddance_inputs/VG_EP01_SD_CLIP_01_opening_text_v1.png`
-- 来源图：`asset_library/val_tavern/generated/episodes/ep01/shot_images/VG_EP01_SHOT_001_opening_v1.png`
+- 来源图：`asset_library/val_tavern/generated/episodes/ep01/shot_images/VG_EP01_SHOT_001_opening_v2.png`
 - 建议时长：4s
 - 烘焙文字：
   - 老瓦：要来一杯吗？
@@ -32,8 +32,9 @@ Q版二次元赛博酒馆短视频镜头，9:16 竖屏，暖色霓虹，轻微�
 - 建议时长：4s
 - 烘焙文字：
   - 贤者：
-  - 打 A 让你跟团，
-  - 你非要摸 B！
+  - 打 A 点喊半天让你跟团，
+  - 你非要一个人摸 B 通！
+  - 我们正面进点永远少一个，
   - 捷风 E 进去就没了，
   - 你人呢？
 
@@ -80,6 +81,7 @@ Q版二次元赛博酒馆短视频镜头，9:16 竖屏，暖色霓虹，轻微�
 - 来源图：`asset_library/val_tavern/generated/episodes/ep01/shot_images/VG_EP01_SHOT_007_group_argument_v1.png`
 - 建议时长：4s
 - 烘焙文字：
+  - 芮娜：那我不单摸，你们正面就一定打得进去吗？
   - 贤者：至少你人在，我们还能补枪！
   - 捷风：你来得比残局结算还晚。
   - 幽影：她不是单摸，她是单机。

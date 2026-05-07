@@ -1,0 +1,92 @@
+[
+  {
+    "result_id": "VG-ANCHOR-RESULT-001",
+    "anchor_task_id": "VG-ANCHOR-001",
+    "asset_name": "瓦叔",
+    "asset_type": "character",
+    "generated_files": [
+      "asset_library/val_tavern/generated/anchors/washu/VG_CHAR_WASHU_fullbody_default_v1.png",
+      "asset_library/val_tavern/generated/anchors/washu/VG_CHAR_WASHU_fullbody_default_v2.png"
+    ],
+    "recommended_file": "asset_library/val_tavern/generated/anchors/washu/VG_CHAR_WASHU_fullbody_default_v2.png",
+    "selection_reason": [
+      "角色轮廓清晰，Q版比例更适合作为锚点",
+      "机械义手和发光酒杯辨识度高",
+      "暖色赛博酒馆气质明确",
+      "背景相对简洁，便于后续统一参考"
+    ],
+    "status": "completed"
+  },
+  {
+    "result_id": "VG-ANCHOR-RESULT-002",
+    "anchor_task_id": "VG-ANCHOR-002",
+    "asset_name": "皮蛋",
+    "asset_type": "character",
+    "generated_files": [
+      "asset_library/val_tavern/generated/anchors/pidan/VG_CHAR_PIDAN_action_delivery_v1.png",
+      "asset_library/val_tavern/generated/anchors/pidan/VG_CHAR_PIDAN_action_delivery_v2.png"
+    ],
+    "recommended_file": "asset_library/val_tavern/generated/anchors/pidan/VG_CHAR_PIDAN_action_delivery_v2.png",
+    "selection_reason": [
+      "角色表情更干净可爱，吉祥物辨识度高",
+      "托盘、账单和小围裙元素清楚",
+      "背景信息更少，不抢角色主体",
+      "适合作为后续跑堂和送酒动作参考"
+    ],
+    "status": "completed"
+  },
+  {
+    "result_id": "VG-ANCHOR-RESULT-003",
+    "anchor_task_id": "VG-ANCHOR-003",
+    "asset_name": "捷风",
+    "asset_type": "character",
+    "generated_files": [
+      "asset_library/val_tavern/generated/anchors/jett/VG_CHAR_JETT_halfbody_datacomment_v1.png",
+      "asset_library/val_tavern/generated/anchors/jett/VG_CHAR_JETT_halfbody_datacomment_v2.png"
+    ],
+    "recommended_file": "asset_library/val_tavern/generated/anchors/jett/VG_CHAR_JETT_halfbody_datacomment_v2.png",
+    "selection_reason": [
+      "白发、数据平板和冷静表情辨识度更高",
+      "角色比例更接近第一阶段 Q版锚点要求",
+      "背景更简洁，适合做角色参考",
+      "冷色边光与暖色酒馆氛围对比明确"
+    ],
+    "status": "completed"
+  },
+  {
+    "result_id": "VG-ANCHOR-RESULT-004",
+    "anchor_task_id": "VG-ANCHOR-005",
+    "asset_name": "今日特调牌",
+    "asset_type": "prop",
+    "generated_files": [
+      "asset_library/val_tavern/generated/anchors/specialdrink_sign/VG_PROP_specialdrink_sign_v1.png",
+      "asset_library/val_tavern/generated/anchors/specialdrink_sign/VG_PROP_specialdrink_sign_v2.png"
+    ],
+    "recommended_file": "asset_library/val_tavern/generated/anchors/specialdrink_sign/VG_PROP_specialdrink_sign_v2.png",
+    "selection_reason": [
+      "中心可替换文字区域更干净",
+      "霓虹边框和道具轮廓清晰",
+      "装饰信息较少，复用性更强",
+      "适合放入吧台场景和金句卡模板"
+    ],
+    "status": "completed"
+  },
+  {
+    "result_id": "VG-ANCHOR-RESULT-005",
+    "anchor_task_id": "VG-ANCHOR-004",
+    "asset_name": "瓦酒馆吧台全景",
+    "asset_type": "scene",
+    "generated_files": [
+      "asset_library/val_tavern/generated/anchors/bar_fullview/VG_SCENE_bar_fullview_v1.png",
+      "asset_library/val_tavern/generated/anchors/bar_fullview/VG_SCENE_bar_fullview_v2.png"
+    ],
+    "recommended_file": "asset_library/val_tavern/generated/anchors/bar_fullview/VG_SCENE_bar_fullview_v2.png",
+    "selection_reason": [
+      "竖屏构图更清晰，吧台视觉中心稳定",
+      "前景留白更大，适合后续角色合成",
+      "今日特调菜单、吧台、酒瓶和墙面装饰齐全",
+      "暖色赛博酒馆氛围统一且不过度杂乱"
+    ],
+    "status": "completed"
+  }
+]

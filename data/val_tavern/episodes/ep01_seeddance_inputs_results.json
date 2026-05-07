@@ -18,9 +18,9 @@
     "duration_seconds": 4,
     "text_baked_in": [
       "贤者：",
-      "打 A 点喊半天让你跟团，",
+      "贤者：打 A 点喊你跟团，",
       "你非要一个人摸 B 通！",
-      "我们正面进点永远少一个，",
+      "正面进点永远少一个，",
       "捷风 E 进去就没了，",
       "你人呢？"
     ],
@@ -33,11 +33,9 @@
     "output_image": "asset_library/val_tavern/generated/episodes/ep01/seeddance_inputs/VG_EP01_SD_CLIP_03_reyna_jett_text_v1.png",
     "duration_seconds": 4,
     "text_baked_in": [
-      "芮娜：",
-      "我 20-10，全队最高，",
-      "怪我？",
-      "捷风：",
-      "你这 20-10 挺好看，",
+      "芮娜：我 20-10，全队最高，",
+      "你们打不进点，怪我？",
+      "捷风：20-10 是挺好看，",
       "就是和赢游戏没关系。"
     ],
     "seeddance_prompt": "Q版二次元赛博酒馆短视频镜头，9:16 竖屏，暖色霓虹，轻微镜头运动，保持原图角色设计，严格保持画面中的中文对白气泡和牌面文字清晰可读，不要改写文字，不要生成新文字，不要让文字变形，不要新增角色，不要变成战斗场景。",
@@ -49,11 +47,11 @@
     "output_image": "asset_library/val_tavern/generated/episodes/ep01/seeddance_inputs/VG_EP01_SD_CLIP_04_reyna_omen_text_v1.png",
     "duration_seconds": 4,
     "text_baked_in": [
-      "芮娜：",
-      "我在拉扯，给压力！",
-      "幽影：",
-      "不怪你。",
-      "你只是和队伍不在一个地图。"
+      "芮娜：我在拉扯，给压力！",
+      "机会都做出来了，",
+      "是你们接不住。",
+      "幽影：你只是和队伍",
+      "不在一个地图。"
     ],
     "seeddance_prompt": "Q版二次元赛博酒馆短视频镜头，9:16 竖屏，暖色霓虹，轻微镜头运动，保持原图角色设计，严格保持画面中的中文对白气泡和牌面文字清晰可读，不要改写文字，不要生成新文字，不要让文字变形，不要新增角色，不要变成战斗场景。",
     "status": "todo"
@@ -64,10 +62,11 @@
     "output_image": "asset_library/val_tavern/generated/episodes/ep01/seeddance_inputs/VG_EP01_SD_CLIP_05_group_argument_text_v1.png",
     "duration_seconds": 4,
     "text_baked_in": [
-      "芮娜：那我不单摸，你们正面就一定打得进去吗？",
-      "贤者：至少你人在，我们还能补枪！",
-      "捷风：你来得比残局结算还晚。",
-      "幽影：她不是单摸，她是单机。"
+      "芮娜：那我不单摸，",
+      "你们正面一定打得进去吗？",
+      "贤者：至少你人在，我们能补枪！",
+      "捷风：你来得比结算还晚。",
+      "幽影：她不是单摸，是单机。"
     ],
     "seeddance_prompt": "Q版二次元赛博酒馆短视频镜头，9:16 竖屏，暖色霓虹，轻微镜头运动，保持原图角色设计，严格保持画面中的中文对白气泡和牌面文字清晰可读，不要改写文字，不要生成新文字，不要让文字变形，不要新增角色，不要变成战斗场景。",
     "status": "todo"
@@ -78,8 +77,8 @@
     "output_image": "asset_library/val_tavern/generated/episodes/ep01/seeddance_inputs/VG_EP01_SD_CLIP_06_pidan_ending_text_v1.png",
     "duration_seconds": 4,
     "text_baked_in": [
-      "都别吵了，",
-      "KSKBL"
+      "老瓦：别吵了，皮蛋你怎么看？",
+      "皮蛋举牌：都别吵了，KSKBL"
     ],
     "seeddance_prompt": "Q版二次元赛博酒馆短视频镜头，9:16 竖屏，暖色霓虹，轻微镜头运动，保持原图角色设计，严格保持画面中的中文对白气泡和牌面文字清晰可读，不要改写文字，不要生成新文字，不要让文字变形，不要新增角色，不要变成战斗场景。",
     "status": "todo"

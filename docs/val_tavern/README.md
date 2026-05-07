@@ -44,6 +44,7 @@
 - [EP01 shot generation plan](./episodes/ep01_shot_generation_plan.md)
 - [EP01 shot image generation seed](../../data/val_tavern/episodes/ep01_shot_image_generation.seed.json)
 - [EP01 first cut 视频制作说明](./episodes/video/ep01_video_first_cut_notes.md)
+- [EP01 SeedDance2 带字输入图与提示词](./episodes/ep01_seeddance_prompt_pack.md)
 - [任务种子文件](../../data/val_tavern/phase1_asset_tasks.seed.json)
 
 ## 任务种子文件位置

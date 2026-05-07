@@ -36,6 +36,7 @@
 - [场景资产卡](./phase1_scene_assets.md)
 - [统一命名规则](./asset_naming_rules.md)
 - [第一阶段制作优先级](./phase1_asset_priority.md)
+- [固定开场白框架](./opening_formula_framework.md)
 - [任务种子文件](../../data/val_tavern/phase1_asset_tasks.seed.json)
 
 ## 任务种子文件位置

@@ -30,11 +30,11 @@
   - `asset_library/val_tavern/generated/anchors/pidan/VG_CHAR_PIDAN_action_delivery_v2.png`
 - 推荐文件：`asset_library/val_tavern/generated/anchors/pidan/VG_CHAR_PIDAN_action_delivery_v2.png`
 - 选择原因：
-  - 角色表情更干净可爱，吉祥物辨识度高。
-  - 托盘、账单和小围裙元素清楚。
-  - 背景信息更少，不抢角色主体。
-  - 适合作为后续跑堂和送酒动作参考。
-- 备注：后续可继续派生举牌、递账单和右下角封面小图标版本。
+  - 更接近参考图的圆滚滚原创吉祥物方向。
+  - 黄色主体、护目镜和小围裙辨识度清晰。
+  - 托盘、发光饮品和空白账单区域更适合复用。
+  - 背景不抢主体，适合作为后续跑堂动作参考。
+- 备注：本次已按参考图重生成皮蛋候选，后续可继续派生举牌、递账单和右下角封面小图标版本。
 
 ### 2.3 捷风
 
@@ -43,11 +43,11 @@
   - `asset_library/val_tavern/generated/anchors/jett/VG_CHAR_JETT_halfbody_datacomment_v2.png`
 - 推荐文件：`asset_library/val_tavern/generated/anchors/jett/VG_CHAR_JETT_halfbody_datacomment_v2.png`
 - 选择原因：
-  - 白发、数据平板和冷静表情辨识度更高。
-  - 角色比例更接近第一阶段 Q版锚点要求。
-  - 背景更简洁，适合做角色参考。
-  - 冷色边光与暖色酒馆氛围对比明确。
-- 备注：可作为靠窗位、数据拆台、平板 UI 交互镜头的角色参考。
+  - 更贴近参考图的夜色赛博酒馆坐姿氛围。
+  - 白发、冷饮杯和数据平板同时保留，角色定位清晰。
+  - 冷色风效与粉橙霓虹形成稳定视觉语言。
+  - 适合作为数据拆台、封面和对话镜头锚点。
+- 备注：本次已按参考图重生成捷风候选，可作为靠窗位、数据拆台、平板 UI 交互镜头的角色参考。
 
 ### 2.4 今日特调牌
 

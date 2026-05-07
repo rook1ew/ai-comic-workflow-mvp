@@ -41,15 +41,14 @@
     "asset_name": "捷风",
     "asset_type": "character",
     "generated_files": [
-      "asset_library/val_tavern/generated/anchors/jett/VG_CHAR_JETT_halfbody_datacomment_v1.png",
-      "asset_library/val_tavern/generated/anchors/jett/VG_CHAR_JETT_halfbody_datacomment_v2.png"
+      "asset_library/val_tavern/generated/anchors/jett/VG_CHAR_JETT_halfbody_datacomment_v1.png"
     ],
-    "recommended_file": "asset_library/val_tavern/generated/anchors/jett/VG_CHAR_JETT_halfbody_datacomment_v2.png",
+    "recommended_file": "asset_library/val_tavern/generated/anchors/jett/VG_CHAR_JETT_halfbody_datacomment_v1.png",
     "selection_reason": [
       "更贴近参考图的夜色赛博酒馆坐姿氛围",
-      "白发、冷饮杯和数据平板同时保留，角色定位清晰",
+      "白发、冷饮杯和吧台特征清晰，角色辨识度高",
       "冷色风效与粉橙霓虹形成稳定视觉语言",
-      "适合作为数据拆台、封面和对话镜头锚点"
+      "适合作为捷风封面、对话和数据拆台镜头锚点"
     ],
     "status": "completed"
   },

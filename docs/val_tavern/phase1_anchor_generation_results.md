@@ -40,14 +40,13 @@
 
 - 生成文件：
   - `asset_library/val_tavern/generated/anchors/jett/VG_CHAR_JETT_halfbody_datacomment_v1.png`
-  - `asset_library/val_tavern/generated/anchors/jett/VG_CHAR_JETT_halfbody_datacomment_v2.png`
-- 推荐文件：`asset_library/val_tavern/generated/anchors/jett/VG_CHAR_JETT_halfbody_datacomment_v2.png`
+- 推荐文件：`asset_library/val_tavern/generated/anchors/jett/VG_CHAR_JETT_halfbody_datacomment_v1.png`
 - 选择原因：
   - 更贴近参考图的夜色赛博酒馆坐姿氛围。
-  - 白发、冷饮杯和数据平板同时保留，角色定位清晰。
+  - 白发、冷饮杯和吧台特征清晰，角色辨识度高。
   - 冷色风效与粉橙霓虹形成稳定视觉语言。
-  - 适合作为数据拆台、封面和对话镜头锚点。
-- 备注：本次已按参考图重生成捷风候选，可作为靠窗位、数据拆台、平板 UI 交互镜头的角色参考。
+  - 适合作为捷风封面、对话和数据拆台镜头锚点。
+- 备注：本次按指定推荐图入库，可作为靠窗位、数据拆台和平板 UI 交互镜头的角色参考。
 
 ### 2.4 今日特调牌
 
@@ -81,7 +80,7 @@
 | --- | --- | --- |
 | 瓦叔 | `asset_library/val_tavern/generated/anchors/washu/VG_CHAR_WASHU_fullbody_default_v2.png` | 主角色参考、今日特调收尾、封面主视觉 |
 | 皮蛋 | `asset_library/val_tavern/generated/anchors/pidan/VG_CHAR_PIDAN_action_delivery_v2.png` | 吉祥物参考、跑堂动作、举牌动作派生 |
-| 捷风 | `asset_library/val_tavern/generated/anchors/jett/VG_CHAR_JETT_halfbody_datacomment_v2.png` | 数据拆台角色参考、靠窗复盘镜头 |
+| 捷风 | `asset_library/val_tavern/generated/anchors/jett/VG_CHAR_JETT_halfbody_datacomment_v1.png` | 数据拆台角色参考、靠窗复盘镜头 |
 | 今日特调牌 | `asset_library/val_tavern/generated/anchors/specialdrink_sign/VG_PROP_specialdrink_sign_v2.png` | 收尾金句道具、模板角标、吧台常驻装饰 |
 | 瓦酒馆吧台全景 | `asset_library/val_tavern/generated/anchors/bar_fullview/VG_SCENE_bar_fullview_v2.png` | 主场景锚点、竖屏分镜背景、角色合成参考 |
 

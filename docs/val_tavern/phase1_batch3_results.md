@@ -17,10 +17,10 @@
   - `asset_library/val_tavern/generated/batch3/scenes/bar_dialogue_midshot/VG_SCENE_bar_dialogue_midshot_v2.png`
 - 推荐文件：`asset_library/val_tavern/generated/batch3/scenes/bar_dialogue_midshot/VG_SCENE_bar_dialogue_midshot_v2.png`
 - 选择原因：
-  - 吧台对话构图更清晰。
-  - 2-3 人角色站位预留更明确。
-  - 酒杯、菜单和座位元素完整。
-  - 文字区域不抢画面，适合后期加字幕。
+  - 吧台构图清楚。
+  - 适合 2–3 个角色对话。
+  - 背景元素丰富但不抢戏。
+  - 适合 EP01 主对话镜头。
 - 后续用途：火男、奶妈、奇乐、瓦叔同框对话镜头。
 
 ### 2.2 靠窗座位区
@@ -30,23 +30,23 @@
   - `asset_library/val_tavern/generated/batch3/scenes/window_seat/VG_SCENE_window_jett_seat_v2.png`
 - 推荐文件：`asset_library/val_tavern/generated/batch3/scenes/window_seat/VG_SCENE_window_jett_seat_v2.png`
 - 选择原因：
-  - 靠窗夜景和清醒氛围更稳定。
-  - 桌面与座位空间清楚。
-  - 适合捷风后续坐位拆台镜头。
-  - 未生成数据平板，符合本批次范围。
-- 后续用途：捷风固定座位、冷静吐槽、数据拆台类镜头。
+  - 赛博夜景更完整。
+  - 座位和桌面空间清楚。
+  - 适合作为捷风固定座位。
+  - 后续可用于冷静拆台、看戏、独白镜头。
+- 后续用途：捷风固定座位、冷静吐槽、看戏、独白类镜头。
 
 ### 2.3 角落阴影座位
 
 - 生成文件：
   - `asset_library/val_tavern/generated/batch3/scenes/corner_seat/VG_SCENE_corner_omen_seat_v1.png`
   - `asset_library/val_tavern/generated/batch3/scenes/corner_seat/VG_SCENE_corner_omen_seat_v2.png`
-- 推荐文件：`asset_library/val_tavern/generated/batch3/scenes/corner_seat/VG_SCENE_corner_omen_seat_v1.png`
+- 推荐文件：`asset_library/val_tavern/generated/batch3/scenes/corner_seat/VG_SCENE_corner_omen_seat_v2.png`
 - 选择原因：
-  - 角落感和低气压氛围明确。
-  - 暗部仍然可读，没有恐怖化。
-  - 保留了幽影角色摆放空间。
-  - 背景复杂度适合短视频镜头复用。
+  - 角落氛围更稳定。
+  - 桌椅和烟雾元素完整。
+  - 适合作为幽影固定座位。
+  - 画面留有角色摆放空间。
 - 后续用途：幽影冷幽默、阴间金句、角落补刀类镜头。
 
 ### 2.4 账单 / 小票
@@ -56,10 +56,9 @@
   - `asset_library/val_tavern/generated/batch3/props/bill_receipt/VG_PROP_bill_receipt_v2.png`
 - 推荐文件：`asset_library/val_tavern/generated/batch3/props/bill_receipt/VG_PROP_bill_receipt_v2.png`
 - 选择原因：
-  - 酒馆账单识别度更高。
-  - 票据留白区域更适合后期替换文字。
-  - 文字不过密，避免不可控中文内容。
-  - 可作为皮蛋递账单镜头高频道具。
+  - 版面更干净。
+  - 留白更多，适合后期添加账单文字。
+  - 更适合重复作为栏目道具使用。
 - 后续用途：结账梗、伤害统计小票、皮蛋递账单镜头。
 
 ### 2.5 皮蛋举牌板
@@ -67,23 +66,22 @@
 - 生成文件：
   - `asset_library/val_tavern/generated/batch3/props/pidan_sign/VG_PROP_pidan_sign_blank_v1.png`
   - `asset_library/val_tavern/generated/batch3/props/pidan_sign/VG_PROP_pidan_sign_blank_v2.png`
-- 推荐文件：`asset_library/val_tavern/generated/batch3/props/pidan_sign/VG_PROP_pidan_sign_blank_v1.png`
+- 推荐文件：`asset_library/val_tavern/generated/batch3/props/pidan_sign/VG_PROP_pidan_sign_blank_v2.png`
 - 选择原因：
-  - 牌面中心留白更大。
-  - 适合皮蛋举牌动作复用。
-  - 轮廓清晰，主体识别稳定。
-  - 方便后期添加“今日上桌”等栏目文字。
+  - 皮蛋露出更有记忆点。
+  - 牌面中心留白充足。
+  - 适合承载“今日上桌：XXXX”副标题。
 - 后续用途：皮蛋出场提示、梗标题、单集主题提示牌。
 
 ## 3. 当前推荐入库资产总表
 
 | 资产名称 | 资产类型 | 推荐文件 | 后续用途 |
 | --- | --- | --- | --- |
-| 吧台中景对话位 | scene | `asset_library/val_tavern/generated/batch3/scenes/bar_dialogue_midshot/VG_SCENE_bar_dialogue_midshot_v2.png` | 2-3 人吧台对话 |
-| 靠窗座位区 | scene | `asset_library/val_tavern/generated/batch3/scenes/window_seat/VG_SCENE_window_jett_seat_v2.png` | 捷风拆台座位 |
-| 角落阴影座位 | scene | `asset_library/val_tavern/generated/batch3/scenes/corner_seat/VG_SCENE_corner_omen_seat_v1.png` | 幽影冷幽默镜头 |
-| 账单 / 小票 | prop | `asset_library/val_tavern/generated/batch3/props/bill_receipt/VG_PROP_bill_receipt_v2.png` | 结账梗、统计小票 |
-| 皮蛋举牌板 | prop | `asset_library/val_tavern/generated/batch3/props/pidan_sign/VG_PROP_pidan_sign_blank_v1.png` | 皮蛋提示牌、栏目标题 |
+| 吧台中景对话位 | scene | `asset_library/val_tavern/generated/batch3/scenes/bar_dialogue_midshot/VG_SCENE_bar_dialogue_midshot_v2.png` | EP01 主对话镜头、2–3 人吧台对话 |
+| 靠窗座位区 | scene | `asset_library/val_tavern/generated/batch3/scenes/window_seat/VG_SCENE_window_jett_seat_v2.png` | 捷风固定座位、冷静拆台、看戏、独白 |
+| 角落阴影座位 | scene | `asset_library/val_tavern/generated/batch3/scenes/corner_seat/VG_SCENE_corner_omen_seat_v2.png` | 幽影固定座位、角落补刀镜头 |
+| 账单 / 小票 | prop | `asset_library/val_tavern/generated/batch3/props/bill_receipt/VG_PROP_bill_receipt_v2.png` | 结账梗、统计小票、栏目道具复用 |
+| 皮蛋举牌板 | prop | `asset_library/val_tavern/generated/batch3/props/pidan_sign/VG_PROP_pidan_sign_blank_v2.png` | “今日上桌：XXXX”副标题、皮蛋提示牌 |
 
 ## 4. 后续生成注意事项
 

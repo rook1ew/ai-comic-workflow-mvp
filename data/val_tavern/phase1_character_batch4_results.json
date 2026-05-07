@@ -1,0 +1,154 @@
+[
+  {
+    "result_id": "VG-CHAR-B4-001",
+    "character_id": "VG_CHAR_BRIMSTONE",
+    "character_name_cn": "炼狱",
+    "character_name_en": "Brimstone",
+    "asset_name": "炼狱",
+    "asset_type": "character",
+    "batch": "phase1_character_batch4",
+    "group": "selected_character_import",
+    "import_source": "D:/炼狱.png",
+    "generated_files": [
+      "asset_library/val_tavern/generated/characters_batch4/brimstone/VG_CHAR_BRIMSTONE_fullbody_whiskeytoast_v1.png"
+    ],
+    "recommended_file": "asset_library/val_tavern/generated/characters_batch4/brimstone/VG_CHAR_BRIMSTONE_fullbody_whiskeytoast_v1.png",
+    "style_tags": [
+      "Q版",
+      "赛博酒馆风",
+      "暖色霓虹",
+      "重装老兵感"
+    ],
+    "scene_tags": [
+      "瓦酒馆",
+      "角色正式资产",
+      "举杯敬酒"
+    ],
+    "pose_tags": [
+      "全身",
+      "举杯",
+      "稳重站姿"
+    ],
+    "selection_reason": [
+      "Q版重装老兵感清晰",
+      "举杯敬酒动作适合瓦酒馆氛围",
+      "暖色赛博酒馆风格统一",
+      "可作为炼狱当前阶段正式角色资产"
+    ],
+    "status": "completed"
+  },
+  {
+    "result_id": "VG-CHAR-B4-002",
+    "character_id": "VG_CHAR_CYPHER",
+    "character_name_cn": "保安",
+    "character_name_en": "Cypher",
+    "asset_name": "保安",
+    "asset_type": "character",
+    "batch": "phase1_character_batch4",
+    "group": "selected_character_import",
+    "import_source": "D:/保安.png",
+    "generated_files": [
+      "asset_library/val_tavern/generated/characters_batch4/cypher/VG_CHAR_CYPHER_fullbody_cardpose_v1.png"
+    ],
+    "recommended_file": "asset_library/val_tavern/generated/characters_batch4/cypher/VG_CHAR_CYPHER_fullbody_cardpose_v1.png",
+    "style_tags": [
+      "Q版",
+      "赛博酒馆风",
+      "白帽神秘感",
+      "清晰轮廓"
+    ],
+    "scene_tags": [
+      "瓦酒馆",
+      "角色正式资产",
+      "小装置"
+    ],
+    "pose_tags": [
+      "全身",
+      "持卡片",
+      "神秘站姿"
+    ],
+    "selection_reason": [
+      "白帽神秘感和角色轮廓清晰",
+      "持卡片动作有记忆点",
+      "小装置元素适合作为保安角色识别点",
+      "可作为保安当前阶段正式角色资产"
+    ],
+    "status": "completed"
+  },
+  {
+    "result_id": "VG-CHAR-B4-003",
+    "character_id": "VG_CHAR_SOVA",
+    "character_name_cn": "猎枭",
+    "character_name_en": "Sova",
+    "asset_name": "猎枭",
+    "asset_type": "character",
+    "batch": "phase1_character_batch4",
+    "group": "selected_character_import",
+    "import_source": "D:/猎枭.png",
+    "generated_files": [
+      "asset_library/val_tavern/generated/characters_batch4/sova/VG_CHAR_SOVA_fullbody_bowdrink_v1.png"
+    ],
+    "recommended_file": "asset_library/val_tavern/generated/characters_batch4/sova/VG_CHAR_SOVA_fullbody_bowdrink_v1.png",
+    "style_tags": [
+      "Q版",
+      "赛博酒馆风",
+      "冰蓝系",
+      "冷静侦察手"
+    ],
+    "scene_tags": [
+      "瓦酒馆",
+      "角色正式资产",
+      "弓与饮品"
+    ],
+    "pose_tags": [
+      "全身",
+      "持弓",
+      "持饮品"
+    ],
+    "selection_reason": [
+      "冰蓝系侦察手气质明确",
+      "持弓和饮品元素同时可读",
+      "Q版比例与现有角色资产风格接近",
+      "可作为猎枭当前阶段正式角色资产"
+    ],
+    "status": "completed"
+  },
+  {
+    "result_id": "VG-CHAR-B4-004",
+    "character_id": "VG_CHAR_REYNA",
+    "character_name_cn": "芮娜",
+    "character_name_en": "Reyna",
+    "asset_name": "芮娜",
+    "asset_type": "character",
+    "batch": "phase1_character_batch4",
+    "group": "selected_character_import",
+    "import_source": "D:/芮娜.png",
+    "generated_files": [
+      "asset_library/val_tavern/generated/characters_batch4/reyna/VG_CHAR_REYNA_fullbody_purpletoast_v1.png"
+    ],
+    "recommended_file": "asset_library/val_tavern/generated/characters_batch4/reyna/VG_CHAR_REYNA_fullbody_purpletoast_v1.png",
+    "style_tags": [
+      "Q版",
+      "赛博酒馆风",
+      "紫色霓虹",
+      "魅惑嘴硬感"
+    ],
+    "scene_tags": [
+      "瓦酒馆",
+      "角色正式资产",
+      "EP01 核心角色"
+    ],
+    "pose_tags": [
+      "全身",
+      "举杯",
+      "自信站姿"
+    ],
+    "selection_reason": [
+      "紫色霓虹和芮娜气质匹配",
+      "举杯姿态适合瓦酒馆角色资产库",
+      "自信嘴硬感清晰，适合 EP01 使用",
+      "可作为芮娜当前阶段正式角色资产"
+    ],
+    "status": "completed"
+  }
+]

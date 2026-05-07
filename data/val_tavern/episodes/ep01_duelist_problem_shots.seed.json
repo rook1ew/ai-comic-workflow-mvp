@@ -1,0 +1,98 @@
+[
+  {
+    "shot_id": "SHOT-001",
+    "episode_id": "VG-EP01",
+    "start_time": 0.0,
+    "end_time": 0.5,
+    "duration": "0.5s",
+    "scene": "瓦酒馆吧台全景",
+    "characters": ["皮蛋"],
+    "dialogue": "瓦酒馆招牌亮起，皮蛋端着发光饮料跑过。圆桌上摆着排位结算界面。",
+    "purpose": "开场视觉钩子，快速建立瓦酒馆和排位吐槽氛围。",
+    "status": "todo"
+  },
+  {
+    "shot_id": "SHOT-002",
+    "episode_id": "VG-EP01",
+    "start_time": 0.5,
+    "end_time": 1.2,
+    "duration": "0.7s",
+    "scene": "吧台中景对话位",
+    "characters": ["老瓦"],
+    "dialogue": "要来一杯吗？",
+    "purpose": "固定开场白 1.0。",
+    "status": "todo"
+  },
+  {
+    "shot_id": "SHOT-003",
+    "episode_id": "VG-EP01",
+    "start_time": 1.2,
+    "end_time": 2.2,
+    "duration": "1.0s",
+    "scene": "吧台中景对话位",
+    "characters": ["皮蛋"],
+    "dialogue": "今日特调：单摸战神",
+    "purpose": "皮蛋举牌给出本集梗点。",
+    "status": "todo"
+  },
+  {
+    "shot_id": "SHOT-004",
+    "episode_id": "VG-EP01",
+    "start_time": 2.2,
+    "end_time": 6.5,
+    "duration": "4.3s",
+    "scene": "吧台中景对话位",
+    "characters": ["贤者"],
+    "dialogue": "打 A 点喊半天让你跟团，你非要一个人摸 B 通！我们正面进点永远少一个，捷风 E 进去就没了，你人呢？",
+    "purpose": "贤者抛出核心矛盾。",
+    "status": "todo"
+  },
+  {
+    "shot_id": "SHOT-005",
+    "episode_id": "VG-EP01",
+    "start_time": 6.5,
+    "end_time": 12.0,
+    "duration": "5.5s",
+    "scene": "吧台中景对话位",
+    "characters": ["芮娜", "捷风"],
+    "dialogue": "芮娜：我 20-10，全队最高战绩。你们自己打不进点，怪我？ 捷风：你这 20-10 挺好看的。就是和赢游戏没什么关系。",
+    "purpose": "芮娜用战绩反驳，捷风拆台。",
+    "status": "todo"
+  },
+  {
+    "shot_id": "SHOT-006",
+    "episode_id": "VG-EP01",
+    "start_time": 12.0,
+    "end_time": 18.0,
+    "duration": "6.0s",
+    "scene": "角落阴影座位",
+    "characters": ["芮娜", "幽影"],
+    "dialogue": "芮娜：我在拉扯，给对面压力。我偷人把机会都做出来了，是你们自己接不住。 幽影：不怪你。你只是和队伍不在一个地图。确实给到我们四个压力了。",
+    "purpose": "芮娜继续嘴硬，幽影冷幽默补刀。",
+    "status": "todo"
+  },
+  {
+    "shot_id": "SHOT-007",
+    "episode_id": "VG-EP01",
+    "start_time": 18.0,
+    "end_time": 22.5,
+    "duration": "4.5s",
+    "scene": "吧台中景对话位",
+    "characters": ["贤者", "芮娜", "捷风", "幽影"],
+    "dialogue": "芮娜：那我不单摸，你们正面就一定打得进去吗？ 贤者：至少你人在，我们还能补枪！ 捷风：你来得比残局结算还晚。 幽影：她不是单摸，她是单机。",
+    "purpose": "众人争吵升级，形成酒馆对线复盘。",
+    "status": "todo"
+  },
+  {
+    "shot_id": "SHOT-008",
+    "episode_id": "VG-EP01",
+    "start_time": 22.5,
+    "end_time": 25.0,
+    "duration": "2.5s",
+    "scene": "吧台中景对话位",
+    "characters": ["老瓦", "皮蛋"],
+    "dialogue": "老瓦：别吵了。皮蛋，你怎么看？ 皮蛋举牌：KSKBL",
+    "purpose": "老瓦叫停，皮蛋举牌临时收尾。",
+    "status": "todo"
+  }
+]

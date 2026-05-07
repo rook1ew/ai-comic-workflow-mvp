@@ -39,6 +39,10 @@
 - [第四批角色资产导入结果](./phase1_character_batch4_results.md)
 - [固定开场白框架](./opening_formula_framework.md)
 - [固定开场白 1.0](./opening_formula_v1.md)
+- [EP01 脚本](./episodes/ep01_duelist_problem_script.md)
+- [EP01 分镜](./episodes/ep01_duelist_problem_storyboard.md)
+- [EP01 shot generation plan](./episodes/ep01_shot_generation_plan.md)
+- [EP01 shot image generation seed](../../data/val_tavern/episodes/ep01_shot_image_generation.seed.json)
 - [任务种子文件](../../data/val_tavern/phase1_asset_tasks.seed.json)
 
 ## 任务种子文件位置

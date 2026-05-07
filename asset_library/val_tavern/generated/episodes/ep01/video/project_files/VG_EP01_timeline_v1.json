@@ -1,0 +1,107 @@
+{
+  "episode_id": "VG-EP01",
+  "title": "《瓦酒馆 EP01：单摸芮娜，赢了战绩输了全队》",
+  "video_spec": {
+    "width": 1080,
+    "height": 1920,
+    "fps": 30,
+    "duration_seconds": 25.0,
+    "format": "mp4",
+    "codec": "H.264",
+    "audio": "silent"
+  },
+  "outputs": {
+    "video": "asset_library/val_tavern/generated/episodes/ep01/video/VG_EP01_first_cut_v1.mp4",
+    "srt": "asset_library/val_tavern/generated/episodes/ep01/video/subtitles/VG_EP01_first_cut_v1.srt"
+  },
+  "shots": [
+    {
+      "shot_id": "SHOT-001",
+      "start": 0.0,
+      "end": 0.5,
+      "image": "VG_EP01_SHOT_001_opening_v2.png",
+      "caption": "",
+      "motion": "slow_push_in",
+      "note": "Uses corrected v2 so the bartender is Washu, not Brimstone.",
+      "duration": 0.5,
+      "image_path": "asset_library/val_tavern/generated/episodes/ep01/shot_images/VG_EP01_SHOT_001_opening_v2.png"
+    },
+    {
+      "shot_id": "SHOT-002",
+      "start": 0.5,
+      "end": 1.2,
+      "image": "VG_EP01_SHOT_002_washu_opening_v1.png",
+      "caption": "要来一杯吗？",
+      "motion": "slow_push_in",
+      "note": "Fixed opening line.",
+      "duration": 0.7,
+      "image_path": "asset_library/val_tavern/generated/episodes/ep01/shot_images/VG_EP01_SHOT_002_washu_opening_v1.png"
+    },
+    {
+      "shot_id": "SHOT-003",
+      "start": 1.2,
+      "end": 2.2,
+      "image": "VG_EP01_SHOT_003_pidan_special_v1.png",
+      "caption": "今日特调：单摸战神",
+      "motion": "slow_push_in",
+      "note": "Plate text is added in video, not generated in the image.",
+      "duration": 1.0,
+      "image_path": "asset_library/val_tavern/generated/episodes/ep01/shot_images/VG_EP01_SHOT_003_pidan_special_v1.png"
+    },
+    {
+      "shot_id": "SHOT-004",
+      "start": 2.2,
+      "end": 6.5,
+      "image": "VG_EP01_SHOT_004_sage_complain_v1.png",
+      "caption": "打 A 点喊半天让你跟团，\n你非要一个人摸 B 通！\n我们正面进点永远少一个，\n捷风 E 进去就没了，你人呢？",
+      "motion": "slow_push_in",
+      "note": "Sage complaint beat.",
+      "duration": 4.3,
+      "image_path": "asset_library/val_tavern/generated/episodes/ep01/shot_images/VG_EP01_SHOT_004_sage_complain_v1.png"
+    },
+    {
+      "shot_id": "SHOT-005",
+      "start": 6.5,
+      "end": 12.0,
+      "image": "VG_EP01_SHOT_005_reyna_jett_conflict_v1.png",
+      "caption": "芮娜：我 20-10，全队最高战绩。\n你们自己打不进点，怪我？\n捷风：你这 20-10 挺好看的。\n就是和赢游戏没什么关系。",
+      "motion": "slow_push_in",
+      "note": "Reyna vs Jett conflict. 20-10 is subtitle text.",
+      "duration": 5.5,
+      "image_path": "asset_library/val_tavern/generated/episodes/ep01/shot_images/VG_EP01_SHOT_005_reyna_jett_conflict_v1.png"
+    },
+    {
+      "shot_id": "SHOT-006",
+      "start": 12.0,
+      "end": 18.0,
+      "image": "VG_EP01_SHOT_006_reyna_omen_roast_v2.png",
+      "caption": "芮娜：我在拉扯，给对面压力。\n我偷人把机会都做出来了，\n是你们自己接不住。\n幽影：不怪你。\n你只是和队伍不在一个地图。\n确实给到我们四个压力了。",
+      "motion": "slow_push_in",
+      "note": "Uses corrected Reyna reference v2.",
+      "duration": 6.0,
+      "image_path": "asset_library/val_tavern/generated/episodes/ep01/shot_images/VG_EP01_SHOT_006_reyna_omen_roast_v2.png"
+    },
+    {
+      "shot_id": "SHOT-007",
+      "start": 18.0,
+      "end": 22.5,
+      "image": "VG_EP01_SHOT_007_group_argument_v1.png",
+      "caption": "芮娜：那我不单摸，\n你们正面就一定打得进去吗？\n贤者：至少你人在，我们还能补枪！\n捷风：你来得比残局结算还晚。\n幽影：她不是单摸，她是单机。",
+      "motion": "slow_pan",
+      "note": "Group argument beat.",
+      "duration": 4.5,
+      "image_path": "asset_library/val_tavern/generated/episodes/ep01/shot_images/VG_EP01_SHOT_007_group_argument_v1.png"
+    },
+    {
+      "shot_id": "SHOT-008",
+      "start": 22.5,
+      "end": 25.0,
+      "image": "VG_EP01_SHOT_008_pidan_ending_v1.png",
+      "caption": "老瓦：别吵了。皮蛋，你怎么看？\n皮蛋举牌：\nKSKBL",
+      "motion": "slow_push_in",
+      "note": "No comment CTA subtitle.",
+      "duration": 2.5,
+      "image_path": "asset_library/val_tavern/generated/episodes/ep01/shot_images/VG_EP01_SHOT_008_pidan_ending_v1.png"
+    }
+  ]
+}

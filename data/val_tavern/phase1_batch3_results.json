@@ -1,0 +1,87 @@
+[
+  {
+    "result_id": "VG-BATCH3-001",
+    "asset_name": "吧台中景对话位",
+    "asset_type": "scene",
+    "generated_files": [
+      "asset_library/val_tavern/generated/batch3/scenes/bar_dialogue_midshot/VG_SCENE_bar_dialogue_midshot_v1.png",
+      "asset_library/val_tavern/generated/batch3/scenes/bar_dialogue_midshot/VG_SCENE_bar_dialogue_midshot_v2.png"
+    ],
+    "recommended_file": "asset_library/val_tavern/generated/batch3/scenes/bar_dialogue_midshot/VG_SCENE_bar_dialogue_midshot_v2.png",
+    "selection_reason": [
+      "吧台对话构图更清晰",
+      "2-3 人角色站位预留更明确",
+      "酒杯、菜单和座位元素完整",
+      "文字区域不抢画面，适合后期加字幕"
+    ],
+    "status": "completed"
+  },
+  {
+    "result_id": "VG-BATCH3-002",
+    "asset_name": "靠窗座位区",
+    "asset_type": "scene",
+    "generated_files": [
+      "asset_library/val_tavern/generated/batch3/scenes/window_seat/VG_SCENE_window_jett_seat_v1.png",
+      "asset_library/val_tavern/generated/batch3/scenes/window_seat/VG_SCENE_window_jett_seat_v2.png"
+    ],
+    "recommended_file": "asset_library/val_tavern/generated/batch3/scenes/window_seat/VG_SCENE_window_jett_seat_v2.png",
+    "selection_reason": [
+      "靠窗夜景和清醒氛围更稳定",
+      "桌面与座位空间清楚",
+      "适合捷风后续坐位拆台镜头",
+      "未生成数据平板，符合本批次范围"
+    ],
+    "status": "completed"
+  },
+  {
+    "result_id": "VG-BATCH3-003",
+    "asset_name": "角落阴影座位",
+    "asset_type": "scene",
+    "generated_files": [
+      "asset_library/val_tavern/generated/batch3/scenes/corner_seat/VG_SCENE_corner_omen_seat_v1.png",
+      "asset_library/val_tavern/generated/batch3/scenes/corner_seat/VG_SCENE_corner_omen_seat_v2.png"
+    ],
+    "recommended_file": "asset_library/val_tavern/generated/batch3/scenes/corner_seat/VG_SCENE_corner_omen_seat_v1.png",
+    "selection_reason": [
+      "角落感和低气压氛围明确",
+      "暗部仍然可读，没有恐怖化",
+      "保留了幽影角色摆放空间",
+      "背景复杂度适合短视频镜头复用"
+    ],
+    "status": "completed"
+  },
+  {
+    "result_id": "VG-BATCH3-004",
+    "asset_name": "账单 / 小票",
+    "asset_type": "prop",
+    "generated_files": [
+      "asset_library/val_tavern/generated/batch3/props/bill_receipt/VG_PROP_bill_receipt_v1.png",
+      "asset_library/val_tavern/generated/batch3/props/bill_receipt/VG_PROP_bill_receipt_v2.png"
+    ],
+    "recommended_file": "asset_library/val_tavern/generated/batch3/props/bill_receipt/VG_PROP_bill_receipt_v2.png",
+    "selection_reason": [
+      "酒馆账单识别度更高",
+      "票据留白区域更适合后期替换文字",
+      "文字不过密，避免不可控中文内容",
+      "可作为皮蛋递账单镜头高频道具"
+    ],
+    "status": "completed"
+  },
+  {
+    "result_id": "VG-BATCH3-005",
+    "asset_name": "皮蛋举牌板",
+    "asset_type": "prop",
+    "generated_files": [
+      "asset_library/val_tavern/generated/batch3/props/pidan_sign/VG_PROP_pidan_sign_blank_v1.png",
+      "asset_library/val_tavern/generated/batch3/props/pidan_sign/VG_PROP_pidan_sign_blank_v2.png"
+    ],
+    "recommended_file": "asset_library/val_tavern/generated/batch3/props/pidan_sign/VG_PROP_pidan_sign_blank_v1.png",
+    "selection_reason": [
+      "牌面中心留白更大",
+      "适合皮蛋举牌动作复用",
+      "轮廓清晰，主体识别稳定",
+      "方便后期添加“今日上桌”等栏目文字"
+    ],
+    "status": "completed"
+  }
+]

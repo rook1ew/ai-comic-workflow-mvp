@@ -9,10 +9,10 @@
     ],
     "recommended_file": "asset_library/val_tavern/generated/characters_batch2/phoenix/VG_CHAR_PHOENIX_action_tablehit_v1.png",
     "selection_reason": [
-      "拍桌动作和上头情绪更适合剧情",
-      "头顶小火焰和能量饮料强化上头嘴硬感",
-      "角色表情夸张但可爱，符合Q版酒馆风格",
-      "适合作为后续剧情常驻资产"
+      "拍桌动作更清楚",
+      "上头情绪更适合剧情冲突",
+      "火焰元素和吧台场景结合更好",
+      "适合 EP02 或冲突镜头复用"
     ],
     "status": "completed"
   },
@@ -26,10 +26,10 @@
     ],
     "recommended_file": "asset_library/val_tavern/generated/characters_batch2/sage/VG_CHAR_SAGE_halfbody_tiredsmile_v1.png",
     "selection_reason": [
-      "温柔无奈气质清楚，画面更干净",
-      "温柔但无奈的疲惫微笑更稳定",
-      "治疗饮品、小药箱和绿色治疗光效清晰",
-      "适合后续“奶妈不是你妈”剧情使用"
+      "温柔无奈气质清楚",
+      "治疗饮品和小药箱元素明确",
+      "画面更干净，复用性更强",
+      "适合 EP01“奶妈不是你妈”剧情"
     ],
     "status": "completed"
   },
@@ -43,10 +43,10 @@
     ],
     "recommended_file": "asset_library/val_tavern/generated/characters_batch2/killjoy/VG_CHAR_KILLJOY_action_trayserve_v2.png",
     "selection_reason": [
-      "服务员感更强，托盘和小鸡元素更清楚",
-      "小鸡围裙、小鸡托盘和工具包信息更完整",
-      "科技少女与赛博酒馆氛围贴合",
-      "适合作为后续道具位和服务员镜头参考"
+      "服务员感更强",
+      "托盘和小鸡元素更清楚",
+      "表情更适合短视频栏目",
+      "适合后续与皮蛋互动"
     ],
     "status": "completed"
   },
@@ -61,9 +61,9 @@
     "recommended_file": "asset_library/val_tavern/generated/characters_batch2/omen/VG_CHAR_OMEN_halfbody_coldstare_v1.png",
     "selection_reason": [
       "角落冷幽默气质更稳定",
-      "冷脸、兜帽和发光眼部辨识度清晰",
-      "黑色饮品和角落座位强化角色定位",
-      "适合作为冷幽默和阴间金句镜头参考"
+      "黑色饮品和阴影氛围更明确",
+      "适合作为常驻补刀角色锚点",
+      "背景没有过度抢戏"
     ],
     "status": "completed"
   }

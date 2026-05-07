@@ -1,0 +1,115 @@
+[
+  {
+    "anchor_task_id": "VG-ANCHOR-001",
+    "asset_name": "瓦叔",
+    "asset_type": "character",
+    "linked_asset_id": "VG-ASSET-001",
+    "linked_prompt_task_ids": ["VG-PROMPT-001", "VG-PROMPT-002", "VG-PROMPT-003"],
+    "recommended_primary_prompt": "VG-PROMPT-001",
+    "recommended_output_count": 3,
+    "recommended_aspect_ratio": "3:4",
+    "usage": ["style_anchor", "character_reference", "batch_consistency"],
+    "acceptance_criteria": [
+      "Q版统一风格",
+      "角色辨识度清晰",
+      "赛博酒馆气质明确",
+      "适合作为后续生成参考"
+    ],
+    "suggested_file_namings": [
+      "VG_CHAR_WASHU_fullbody_default_v1",
+      "VG_CHAR_WASHU_fullbody_default_v2",
+      "VG_CHAR_WASHU_fullbody_default_v3"
+    ],
+    "status": "todo"
+  },
+  {
+    "anchor_task_id": "VG-ANCHOR-002",
+    "asset_name": "皮蛋",
+    "asset_type": "character",
+    "linked_asset_id": "VG-ASSET-002",
+    "linked_prompt_task_ids": ["VG-PROMPT-004", "VG-PROMPT-005", "VG-PROMPT-006"],
+    "recommended_primary_prompt": "VG-PROMPT-004",
+    "recommended_output_count": 3,
+    "recommended_aspect_ratio": "3:4",
+    "usage": ["mascot_anchor", "character_reference", "batch_consistency"],
+    "acceptance_criteria": [
+      "Q版统一风格",
+      "吉祥物辨识度清晰",
+      "托盘和围裙元素明确",
+      "适合作为跑堂和举牌动作参考"
+    ],
+    "suggested_file_namings": [
+      "VG_CHAR_PIDAN_fullbody_default_v1",
+      "VG_CHAR_PIDAN_fullbody_default_v2",
+      "VG_CHAR_PIDAN_fullbody_default_v3"
+    ],
+    "status": "todo"
+  },
+  {
+    "anchor_task_id": "VG-ANCHOR-003",
+    "asset_name": "捷风",
+    "asset_type": "character",
+    "linked_asset_id": "VG-ASSET-003",
+    "linked_prompt_task_ids": ["VG-PROMPT-007", "VG-PROMPT-008", "VG-PROMPT-009"],
+    "recommended_primary_prompt": "VG-PROMPT-007",
+    "recommended_output_count": 3,
+    "recommended_aspect_ratio": "3:4",
+    "usage": ["character_reference", "data_comment_anchor", "batch_consistency"],
+    "acceptance_criteria": [
+      "Q版统一风格",
+      "白发和数据平板辨识度清晰",
+      "冷静毒舌气质明确",
+      "适合作为数据拆台镜头参考"
+    ],
+    "suggested_file_namings": [
+      "VG_CHAR_JETT_fullbody_default_v1",
+      "VG_CHAR_JETT_fullbody_default_v2",
+      "VG_CHAR_JETT_fullbody_default_v3"
+    ],
+    "status": "todo"
+  },
+  {
+    "anchor_task_id": "VG-ANCHOR-004",
+    "asset_name": "瓦酒馆吧台全景",
+    "asset_type": "scene",
+    "linked_asset_id": "VG-ASSET-018",
+    "linked_prompt_task_ids": ["VG-PROMPT-032", "VG-PROMPT-033"],
+    "recommended_primary_prompt": "VG-PROMPT-032",
+    "recommended_output_count": 2,
+    "recommended_aspect_ratio": "9:16",
+    "usage": ["scene_anchor", "vertical_short_video_background", "storyboard_reference"],
+    "acceptance_criteria": [
+      "赛博酒馆暖光氛围明确",
+      "吧台和今日特调菜单清晰",
+      "预留角色活动空间",
+      "不使用真实官方LOGO或官方素材"
+    ],
+    "suggested_file_namings": [
+      "VG_SCENE_bar_fullview_vertical_v1",
+      "VG_SCENE_bar_fullview_vertical_v2"
+    ],
+    "status": "todo"
+  },
+  {
+    "anchor_task_id": "VG-ANCHOR-005",
+    "asset_name": "今日特调牌",
+    "asset_type": "prop",
+    "linked_asset_id": "VG-ASSET-008",
+    "linked_prompt_task_ids": ["VG-PROMPT-022"],
+    "recommended_primary_prompt": "VG-PROMPT-022",
+    "recommended_output_count": 2,
+    "recommended_aspect_ratio": "1:1",
+    "usage": ["prop_anchor", "ending_quote_asset", "template_reusable_asset"],
+    "acceptance_criteria": [
+      "赛博酒馆暖色霓虹风格明确",
+      "轮廓清晰且可作为独立素材",
+      "可替换文字区域干净可读",
+      "不使用真实官方LOGO或官方素材"
+    ],
+    "suggested_file_namings": [
+      "VG_PROP_specialdrink_sign_v1",
+      "VG_PROP_specialdrink_sign_v2"
+    ],
+    "status": "todo"
+  }
+]

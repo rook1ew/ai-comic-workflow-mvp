@@ -127,9 +127,10 @@
     "episode_id": "VG-EP01",
     "shot_title": "芮娜与幽影补刀",
     "generated_files": [
-      "asset_library/val_tavern/generated/episodes/ep01/shot_images/VG_EP01_SHOT_006_reyna_omen_roast_v1.png"
+      "asset_library/val_tavern/generated/episodes/ep01/shot_images/VG_EP01_SHOT_006_reyna_omen_roast_v1.png",
+      "asset_library/val_tavern/generated/episodes/ep01/shot_images/VG_EP01_SHOT_006_reyna_omen_roast_v2.png"
     ],
-    "recommended_file": "asset_library/val_tavern/generated/episodes/ep01/shot_images/VG_EP01_SHOT_006_reyna_omen_roast_v1.png",
+    "recommended_file": "asset_library/val_tavern/generated/episodes/ep01/shot_images/VG_EP01_SHOT_006_reyna_omen_roast_v2.png",
     "used_assets": [
       "asset_library/val_tavern/generated/characters_batch4/reyna/VG_CHAR_REYNA_fullbody_purpletoast_v1.png",
       "asset_library/val_tavern/generated/characters_batch2/omen/VG_CHAR_OMEN_halfbody_coldstare_v1.png",
@@ -140,7 +141,8 @@
       "幽影补刀台词后期添加"
     ],
     "selection_reason": [
-      "符合芮娜嘴硬与幽影冷幽默补刀目标",
+      "芮娜外观更贴近正式角色资产参考",
+      "黑紫长发、紫色眼睛和举杯姿态更准确",
       "保持角落阴影座位氛围",
       "适合短视频竖屏使用"
     ],

@@ -53,11 +53,13 @@
 
 ### SHOT-006 芮娜与幽影补刀
 
-- 生成文件：`asset_library/val_tavern/generated/episodes/ep01/shot_images/VG_EP01_SHOT_006_reyna_omen_roast_v1.png`
-- 推荐文件：`asset_library/val_tavern/generated/episodes/ep01/shot_images/VG_EP01_SHOT_006_reyna_omen_roast_v1.png`
+- 生成文件：
+  - `asset_library/val_tavern/generated/episodes/ep01/shot_images/VG_EP01_SHOT_006_reyna_omen_roast_v1.png`
+  - `asset_library/val_tavern/generated/episodes/ep01/shot_images/VG_EP01_SHOT_006_reyna_omen_roast_v2.png`
+- 推荐文件：`asset_library/val_tavern/generated/episodes/ep01/shot_images/VG_EP01_SHOT_006_reyna_omen_roast_v2.png`
 - 画面目标：芮娜继续解释自己在拉扯，幽影坐在角落冷冷补刀。
 - 后期需要添加的文字：芮娜解释台词、幽影补刀台词后期添加。
-- 备注：角落阴影座位要保持可读，不做恐怖风。
+- 备注：v2 参照芮娜正式角色资产重做，黑紫长发、紫色眼睛、举杯姿态和嘴硬气质更准确；角落阴影座位保持可读，不做恐怖风。
 
 ### SHOT-007 众人争吵
 

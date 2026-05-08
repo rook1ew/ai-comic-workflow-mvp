@@ -1,0 +1,68 @@
+[
+  {
+    "clip_id": "EP01-CLIP-01",
+    "source_video": "asset_library/val_tavern/generated/episodes/ep01/seeddance_clips/EP01_CLIP_01_opening.mp4",
+    "start_time": "0.0s",
+    "end_time": "5.0s",
+    "duration": "5.0s",
+    "content_summary": "开场 + 老瓦固定开场 + 皮蛋举牌，建立炼狱酒馆 EP01 单摸战神主题。",
+    "edit_notes": "作为开场段使用，裁掉开头和结尾不稳定废帧，保留招牌、老瓦和皮蛋举牌信息。转场使用硬切。",
+    "audio_notes": "可加入酒馆环境底噪、招牌亮起音效、皮蛋跑过的轻快 pop 音效。",
+    "status": "todo"
+  },
+  {
+    "clip_id": "EP01-CLIP-02",
+    "source_video": "asset_library/val_tavern/generated/episodes/ep01/seeddance_clips/EP01_CLIP_02_sage_complain.mp4",
+    "start_time": "5.0s",
+    "end_time": "12.0s",
+    "duration": "7.0s",
+    "content_summary": "贤者吐槽芮娜不跟团，一个人摸 B 通，导致正面进点少人。",
+    "edit_notes": "保留贤者表情和战术桌面信息，前后裁掉表情漂移或字幕不稳的废帧。字幕已烘焙，不重复加字幕。",
+    "audio_notes": "建议补贤者配音，可加轻微拍桌声或战术桌面提示音。",
+    "status": "todo"
+  },
+  {
+    "clip_id": "EP01-CLIP-03",
+    "source_video": "asset_library/val_tavern/generated/episodes/ep01/seeddance_clips/EP01_CLIP_03_reyna_jett.mp4",
+    "start_time": "12.0s",
+    "end_time": "19.0s",
+    "duration": "7.0s",
+    "content_summary": "芮娜用 20-10 战绩嘴硬反驳，捷风阴阳战绩和赢游戏没关系。",
+    "edit_notes": "重点保留芮娜自信表情和捷风冷脸反应。若字幕糊掉，后续在剪映覆盖同文案字幕。",
+    "audio_notes": "建议芮娜语气自信偏嘴硬，捷风语气冷淡阴阳。可加短促 whoosh 强调 20-10。",
+    "status": "todo"
+  },
+  {
+    "clip_id": "EP01-CLIP-04",
+    "source_video": "asset_library/val_tavern/generated/episodes/ep01/seeddance_clips/EP01_CLIP_04_reyna_omen.mp4",
+    "start_time": "19.0s",
+    "end_time": "28.0s",
+    "duration": "9.0s",
+    "content_summary": "芮娜继续解释自己在拉扯给压力，幽影冷幽默补刀她和队伍不在一个地图。",
+    "edit_notes": "保留芮娜与幽影同框关系，幽影台词处节奏放慢。转场继续硬切。",
+    "audio_notes": "建议幽影配音低沉、慢半拍，可加低频氛围音增强冷幽默。",
+    "status": "todo"
+  },
+  {
+    "clip_id": "EP01-CLIP-05",
+    "source_video": "asset_library/val_tavern/generated/episodes/ep01/seeddance_clips/EP01_CLIP_05_group_argument.mp4",
+    "start_time": "28.0s",
+    "end_time": "36.0s",
+    "duration": "8.0s",
+    "content_summary": "众人争吵升级，芮娜、贤者、捷风、幽影围绕单摸问题对线。",
+    "edit_notes": "画面信息量较大，优先保留角色表情稳定的部分。若字幕不清晰，后期用剪映覆盖字幕。",
+    "audio_notes": "多角色配音需要错开节奏，可加入轻微酒馆吵闹声和短促 pop 音效。",
+    "status": "todo"
+  },
+  {
+    "clip_id": "EP01-CLIP-06",
+    "source_video": "asset_library/val_tavern/generated/episodes/ep01/seeddance_clips/EP01_CLIP_06_pidan_ending.mp4",
+    "start_time": "36.0s",
+    "end_time": "41.0s",
+    "duration": "5.0s",
+    "content_summary": "老瓦叫停争吵，皮蛋举牌收尾：都别吵了，KSKBL。",
+    "edit_notes": "保留皮蛋举牌和 KSKBL 信息，作为 first cut 收尾。本版不加评论引导字幕。",
+    "audio_notes": "可加入老瓦叫停配音、举牌 pop 音效和轻微收尾音效。",
+    "status": "todo"
+  }
+]

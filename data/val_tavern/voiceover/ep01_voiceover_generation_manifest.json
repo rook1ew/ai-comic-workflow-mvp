@@ -1,0 +1,416 @@
+[
+  {
+    "line_id": "EP01-VO-001",
+    "episode_id": "EP01",
+    "clip_id": "EP01-CLIP-01",
+    "character": "老瓦",
+    "voice_profile": "washu_low_mature_tavern_boss",
+    "text": "要来一杯吗？",
+    "target_duration_seconds": 1.2,
+    "recommended_speed": "normal_slow",
+    "provider": "elevenlabs_stub",
+    "model_id": "TODO_MODEL_ID",
+    "voice_id": "TODO_VOICE_ID",
+    "request_payload_preview": {
+      "text": "要来一杯吗？",
+      "model_id": "TODO_MODEL_ID",
+      "voice_settings": {
+        "stability": "TODO",
+        "similarity_boost": "TODO"
+      }
+    },
+    "output_path": "asset_library/val_tavern/generated/episodes/ep01/voiceover/EP01_CLIP01_WASHU_001_opening.wav",
+    "status": "pending_tts"
+  },
+  {
+    "line_id": "EP01-VO-002",
+    "episode_id": "EP01",
+    "clip_id": "EP01-CLIP-01",
+    "character": "皮蛋",
+    "voice_profile": "pidan_cute_short_electronic",
+    "text": "今日特调，单摸战神！",
+    "target_duration_seconds": 1.4,
+    "recommended_speed": "fast",
+    "provider": "elevenlabs_stub",
+    "model_id": "TODO_MODEL_ID",
+    "voice_id": "TODO_VOICE_ID",
+    "request_payload_preview": {
+      "text": "今日特调，单摸战神！",
+      "model_id": "TODO_MODEL_ID",
+      "voice_settings": {
+        "stability": "TODO",
+        "similarity_boost": "TODO"
+      }
+    },
+    "output_path": "asset_library/val_tavern/generated/episodes/ep01/voiceover/EP01_CLIP01_PIDAN_001_special.wav",
+    "status": "pending_tts"
+  },
+  {
+    "line_id": "EP01-VO-003",
+    "episode_id": "EP01",
+    "clip_id": "EP01-CLIP-02",
+    "character": "贤者",
+    "voice_profile": "sage_gentle_but_tilted",
+    "text": "打 A 让你跟团，你非要摸 B！",
+    "target_duration_seconds": 2.0,
+    "recommended_speed": "normal_fast",
+    "provider": "elevenlabs_stub",
+    "model_id": "TODO_MODEL_ID",
+    "voice_id": "TODO_VOICE_ID",
+    "request_payload_preview": {
+      "text": "打 A 让你跟团，你非要摸 B！",
+      "model_id": "TODO_MODEL_ID",
+      "voice_settings": {
+        "stability": "TODO",
+        "similarity_boost": "TODO"
+      }
+    },
+    "output_path": "asset_library/val_tavern/generated/episodes/ep01/voiceover/EP01_CLIP02_SAGE_001_complain.wav",
+    "status": "pending_tts"
+  },
+  {
+    "line_id": "EP01-VO-004",
+    "episode_id": "EP01",
+    "clip_id": "EP01-CLIP-02",
+    "character": "贤者",
+    "voice_profile": "sage_gentle_but_tilted",
+    "text": "我们正面永远少一个，捷风 E 进去就没了，你人呢？",
+    "target_duration_seconds": 3.4,
+    "recommended_speed": "normal_fast",
+    "provider": "elevenlabs_stub",
+    "model_id": "TODO_MODEL_ID",
+    "voice_id": "TODO_VOICE_ID",
+    "request_payload_preview": {
+      "text": "我们正面永远少一个，捷风 E 进去就没了，你人呢？",
+      "model_id": "TODO_MODEL_ID",
+      "voice_settings": {
+        "stability": "TODO",
+        "similarity_boost": "TODO"
+      }
+    },
+    "output_path": "asset_library/val_tavern/generated/episodes/ep01/voiceover/EP01_CLIP02_SAGE_002_where_are_you.wav",
+    "status": "pending_tts"
+  },
+  {
+    "line_id": "EP01-VO-005",
+    "episode_id": "EP01",
+    "clip_id": "EP01-CLIP-03",
+    "character": "芮娜",
+    "voice_profile": "reyna_confident_hardmouth",
+    "text": "我 20-10，全队最高战绩，怪我？",
+    "target_duration_seconds": 2.5,
+    "recommended_speed": "normal_fast",
+    "provider": "elevenlabs_stub",
+    "model_id": "TODO_MODEL_ID",
+    "voice_id": "TODO_VOICE_ID",
+    "request_payload_preview": {
+      "text": "我 20-10，全队最高战绩，怪我？",
+      "model_id": "TODO_MODEL_ID",
+      "voice_settings": {
+        "stability": "TODO",
+        "similarity_boost": "TODO"
+      }
+    },
+    "output_path": "asset_library/val_tavern/generated/episodes/ep01/voiceover/EP01_CLIP03_REYNA_001_kda_reply.wav",
+    "status": "pending_tts"
+  },
+  {
+    "line_id": "EP01-VO-006",
+    "episode_id": "EP01",
+    "clip_id": "EP01-CLIP-03",
+    "character": "捷风",
+    "voice_profile": "jett_cold_sarcastic",
+    "text": "挺好看的。",
+    "target_duration_seconds": 1.0,
+    "recommended_speed": "normal",
+    "provider": "elevenlabs_stub",
+    "model_id": "TODO_MODEL_ID",
+    "voice_id": "TODO_VOICE_ID",
+    "request_payload_preview": {
+      "text": "挺好看的。",
+      "model_id": "TODO_MODEL_ID",
+      "voice_settings": {
+        "stability": "TODO",
+        "similarity_boost": "TODO"
+      }
+    },
+    "output_path": "asset_library/val_tavern/generated/episodes/ep01/voiceover/EP01_CLIP03_JETT_001_pre_roast.wav",
+    "status": "pending_tts"
+  },
+  {
+    "line_id": "EP01-VO-007",
+    "episode_id": "EP01",
+    "clip_id": "EP01-CLIP-03",
+    "character": "捷风",
+    "voice_profile": "jett_cold_sarcastic",
+    "text": "就是和赢游戏没什么关系。",
+    "target_duration_seconds": 2.0,
+    "recommended_speed": "normal",
+    "provider": "elevenlabs_stub",
+    "model_id": "TODO_MODEL_ID",
+    "voice_id": "TODO_VOICE_ID",
+    "request_payload_preview": {
+      "text": "就是和赢游戏没什么关系。",
+      "model_id": "TODO_MODEL_ID",
+      "voice_settings": {
+        "stability": "TODO",
+        "similarity_boost": "TODO"
+      }
+    },
+    "output_path": "asset_library/val_tavern/generated/episodes/ep01/voiceover/EP01_CLIP03_JETT_002_roast.wav",
+    "status": "pending_tts"
+  },
+  {
+    "line_id": "EP01-VO-008",
+    "episode_id": "EP01",
+    "clip_id": "EP01-CLIP-04",
+    "character": "芮娜",
+    "voice_profile": "reyna_confident_hardmouth",
+    "text": "我在拉扯，给对面压力。",
+    "target_duration_seconds": 1.8,
+    "recommended_speed": "normal_fast",
+    "provider": "elevenlabs_stub",
+    "model_id": "TODO_MODEL_ID",
+    "voice_id": "TODO_VOICE_ID",
+    "request_payload_preview": {
+      "text": "我在拉扯，给对面压力。",
+      "model_id": "TODO_MODEL_ID",
+      "voice_settings": {
+        "stability": "TODO",
+        "similarity_boost": "TODO"
+      }
+    },
+    "output_path": "asset_library/val_tavern/generated/episodes/ep01/voiceover/EP01_CLIP04_REYNA_001_pressure.wav",
+    "status": "pending_tts"
+  },
+  {
+    "line_id": "EP01-VO-009",
+    "episode_id": "EP01",
+    "clip_id": "EP01-CLIP-04",
+    "character": "芮娜",
+    "voice_profile": "reyna_confident_hardmouth",
+    "text": "机会都做出来了，是你们接不住。",
+    "target_duration_seconds": 2.4,
+    "recommended_speed": "normal_fast",
+    "provider": "elevenlabs_stub",
+    "model_id": "TODO_MODEL_ID",
+    "voice_id": "TODO_VOICE_ID",
+    "request_payload_preview": {
+      "text": "机会都做出来了，是你们接不住。",
+      "model_id": "TODO_MODEL_ID",
+      "voice_settings": {
+        "stability": "TODO",
+        "similarity_boost": "TODO"
+      }
+    },
+    "output_path": "asset_library/val_tavern/generated/episodes/ep01/voiceover/EP01_CLIP04_REYNA_002_chance_done.wav",
+    "status": "pending_tts"
+  },
+  {
+    "line_id": "EP01-VO-010",
+    "episode_id": "EP01",
+    "clip_id": "EP01-CLIP-04",
+    "character": "幽影",
+    "voice_profile": "omen_low_slow_deadpan",
+    "text": "不怪你。",
+    "target_duration_seconds": 1.0,
+    "recommended_speed": "slow",
+    "provider": "elevenlabs_stub",
+    "model_id": "TODO_MODEL_ID",
+    "voice_id": "TODO_VOICE_ID",
+    "request_payload_preview": {
+      "text": "不怪你。",
+      "model_id": "TODO_MODEL_ID",
+      "voice_settings": {
+        "stability": "TODO",
+        "similarity_boost": "TODO"
+      }
+    },
+    "output_path": "asset_library/val_tavern/generated/episodes/ep01/voiceover/EP01_CLIP04_OMEN_001_not_your_fault.wav",
+    "status": "pending_tts"
+  },
+  {
+    "line_id": "EP01-VO-011",
+    "episode_id": "EP01",
+    "clip_id": "EP01-CLIP-04",
+    "character": "幽影",
+    "voice_profile": "omen_low_slow_deadpan",
+    "text": "你只是和队伍不在一个地图。",
+    "target_duration_seconds": 2.4,
+    "recommended_speed": "slow",
+    "provider": "elevenlabs_stub",
+    "model_id": "TODO_MODEL_ID",
+    "voice_id": "TODO_VOICE_ID",
+    "request_payload_preview": {
+      "text": "你只是和队伍不在一个地图。",
+      "model_id": "TODO_MODEL_ID",
+      "voice_settings": {
+        "stability": "TODO",
+        "similarity_boost": "TODO"
+      }
+    },
+    "output_path": "asset_library/val_tavern/generated/episodes/ep01/voiceover/EP01_CLIP04_OMEN_002_wrong_map.wav",
+    "status": "pending_tts"
+  },
+  {
+    "line_id": "EP01-VO-012",
+    "episode_id": "EP01",
+    "clip_id": "EP01-CLIP-04",
+    "character": "幽影",
+    "voice_profile": "omen_low_slow_deadpan",
+    "text": "压力确实给到我们四个了。",
+    "target_duration_seconds": 2.2,
+    "recommended_speed": "slow",
+    "provider": "elevenlabs_stub",
+    "model_id": "TODO_MODEL_ID",
+    "voice_id": "TODO_VOICE_ID",
+    "request_payload_preview": {
+      "text": "压力确实给到我们四个了。",
+      "model_id": "TODO_MODEL_ID",
+      "voice_settings": {
+        "stability": "TODO",
+        "similarity_boost": "TODO"
+      }
+    },
+    "output_path": "asset_library/val_tavern/generated/episodes/ep01/voiceover/EP01_CLIP04_OMEN_003_team_pressure.wav",
+    "status": "pending_tts"
+  },
+  {
+    "line_id": "EP01-VO-013",
+    "episode_id": "EP01",
+    "clip_id": "EP01-CLIP-05",
+    "character": "芮娜",
+    "voice_profile": "reyna_confident_hardmouth",
+    "text": "那我不单摸，你们正面就一定打得进去吗？",
+    "target_duration_seconds": 2.8,
+    "recommended_speed": "normal_fast",
+    "provider": "elevenlabs_stub",
+    "model_id": "TODO_MODEL_ID",
+    "voice_id": "TODO_VOICE_ID",
+    "request_payload_preview": {
+      "text": "那我不单摸，你们正面就一定打得进去吗？",
+      "model_id": "TODO_MODEL_ID",
+      "voice_settings": {
+        "stability": "TODO",
+        "similarity_boost": "TODO"
+      }
+    },
+    "output_path": "asset_library/val_tavern/generated/episodes/ep01/voiceover/EP01_CLIP05_REYNA_001_counter_question.wav",
+    "status": "pending_tts"
+  },
+  {
+    "line_id": "EP01-VO-014",
+    "episode_id": "EP01",
+    "clip_id": "EP01-CLIP-05",
+    "character": "贤者",
+    "voice_profile": "sage_gentle_but_tilted",
+    "text": "至少你人在，我们还能补枪！",
+    "target_duration_seconds": 2.0,
+    "recommended_speed": "normal_fast",
+    "provider": "elevenlabs_stub",
+    "model_id": "TODO_MODEL_ID",
+    "voice_id": "TODO_VOICE_ID",
+    "request_payload_preview": {
+      "text": "至少你人在，我们还能补枪！",
+      "model_id": "TODO_MODEL_ID",
+      "voice_settings": {
+        "stability": "TODO",
+        "similarity_boost": "TODO"
+      }
+    },
+    "output_path": "asset_library/val_tavern/generated/episodes/ep01/voiceover/EP01_CLIP05_SAGE_001_trade.wav",
+    "status": "pending_tts"
+  },
+  {
+    "line_id": "EP01-VO-015",
+    "episode_id": "EP01",
+    "clip_id": "EP01-CLIP-05",
+    "character": "捷风",
+    "voice_profile": "jett_cold_sarcastic",
+    "text": "你来得比残局结算还晚。",
+    "target_duration_seconds": 2.0,
+    "recommended_speed": "normal",
+    "provider": "elevenlabs_stub",
+    "model_id": "TODO_MODEL_ID",
+    "voice_id": "TODO_VOICE_ID",
+    "request_payload_preview": {
+      "text": "你来得比残局结算还晚。",
+      "model_id": "TODO_MODEL_ID",
+      "voice_settings": {
+        "stability": "TODO",
+        "similarity_boost": "TODO"
+      }
+    },
+    "output_path": "asset_library/val_tavern/generated/episodes/ep01/voiceover/EP01_CLIP05_JETT_001_late.wav",
+    "status": "pending_tts"
+  },
+  {
+    "line_id": "EP01-VO-016",
+    "episode_id": "EP01",
+    "clip_id": "EP01-CLIP-05",
+    "character": "幽影",
+    "voice_profile": "omen_low_slow_deadpan",
+    "text": "她不是单摸，她是单机。",
+    "target_duration_seconds": 2.0,
+    "recommended_speed": "slow",
+    "provider": "elevenlabs_stub",
+    "model_id": "TODO_MODEL_ID",
+    "voice_id": "TODO_VOICE_ID",
+    "request_payload_preview": {
+      "text": "她不是单摸，她是单机。",
+      "model_id": "TODO_MODEL_ID",
+      "voice_settings": {
+        "stability": "TODO",
+        "similarity_boost": "TODO"
+      }
+    },
+    "output_path": "asset_library/val_tavern/generated/episodes/ep01/voiceover/EP01_CLIP05_OMEN_001_single_player.wav",
+    "status": "pending_tts"
+  },
+  {
+    "line_id": "EP01-VO-017",
+    "episode_id": "EP01",
+    "clip_id": "EP01-CLIP-06",
+    "character": "老瓦",
+    "voice_profile": "washu_low_mature_tavern_boss",
+    "text": "皮蛋，你怎么看？",
+    "target_duration_seconds": 1.6,
+    "recommended_speed": "normal_slow",
+    "provider": "elevenlabs_stub",
+    "model_id": "TODO_MODEL_ID",
+    "voice_id": "TODO_VOICE_ID",
+    "request_payload_preview": {
+      "text": "皮蛋，你怎么看？",
+      "model_id": "TODO_MODEL_ID",
+      "voice_settings": {
+        "stability": "TODO",
+        "similarity_boost": "TODO"
+      }
+    },
+    "output_path": "asset_library/val_tavern/generated/episodes/ep01/voiceover/EP01_CLIP06_WASHU_001_ask_pidan.wav",
+    "status": "pending_tts"
+  },
+  {
+    "line_id": "EP01-VO-018",
+    "episode_id": "EP01",
+    "clip_id": "EP01-CLIP-06",
+    "character": "皮蛋",
+    "voice_profile": "pidan_cute_short_electronic",
+    "text": "都别吵了，KSKBL！",
+    "target_duration_seconds": 1.8,
+    "recommended_speed": "fast",
+    "provider": "elevenlabs_stub",
+    "model_id": "TODO_MODEL_ID",
+    "voice_id": "TODO_VOICE_ID",
+    "request_payload_preview": {
+      "text": "都别吵了，KSKBL！",
+      "model_id": "TODO_MODEL_ID",
+      "voice_settings": {
+        "stability": "TODO",
+        "similarity_boost": "TODO"
+      }
+    },
+    "output_path": "asset_library/val_tavern/generated/episodes/ep01/voiceover/EP01_CLIP06_PIDAN_001_kskbl.wav",
+    "status": "pending_tts"
+  }
+]

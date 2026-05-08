@@ -50,6 +50,7 @@
 - [AI 配音工作流](./voiceover/voiceover_workflow.md)
 - [角色音色圣经](./voiceover/character_voice_bible.md)
 - [EP01 配音计划](./voiceover/ep01_voiceover_plan.md)
+- [EP01 参考音色配音渲染结果](./voiceover/ep01_voiceover_render_results.md)
 - [任务种子文件](../../data/val_tavern/phase1_asset_tasks.seed.json)
 
 ## 任务种子文件位置

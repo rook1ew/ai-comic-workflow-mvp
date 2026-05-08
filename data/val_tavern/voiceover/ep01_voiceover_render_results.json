@@ -1,0 +1,213 @@
+{
+  "render_id": "EP01-VOICEOVER-REF-V2",
+  "episode_id": "EP01",
+  "source_reference_video": "D:\\瓦酒馆视频素材\\EP01_first_cut_v1.mp4",
+  "silent_video": "asset_library/val_tavern/generated/episodes/ep01/edit/exports/VG_EP01_seeddance_first_cut_silent_v1.mp4",
+  "output_voiceover_wav": "asset_library/val_tavern/generated/episodes/ep01/edit/project_files/VG_EP01_voiceover_reference_v2.wav",
+  "output_video": "asset_library/val_tavern/generated/episodes/ep01/edit/exports/VG_EP01_seeddance_first_cut_voice_ref_v2.mp4",
+  "line_count": 18,
+  "video_duration_seconds": 41.0,
+  "audio_duration_seconds": 41.0,
+  "reyna_voice_direction": "V3 selected by user: confident, brighter, stronger attack, closer to Reyna reference direction",
+  "lines": [
+    {
+      "line_id": "EP01-VO-001",
+      "character": "老瓦",
+      "text": "要来一杯吗？",
+      "source_video": "D:\\瓦酒馆视频素材\\EP01_first_cut_v1.mp4",
+      "source_start": 2.2,
+      "source_duration": 1.65,
+      "target_start": 0.7,
+      "output_file": "asset_library/val_tavern/generated/episodes/ep01/voiceover_lines/reference_v2/EP01_CLIP01_WASHU_001_opening.wav",
+      "voice_filter": "reference_loudnorm"
+    },
+    {
+      "line_id": "EP01-VO-002",
+      "character": "皮蛋",
+      "text": "今日特调，单摸战神！",
+      "source_video": "D:\\瓦酒馆视频素材\\EP01_first_cut_v1.mp4",
+      "source_start": 5.1,
+      "source_duration": 2.3,
+      "target_start": 2.35,
+      "output_file": "asset_library/val_tavern/generated/episodes/ep01/voiceover_lines/reference_v2/EP01_CLIP01_PIDAN_001_special.wav",
+      "voice_filter": "reference_loudnorm"
+    },
+    {
+      "line_id": "EP01-VO-003",
+      "character": "贤者",
+      "text": "打 A 让你跟团，你非要摸 B！",
+      "source_video": "D:\\瓦酒馆视频素材\\EP01_first_cut_v1.mp4",
+      "source_start": 15.05,
+      "source_duration": 2.4,
+      "target_start": 5.3,
+      "output_file": "asset_library/val_tavern/generated/episodes/ep01/voiceover_lines/reference_v2/EP01_CLIP02_SAGE_001_complain.wav",
+      "voice_filter": "reference_loudnorm"
+    },
+    {
+      "line_id": "EP01-VO-004",
+      "character": "贤者",
+      "text": "我们正面永远少一个，捷风 E 进去就没了，你人呢？",
+      "source_video": "D:\\瓦酒馆视频素材\\EP01_first_cut_v1.mp4",
+      "source_start": 17.35,
+      "source_duration": 3.55,
+      "target_start": 7.75,
+      "output_file": "asset_library/val_tavern/generated/episodes/ep01/voiceover_lines/reference_v2/EP01_CLIP02_SAGE_002_where_are_you.wav",
+      "voice_filter": "reference_loudnorm"
+    },
+    {
+      "line_id": "EP01-VO-005",
+      "character": "芮娜",
+      "text": "我 20-10，全队最高战绩，怪我？",
+      "source_video": "D:\\瓦酒馆视频素材\\EP01_first_cut_v1.mp4",
+      "source_start": 8.15,
+      "source_duration": 2.65,
+      "target_start": 12.15,
+      "output_file": "asset_library/val_tavern/generated/episodes/ep01/voiceover_lines/reference_v2/EP01_CLIP03_REYNA_001_kda_reply.wav",
+      "voice_filter": "reyna_v3_official_direction"
+    },
+    {
+      "line_id": "EP01-VO-006",
+      "character": "捷风",
+      "text": "挺好看的。",
+      "source_video": "D:\\瓦酒馆视频素材\\EP01_first_cut_v1.mp4",
+      "source_start": 12.05,
+      "source_duration": 1.1,
+      "target_start": 14.95,
+      "output_file": "asset_library/val_tavern/generated/episodes/ep01/voiceover_lines/reference_v2/EP01_CLIP03_JETT_001_pre_roast.wav",
+      "voice_filter": "reference_loudnorm"
+    },
+    {
+      "line_id": "EP01-VO-007",
+      "character": "捷风",
+      "text": "就是和赢游戏没什么关系。",
+      "source_video": "D:\\瓦酒馆视频素材\\EP01_first_cut_v1.mp4",
+      "source_start": 13.05,
+      "source_duration": 2.05,
+      "target_start": 16.05,
+      "output_file": "asset_library/val_tavern/generated/episodes/ep01/voiceover_lines/reference_v2/EP01_CLIP03_JETT_002_roast.wav",
+      "voice_filter": "reference_loudnorm"
+    },
+    {
+      "line_id": "EP01-VO-008",
+      "character": "芮娜",
+      "text": "我在拉扯，给对面压力。",
+      "source_video": "D:\\瓦酒馆视频素材\\EP01_first_cut_v1.mp4",
+      "source_start": 22.05,
+      "source_duration": 2.2,
+      "target_start": 19.35,
+      "output_file": "asset_library/val_tavern/generated/episodes/ep01/voiceover_lines/reference_v2/EP01_CLIP04_REYNA_001_pressure.wav",
+      "voice_filter": "reyna_v3_official_direction"
+    },
+    {
+      "line_id": "EP01-VO-009",
+      "character": "芮娜",
+      "text": "机会都做出来了，是你们接不住。",
+      "source_video": "D:\\瓦酒馆视频素材\\EP01_first_cut_v1.mp4",
+      "source_start": 24.55,
+      "source_duration": 2.3,
+      "target_start": 21.55,
+      "output_file": "asset_library/val_tavern/generated/episodes/ep01/voiceover_lines/reference_v2/EP01_CLIP04_REYNA_002_chance_done.wav",
+      "voice_filter": "reyna_v3_official_direction"
+    },
+    {
+      "line_id": "EP01-VO-010",
+      "character": "幽影",
+      "text": "不怪你。",
+      "source_video": "D:\\瓦酒馆视频素材\\EP01_first_cut_v1.mp4",
+      "source_start": 27.05,
+      "source_duration": 1.05,
+      "target_start": 23.95,
+      "output_file": "asset_library/val_tavern/generated/episodes/ep01/voiceover_lines/reference_v2/EP01_CLIP04_OMEN_001_not_your_fault.wav",
+      "voice_filter": "reference_loudnorm"
+    },
+    {
+      "line_id": "EP01-VO-011",
+      "character": "幽影",
+      "text": "你只是和队伍不在一个地图。",
+      "source_video": "D:\\瓦酒馆视频素材\\EP01_first_cut_v1.mp4",
+      "source_start": 29.55,
+      "source_duration": 2.45,
+      "target_start": 25.1,
+      "output_file": "asset_library/val_tavern/generated/episodes/ep01/voiceover_lines/reference_v2/EP01_CLIP04_OMEN_002_wrong_map.wav",
+      "voice_filter": "reference_loudnorm"
+    },
+    {
+      "line_id": "EP01-VO-012",
+      "character": "幽影",
+      "text": "压力确实给到我们四个了。",
+      "source_video": "D:\\瓦酒馆视频素材\\EP01_first_cut_v1.mp4",
+      "source_start": 27.85,
+      "source_duration": 1.95,
+      "target_start": 27.2,
+      "output_file": "asset_library/val_tavern/generated/episodes/ep01/voiceover_lines/reference_v2/EP01_CLIP04_OMEN_003_team_pressure.wav",
+      "voice_filter": "reference_loudnorm"
+    },
+    {
+      "line_id": "EP01-VO-013",
+      "character": "芮娜",
+      "text": "那我不单摸，你们正面就一定打得进去吗？",
+      "source_video": "D:\\瓦酒馆视频素材\\EP01_first_cut_v1.mp4",
+      "source_start": 34.05,
+      "source_duration": 2.35,
+      "target_start": 28.35,
+      "output_file": "asset_library/val_tavern/generated/episodes/ep01/voiceover_lines/reference_v2/EP01_CLIP05_REYNA_001_counter_question.wav",
+      "voice_filter": "reyna_v3_official_direction"
+    },
+    {
+      "line_id": "EP01-VO-014",
+      "character": "贤者",
+      "text": "至少你人在，我们还能补枪！",
+      "source_video": "D:\\瓦酒馆视频素材\\EP01_first_cut_v1.mp4",
+      "source_start": 36.7,
+      "source_duration": 1.95,
+      "target_start": 30.8,
+      "output_file": "asset_library/val_tavern/generated/episodes/ep01/voiceover_lines/reference_v2/EP01_CLIP05_SAGE_001_trade.wav",
+      "voice_filter": "reference_loudnorm"
+    },
+    {
+      "line_id": "EP01-VO-015",
+      "character": "捷风",
+      "text": "你来得比残局结算还晚。",
+      "source_video": "D:\\瓦酒馆视频素材\\EP01_first_cut_v1.mp4",
+      "source_start": 38.1,
+      "source_duration": 1.9,
+      "target_start": 32.8,
+      "output_file": "asset_library/val_tavern/generated/episodes/ep01/voiceover_lines/reference_v2/EP01_CLIP05_JETT_001_late.wav",
+      "voice_filter": "reference_loudnorm"
+    },
+    {
+      "line_id": "EP01-VO-016",
+      "character": "幽影",
+      "text": "她不是单摸，她是单机。",
+      "source_video": "D:\\瓦酒馆视频素材\\EP01_first_cut_v1.mp4",
+      "source_start": 39.0,
+      "source_duration": 2.1,
+      "target_start": 34.55,
+      "output_file": "asset_library/val_tavern/generated/episodes/ep01/voiceover_lines/reference_v2/EP01_CLIP05_OMEN_001_single_player.wav",
+      "voice_filter": "reference_loudnorm"
+    },
+    {
+      "line_id": "EP01-VO-017",
+      "character": "老瓦",
+      "text": "皮蛋，你怎么看？",
+      "source_video": "D:\\瓦酒馆视频素材\\EP01_first_cut_v1.mp4",
+      "source_start": 40.75,
+      "source_duration": 1.5,
+      "target_start": 36.6,
+      "output_file": "asset_library/val_tavern/generated/episodes/ep01/voiceover_lines/reference_v2/EP01_CLIP06_WASHU_001_ask_pidan.wav",
+      "voice_filter": "reference_loudnorm"
+    },
+    {
+      "line_id": "EP01-VO-018",
+      "character": "皮蛋",
+      "text": "都别吵了，KSKBL！",
+      "source_video": "D:\\瓦酒馆视频素材\\EP01_first_cut_v1.mp4",
+      "source_start": 42.35,
+      "source_duration": 1.8,
+      "target_start": 38.45,
+      "output_file": "asset_library/val_tavern/generated/episodes/ep01/voiceover_lines/reference_v2/EP01_CLIP06_PIDAN_001_kskbl.wav",
+      "voice_filter": "reference_loudnorm"
+    }
+  ],
+  "status": "completed"
+}

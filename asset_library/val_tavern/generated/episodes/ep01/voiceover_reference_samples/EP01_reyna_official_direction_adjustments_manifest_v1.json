@@ -1,0 +1,32 @@
+﻿[
+    {
+        "variant":  "EP01_REF_REYNA_official_direction_v1_mature",
+        "source":  "EP01_REF_REYNA_from_video_v1.wav",
+        "target_style":  "Bilibili P17 Reyna official CN direction",
+        "pitch_factor":  0.9,
+        "mp3":  "asset_library/val_tavern/generated/episodes/ep01/voiceover_reference_samples/EP01_REF_REYNA_official_direction_v1_mature.mp3",
+        "wav":  "asset_library/val_tavern/generated/episodes/ep01/voiceover_reference_samples/EP01_REF_REYNA_official_direction_v1_mature.wav",
+        "duration_seconds":  3.05,
+        "status":  "for_user_review"
+    },
+    {
+        "variant":  "EP01_REF_REYNA_official_direction_v2_cold",
+        "source":  "EP01_REF_REYNA_from_video_v1.wav",
+        "target_style":  "Bilibili P17 Reyna official CN direction",
+        "pitch_factor":  0.86,
+        "mp3":  "asset_library/val_tavern/generated/episodes/ep01/voiceover_reference_samples/EP01_REF_REYNA_official_direction_v2_cold.mp3",
+        "wav":  "asset_library/val_tavern/generated/episodes/ep01/voiceover_reference_samples/EP01_REF_REYNA_official_direction_v2_cold.wav",
+        "duration_seconds":  3.06,
+        "status":  "for_user_review"
+    },
+    {
+        "variant":  "EP01_REF_REYNA_official_direction_v3_confident",
+        "source":  "EP01_REF_REYNA_from_video_v1.wav",
+        "target_style":  "Bilibili P17 Reyna official CN direction",
+        "pitch_factor":  0.93,
+        "mp3":  "asset_library/val_tavern/generated/episodes/ep01/voiceover_reference_samples/EP01_REF_REYNA_official_direction_v3_confident.mp3",
+        "wav":  "asset_library/val_tavern/generated/episodes/ep01/voiceover_reference_samples/EP01_REF_REYNA_official_direction_v3_confident.wav",
+        "duration_seconds":  3.06,
+        "status":  "for_user_review"
+    }
+]

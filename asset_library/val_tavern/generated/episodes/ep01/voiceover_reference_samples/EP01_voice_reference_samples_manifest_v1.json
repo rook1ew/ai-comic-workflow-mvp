@@ -1,0 +1,92 @@
+﻿[
+    {
+        "role":  "REYNA",
+        "character":  "芮娜",
+        "source_video":  "D:\\瓦酒馆视频素材\\5月8日 (1).mp4",
+        "source_start":  "00:00:09.00",
+        "source_duration":  "00:00:03.05",
+        "selected_line":  "我 20-10，全队最高战绩，怪我？",
+        "mp3":  "asset_library/val_tavern/generated/episodes/ep01/voiceover_reference_samples/EP01_REF_REYNA_from_video_v1.mp3",
+        "wav":  "asset_library/val_tavern/generated/episodes/ep01/voiceover_reference_samples/EP01_REF_REYNA_from_video_v1.wav",
+        "actual_duration_seconds":  3.05,
+        "note":  "用户指定芮娜试音台词：我 20-10，全队最高战绩，怪我？",
+        "status":  "for_user_review"
+    },
+    {
+        "value":  [
+                      {
+                          "role":  "WASHU",
+                          "character":  "老瓦",
+                          "source_video":  "D:\\瓦酒馆视频素材\\5月8日 (1).mp4",
+                          "source_start":  "00:00:40.00",
+                          "source_duration":  "00:00:02.40",
+                          "mp3":  "asset_library/val_tavern/generated/episodes/ep01/voiceover_reference_samples/EP01_REF_WASHU_from_video_v1.mp3",
+                          "wav":  "asset_library/val_tavern/generated/episodes/ep01/voiceover_reference_samples/EP01_REF_WASHU_from_video_v1.wav",
+                          "actual_duration_seconds":  2.37,
+                          "note":  "收尾控场，酒馆老板口吻",
+                          "status":  "for_user_review"
+                      },
+                      {
+                          "role":  "PIDAN",
+                          "character":  "皮蛋",
+                          "source_video":  "D:\\瓦酒馆视频素材\\5月8日 (1).mp4",
+                          "source_start":  "00:00:05.20",
+                          "source_duration":  "00:00:02.60",
+                          "mp3":  "asset_library/val_tavern/generated/episodes/ep01/voiceover_reference_samples/EP01_REF_PIDAN_from_video_v1.mp3",
+                          "wav":  "asset_library/val_tavern/generated/episodes/ep01/voiceover_reference_samples/EP01_REF_PIDAN_from_video_v1.wav",
+                          "actual_duration_seconds":  2.6,
+                          "note":  "举牌提示，今日特调",
+                          "status":  "for_user_review"
+                      },
+                      {
+                          "role":  "SAGE",
+                          "character":  "贤者",
+                          "source_video":  "D:\\瓦酒馆视频素材\\5月8日 (1).mp4",
+                          "source_start":  "00:00:16.20",
+                          "source_duration":  "00:00:04.60",
+                          "mp3":  "asset_library/val_tavern/generated/episodes/ep01/voiceover_reference_samples/EP01_REF_SAGE_from_video_v1.mp3",
+                          "wav":  "asset_library/val_tavern/generated/episodes/ep01/voiceover_reference_samples/EP01_REF_SAGE_from_video_v1.wav",
+                          "actual_duration_seconds":  4.6,
+                          "note":  "战术桌吐槽，不跟团",
+                          "status":  "for_user_review"
+                      },
+                      {
+                          "role":  "REYNA",
+                          "character":  "芮娜",
+                          "source_video":  "D:\\瓦酒馆视频素材\\5月8日 (1).mp4",
+                          "source_start":  "00:00:22.00",
+                          "source_duration":  "00:00:04.40",
+                          "mp3":  "asset_library/val_tavern/generated/episodes/ep01/voiceover_reference_samples/EP01_REF_REYNA_from_video_v1.mp3",
+                          "wav":  "asset_library/val_tavern/generated/episodes/ep01/voiceover_reference_samples/EP01_REF_REYNA_from_video_v1.wav",
+                          "actual_duration_seconds":  4.4,
+                          "note":  "嘴硬反驳，强势自信",
+                          "status":  "for_user_review"
+                      },
+                      {
+                          "role":  "JETT",
+                          "character":  "捷风",
+                          "source_video":  "D:\\瓦酒馆视频素材\\5月8日 (1).mp4",
+                          "source_start":  "00:00:11.20",
+                          "source_duration":  "00:00:04.00",
+                          "mp3":  "asset_library/val_tavern/generated/episodes/ep01/voiceover_reference_samples/EP01_REF_JETT_from_video_v1.mp3",
+                          "wav":  "asset_library/val_tavern/generated/episodes/ep01/voiceover_reference_samples/EP01_REF_JETT_from_video_v1.wav",
+                          "actual_duration_seconds":  4,
+                          "note":  "冷脸阴阳，20-10 吐槽",
+                          "status":  "for_user_review"
+                      },
+                      {
+                          "role":  "OMEN",
+                          "character":  "幽影",
+                          "source_video":  "D:\\瓦酒馆视频素材\\5月8日 (1).mp4",
+                          "source_start":  "00:00:29.50",
+                          "source_duration":  "00:00:05.50",
+                          "mp3":  "asset_library/val_tavern/generated/episodes/ep01/voiceover_reference_samples/EP01_REF_OMEN_from_video_v1.mp3",
+                          "wav":  "asset_library/val_tavern/generated/episodes/ep01/voiceover_reference_samples/EP01_REF_OMEN_from_video_v1.wav",
+                          "actual_duration_seconds":  5.5,
+                          "note":  "低沉补刀，不在一个地图",
+                          "status":  "for_user_review"
+                      }
+                  ],
+        "Count":  6
+    }
+]

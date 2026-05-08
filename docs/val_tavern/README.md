@@ -46,6 +46,7 @@
 - [EP01 first cut 视频制作说明](./episodes/video/ep01_video_first_cut_notes.md)
 - [EP01 剪辑计划](./episodes/video/ep01_editing_plan.md)
 - [EP01 SeedDance first cut 剪辑结果](./episodes/video/ep01_seeddance_first_cut_results.md)
+- [EP01 HyperFrames 对照渲染结果](./episodes/video/ep01_hyperframes_render_results.md)
 - [EP01 SeedDance2 带字输入图与提示词](./episodes/ep01_seeddance_prompt_pack.md)
 - [AI 配音工作流](./voiceover/voiceover_workflow.md)
 - [角色音色圣经](./voiceover/character_voice_bible.md)

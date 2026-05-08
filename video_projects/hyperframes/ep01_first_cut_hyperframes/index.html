@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="en" data-resolution="portrait">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1080, height=1920" />
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        margin: 0;
+        width: 1080px;
+        height: 1920px;
+        overflow: hidden;
+        background: #000;
+      }
+      #root {
+        position: relative;
+        width: 1080px;
+        height: 1920px;
+        overflow: hidden;
+        background: #05030a;
+      }
+      .stage-bg {
+        position: absolute;
+        inset: 0;
+        background:
+          radial-gradient(circle at 50% 10%, rgba(184, 76, 255, 0.14), transparent 38%),
+          radial-gradient(circle at 50% 88%, rgba(255, 179, 71, 0.16), transparent 42%),
+          #05030a;
+      }
+      .episode-clip {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transform-origin: 50% 50%;
+        background: #05030a;
+      }
+    </style>
+  </head>
+  <body>
+    <div
+      id="root"
+      data-composition-id="main"
+      data-start="0"
+      data-duration="41"
+      data-width="1080"
+      data-height="1920"
+    >
+      <div class="stage-bg"></div>
+
+      <video
+        id="clip-01"
+        class="episode-clip"
+        data-start="0"
+        data-duration="5"
+        data-track-index="0"
+        src="../../../asset_library/val_tavern/generated/episodes/ep01/seeddance_clips/EP01_CLIP_01_opening.mp4"
+        muted
+        playsinline
+      ></video>
+      <video
+        id="clip-02"
+        class="episode-clip"
+        data-start="5"
+        data-duration="7"
+        data-track-index="0"
+        src="../../../asset_library/val_tavern/generated/episodes/ep01/seeddance_clips/EP01_CLIP_02_sage_complain.mp4"
+        muted
+        playsinline
+      ></video>
+      <video
+        id="clip-03"
+        class="episode-clip"
+        data-start="12"
+        data-duration="7"
+        data-track-index="0"
+        src="../../../asset_library/val_tavern/generated/episodes/ep01/seeddance_clips/EP01_CLIP_03_reyna_jett.mp4"
+        muted
+        playsinline
+      ></video>
+      <video
+        id="clip-04"
+        class="episode-clip"
+        data-start="19"
+        data-duration="9"
+        data-track-index="0"
+        src="../../../asset_library/val_tavern/generated/episodes/ep01/seeddance_clips/EP01_CLIP_04_reyna_omen.mp4"
+        muted
+        playsinline
+      ></video>
+      <video
+        id="clip-05"
+        class="episode-clip"
+        data-start="28"
+        data-duration="8"
+        data-track-index="0"
+        src="../../../asset_library/val_tavern/generated/episodes/ep01/seeddance_clips/EP01_CLIP_05_group_argument.mp4"
+        muted
+        playsinline
+      ></video>
+      <video
+        id="clip-06"
+        class="episode-clip"
+        data-start="36"
+        data-duration="5"
+        data-track-index="0"
+        src="../../../asset_library/val_tavern/generated/episodes/ep01/seeddance_clips/EP01_CLIP_06_pidan_ending.mp4"
+        muted
+        playsinline
+      ></video>
+
+      <audio
+        id="voiceover-v2"
+        data-start="0"
+        data-duration="41"
+        data-track-index="1"
+        src="../../../asset_library/val_tavern/generated/episodes/ep01/edit/project_files/VG_EP01_voiceover_reference_v2.wav"
+        data-volume="1"
+      ></audio>
+    </div>
+
+    <script>
+      window.__timelines = window.__timelines || {};
+      const tl = gsap.timeline({ paused: true });
+      const clipIds = ["#clip-01", "#clip-02", "#clip-03", "#clip-04", "#clip-05", "#clip-06"];
+      clipIds.forEach((id, index) => {
+        const start = [0, 5, 12, 19, 28, 36][index];
+        tl.fromTo(id, { opacity: 0.96, scale: 1.004 }, { opacity: 1, scale: 1.018, duration: 0.8, ease: "power1.out" }, start);
+      });
+      window.__timelines["main"] = tl;
+    </script>
+  </body>
+</html>
